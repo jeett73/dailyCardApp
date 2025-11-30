@@ -28,7 +28,7 @@ export default function OtpScreen() {
 
   function onVerify() {
     if (!canVerify) return;
-    router.replace('/customer');
+    router.replace('/owner');
   }
 
   return (

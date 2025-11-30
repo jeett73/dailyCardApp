@@ -53,6 +53,7 @@ function RootLayoutNav() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="otp" options={{ headerShown: false }} />
         <Stack.Screen name="customer" options={{ headerShown: false }} />
+        <Stack.Screen name="owner" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );
