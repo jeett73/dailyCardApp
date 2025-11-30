@@ -3,7 +3,16 @@ import Colors from '@/constants/Colors';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+import {
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function OtpScreen() {
@@ -19,7 +28,7 @@ export default function OtpScreen() {
     useCallback(() => {
       const t = setTimeout(() => inputRef.current?.focus(), 150);
       return () => clearTimeout(t);
-    }, [])
+    }, []),
   );
 
   function focusInput() {
@@ -40,7 +49,11 @@ export default function OtpScreen() {
       resizeMode="cover"
     >
       <View style={styles.overlay} pointerEvents="none" />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={keyboardOffset} style={styles.flex}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardOffset}
+        style={styles.flex}
+      >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
             <Text style={styles.title}>Enter OTP</Text>
@@ -65,7 +78,12 @@ export default function OtpScreen() {
               maxLength={4}
             />
 
-            <TouchableOpacity onPress={onVerify} disabled={!canVerify} activeOpacity={0.9} style={[styles.button, !canVerify && styles.buttonDisabled]}>
+            <TouchableOpacity
+              onPress={onVerify}
+              disabled={!canVerify}
+              activeOpacity={0.9}
+              style={[styles.button, !canVerify && styles.buttonDisabled]}
+            >
               <Text style={styles.buttonText}>Verify</Text>
             </TouchableOpacity>
           </View>
@@ -79,7 +97,14 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   bg: { flex: 1 },
   bgImage: { width: '100%', height: '100%' },
-  overlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.35)' },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
   container: {
     flexGrow: 1,
     alignItems: 'center',

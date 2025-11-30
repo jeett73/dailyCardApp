@@ -2,7 +2,16 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { ImageBackground, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import {
+  ImageBackground,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
@@ -28,7 +37,11 @@ export default function LoginScreen() {
       resizeMode="cover"
     >
       <View style={styles.overlay} pointerEvents="none" />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={keyboardOffset} style={styles.flex}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardOffset}
+        style={styles.flex}
+      >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
             <Text style={styles.title}>Welcome Back</Text>
@@ -45,7 +58,12 @@ export default function LoginScreen() {
               />
             </View>
 
-            <TouchableOpacity onPress={handleContinue} activeOpacity={0.9} disabled={!isValid} style={[styles.button, !isValid && styles.buttonDisabled]}>
+            <TouchableOpacity
+              onPress={handleContinue}
+              activeOpacity={0.9}
+              disabled={!isValid}
+              style={[styles.button, !isValid && styles.buttonDisabled]}
+            >
               <Text style={styles.buttonText}>Send OTP</Text>
             </TouchableOpacity>
           </View>
@@ -59,13 +77,20 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   bg: { flex: 1 },
   bgImage: { width: '100%', height: '100%' },
-  overlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.35)' },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
   container: {
     flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'flex-end',
     paddingHorizontal: 24,
-    paddingBottom: 32
+    paddingBottom: 32,
   },
   card: {
     width: '100%',
@@ -136,4 +161,3 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-

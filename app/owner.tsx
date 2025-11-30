@@ -1,7 +1,15 @@
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React, { useMemo, useState } from 'react';
-import { Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function OwnerDashboard() {
@@ -77,7 +85,10 @@ export default function OwnerDashboard() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.flex}
+    >
       <View style={[styles.container, { paddingTop: insets.top + 60 }]}>
         {/* <View style={styles.searchBarWrapper}>
           <TextInput
@@ -102,7 +113,12 @@ export default function OwnerDashboard() {
             <Text style={styles.placeholderText}>Enter 15 on the keypad to view card 15</Text>
           )} */}
           {filtered.map((name) => (
-            <TouchableOpacity key={name} style={styles.customerCard} activeOpacity={0.85} onPress={() => openSheet(name)}>
+            <TouchableOpacity
+              key={name}
+              style={styles.customerCard}
+              activeOpacity={0.85}
+              onPress={() => openSheet(name)}
+            >
               <Text style={styles.customerName}>[15] {name}</Text>
             </TouchableOpacity>
           ))}
@@ -111,33 +127,56 @@ export default function OwnerDashboard() {
         <View style={[styles.keypadWrapper, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.keypadRow}>
             {['1', '2', '3'].map((d) => (
-              <TouchableOpacity key={d} style={styles.key} activeOpacity={0.8} onPress={() => onDigit(d)}>
+              <TouchableOpacity
+                key={d}
+                style={styles.key}
+                activeOpacity={0.8}
+                onPress={() => onDigit(d)}
+              >
                 <Text style={styles.keyText}>{d}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <View style={styles.keypadRow}>
             {['4', '5', '6'].map((d) => (
-              <TouchableOpacity key={d} style={styles.key} activeOpacity={0.8} onPress={() => onDigit(d)}>
+              <TouchableOpacity
+                key={d}
+                style={styles.key}
+                activeOpacity={0.8}
+                onPress={() => onDigit(d)}
+              >
                 <Text style={styles.keyText}>{d}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <View style={styles.keypadRow}>
             {['7', '8', '9'].map((d) => (
-              <TouchableOpacity key={d} style={styles.key} activeOpacity={0.8} onPress={() => onDigit(d)}>
+              <TouchableOpacity
+                key={d}
+                style={styles.key}
+                activeOpacity={0.8}
+                onPress={() => onDigit(d)}
+              >
                 <Text style={styles.keyText}>{d}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <View style={styles.keypadRow}>
-            <TouchableOpacity style={[styles.key, styles.utilKey]} activeOpacity={0.8} onPress={onClear}>
+            <TouchableOpacity
+              style={[styles.key, styles.utilKey]}
+              activeOpacity={0.8}
+              onPress={onClear}
+            >
               <Text style={styles.utilKeyText}>Clear</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.key} activeOpacity={0.8} onPress={() => onDigit('0')}>
               <Text style={styles.keyText}>0</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.key, styles.utilKey]} activeOpacity={0.8} onPress={onBackspace}>
+            <TouchableOpacity
+              style={[styles.key, styles.utilKey]}
+              activeOpacity={0.8}
+              onPress={onBackspace}
+            >
               <Text style={styles.utilKeyText}>⌫</Text>
             </TouchableOpacity>
           </View>
@@ -145,7 +184,7 @@ export default function OwnerDashboard() {
         {sheetVisible && (
           <>
             <Pressable style={styles.overlay} onPress={closeSheet} />
-            <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetY }] }] }>
+            <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetY }] }]}>
               <View style={styles.sheetHeader}>
                 <View style={styles.dragIndicator} />
                 <Text style={styles.sheetTitle}>{selectedName || ''}</Text>
@@ -155,11 +194,19 @@ export default function OwnerDashboard() {
                   <View key={p} style={styles.productRow}>
                     <Text style={styles.productName}>{p}</Text>
                     <View style={styles.qtyControls}>
-                      <TouchableOpacity style={styles.qtyButton} activeOpacity={0.85} onPress={() => dec(p)}>
+                      <TouchableOpacity
+                        style={styles.qtyButton}
+                        activeOpacity={0.85}
+                        onPress={() => dec(p)}
+                      >
                         <Text style={styles.qtyButtonText}>-</Text>
                       </TouchableOpacity>
                       <Text style={styles.qtyValue}>{quantities[p] ?? 0}</Text>
-                      <TouchableOpacity style={styles.qtyButton} activeOpacity={0.85} onPress={() => inc(p)}>
+                      <TouchableOpacity
+                        style={styles.qtyButton}
+                        activeOpacity={0.85}
+                        onPress={() => inc(p)}
+                      >
                         <Text style={styles.qtyButtonText}>+</Text>
                       </TouchableOpacity>
                     </View>
@@ -297,7 +344,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)'
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   sheet: {
     position: 'absolute',
@@ -386,4 +433,3 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-
