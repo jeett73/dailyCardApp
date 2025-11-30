@@ -1,12 +1,21 @@
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
-import { ImageBackground, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import {
+  ImageBackground,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
-  const router = useRouter();
+  const navigation = useNavigation<any>();
   const [phone, setPhone] = useState('');
   const isValid = useMemo(() => phone.length === 10, [phone]);
   const insets = useSafeAreaInsets();
@@ -16,19 +25,23 @@ export default function LoginScreen() {
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length !== 10) return;
     Keyboard.dismiss();
-    router.push({ pathname: '/otp', params: { phone: cleaned } });
+    navigation.navigate('Otp', { phone: cleaned });
   }
 
   return (
     <ImageBackground
-      source={require('../ChatGPT Image Nov 29, 2025, 10_16_18 PM.png')}
+      source={require('../../assets/images/bg.png')}
       style={styles.bg}
       imageStyle={styles.bgImage}
       blurRadius={10}
       resizeMode="cover"
     >
       <View style={styles.overlay} pointerEvents="none" />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={keyboardOffset} style={styles.flex}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardOffset}
+        style={styles.flex}
+      >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
             <Text style={styles.title}>Welcome Back</Text>
@@ -45,7 +58,12 @@ export default function LoginScreen() {
               />
             </View>
 
-            <TouchableOpacity onPress={handleContinue} activeOpacity={0.9} disabled={!isValid} style={[styles.button, !isValid && styles.buttonDisabled]}>
+            <TouchableOpacity
+              onPress={handleContinue}
+              activeOpacity={0.9}
+              disabled={!isValid}
+              style={[styles.button, !isValid && styles.buttonDisabled]}
+            >
               <Text style={styles.buttonText}>Send OTP</Text>
             </TouchableOpacity>
           </View>
@@ -59,13 +77,20 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   bg: { flex: 1 },
   bgImage: { width: '100%', height: '100%' },
-  overlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.35)' },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
   container: {
     flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'flex-end',
     paddingHorizontal: 24,
-    paddingBottom: 32
+    paddingBottom: 32,
   },
   card: {
     width: '100%',
@@ -97,21 +122,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   inputWrapper: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
+    marginBottom: 16,
   },
   input: {
-    height: 52,
-    borderRadius: 16,
+    height: 50,
+    borderRadius: 14,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(248,248,248,0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
     fontSize: 16,
+    fontWeight: '600',
+    backgroundColor: '#e0cde6ff',
     color: Colors.light.text,
   },
   button: {
@@ -136,4 +155,3 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-

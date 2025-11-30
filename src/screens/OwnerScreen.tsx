@@ -1,10 +1,18 @@
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React, { useMemo, useState } from 'react';
-import { Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function OwnerDashboard() {
+export default function OwnerScreen() {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [input, setInput] = useState('');
@@ -79,36 +87,31 @@ export default function OwnerDashboard() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
       <View style={[styles.container, { paddingTop: insets.top + 60 }]}>
-        {/* <View style={styles.searchBarWrapper}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search customers"
-            placeholderTextColor="#0d101b"
-            style={styles.searchInput}
-          />
-        </View> */}
-
         <View style={styles.headerCenter}>
           <Text style={styles.title}>Patel Dairy & Sweet</Text>
           <Text style={styles.subTitle}>{input ? `Card #${input}` : 'Enter card number'}</Text>
         </View>
 
         <ScrollView contentContainerStyle={styles.listContainer}>
-          {input === '15' && filtered.length === 0 && (
-            <Text style={styles.emptyText}>No customers found</Text>
-          )}
-          {/* {input !== '15' && customers.length === 0 && (
-            <Text style={styles.placeholderText}>Enter 15 on the keypad to view card 15</Text>
-          )} */}
+          {input === '15' && filtered.length === 0 && <Text style={styles.emptyText}>No customers found</Text>}
           {filtered.map((name) => (
             <TouchableOpacity key={name} style={styles.customerCard} activeOpacity={0.85} onPress={() => openSheet(name)}>
-              <Text style={styles.customerName}>[15] {name}</Text>
+              <Text style={styles.customerName}>{name}</Text>
+              <View style={styles.cardRow}>
+                {products.map((p) => (
+                  <View key={p} style={styles.cardItem}>
+                    <Text style={styles.cardItemLabel}>{p}</Text>
+                    <View style={styles.cardItemBadge}>
+                      <Text style={styles.cardItemBadgeText}>{(quantities[p] ?? 0).toString()}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <View style={[styles.keypadWrapper, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={styles.keypadWrapper}>
           <View style={styles.keypadRow}>
             {['1', '2', '3'].map((d) => (
               <TouchableOpacity key={d} style={styles.key} activeOpacity={0.8} onPress={() => onDigit(d)}>
@@ -145,7 +148,7 @@ export default function OwnerDashboard() {
         {sheetVisible && (
           <>
             <Pressable style={styles.overlay} onPress={closeSheet} />
-            <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetY }] }] }>
+            <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetY }] }]}>
               <View style={styles.sheetHeader}>
                 <View style={styles.dragIndicator} />
                 <Text style={styles.sheetTitle}>{selectedName || ''}</Text>
@@ -181,52 +184,38 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  searchBarWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  searchInput: {
-    width: '80%',
-    height: 44,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(248,248,248,0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
-    fontSize: 16,
-    color: Colors.light.text,
+    backgroundColor: '#f8f8f8',
   },
   headerCenter: {
     alignItems: 'center',
-    paddingVertical: 12,
   },
   title: {
-    fontStyle: 'italic',
-    fontSize: 25,
-    fontWeight: '900',
+    fontSize: 22,
+    fontWeight: '800',
     color: Colors.light.text,
-    marginBottom: 8,
   },
   subTitle: {
     marginTop: 4,
-    fontSize: 15,
-    color: '#555',
+    fontSize: 14,
+    color: '#666',
   },
   listContainer: {
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    paddingBottom: 8,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 14,
+    paddingVertical: 12,
   },
   customerCard: {
     borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: '#e0cde6ff',
+    padding: 12,
+    marginVertical: 8,
+    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: 'rgba(13,16,27,0.08)',
-    marginBottom: 10,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -237,18 +226,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: Colors.light.text,
+    marginBottom: 8,
   },
-  emptyText: {
-    textAlign: 'center',
-    color: '#666',
-    fontSize: 14,
-    paddingVertical: 12,
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  placeholderText: {
-    textAlign: 'center',
-    color: '#666',
+  cardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardItemLabel: {
     fontSize: 14,
-    paddingVertical: 12,
+    color: '#666',
+    marginRight: 8,
+  },
+  cardItemBadge: {
+    minWidth: 24,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    backgroundColor: '#0d101b',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardItemBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
   },
   keypadWrapper: {
     position: 'absolute',
@@ -297,7 +303,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)'
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   sheet: {
     position: 'absolute',
@@ -386,4 +392,3 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-
