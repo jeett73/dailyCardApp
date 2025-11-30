@@ -1,6 +1,6 @@
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
 import {
   ImageBackground,
@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
-  const router = useRouter();
+  const navigation = useNavigation<any>();
   const [phone, setPhone] = useState('');
   const isValid = useMemo(() => phone.length === 10, [phone]);
   const insets = useSafeAreaInsets();
@@ -25,12 +25,12 @@ export default function LoginScreen() {
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length !== 10) return;
     Keyboard.dismiss();
-    router.push({ pathname: '/otp', params: { phone: cleaned } });
+    navigation.navigate('Otp', { phone: cleaned });
   }
 
   return (
     <ImageBackground
-      source={require('../ChatGPT Image Nov 29, 2025, 10_16_18 PM.png')}
+      source={require('../../assets/images/bg.png')}
       style={styles.bg}
       imageStyle={styles.bgImage}
       blurRadius={10}
@@ -122,21 +122,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   inputWrapper: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
+    marginBottom: 16,
   },
   input: {
-    height: 52,
-    borderRadius: 16,
+    height: 50,
+    borderRadius: 14,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(248,248,248,0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
     fontSize: 16,
+    fontWeight: '600',
+    backgroundColor: '#e0cde6ff',
     color: Colors.light.text,
   },
   button: {

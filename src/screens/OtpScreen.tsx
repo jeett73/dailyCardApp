@@ -1,7 +1,6 @@
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { useFocusEffect } from '@react-navigation/native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ImageBackground,
@@ -16,8 +15,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function OtpScreen() {
-  const { phone } = useLocalSearchParams<{ phone?: string }>();
-  const router = useRouter();
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const phone: string | undefined = route?.params?.phone;
   const [code, setCode] = useState('');
   const inputRef = useRef<TextInput>(null);
   const canVerify = useMemo(() => code.length === 4, [code]);
@@ -37,12 +37,12 @@ export default function OtpScreen() {
 
   function onVerify() {
     if (!canVerify) return;
-    router.replace('/owner');
+    navigation.replace('Owner');
   }
 
   return (
     <ImageBackground
-      source={require('../ChatGPT Image Nov 29, 2025, 10_16_18 PM.png')}
+      source={require('../../assets/images/bg.png')}
       style={styles.bg}
       imageStyle={styles.bgImage}
       blurRadius={10}

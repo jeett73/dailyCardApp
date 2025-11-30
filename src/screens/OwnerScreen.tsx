@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function OwnerDashboard() {
+export default function OwnerScreen() {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [input, setInput] = useState('');
@@ -85,98 +85,62 @@ export default function OwnerDashboard() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.flex}
-    >
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
       <View style={[styles.container, { paddingTop: insets.top + 60 }]}>
-        {/* <View style={styles.searchBarWrapper}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search customers"
-            placeholderTextColor="#0d101b"
-            style={styles.searchInput}
-          />
-        </View> */}
-
         <View style={styles.headerCenter}>
           <Text style={styles.title}>Patel Dairy & Sweet</Text>
           <Text style={styles.subTitle}>{input ? `Card #${input}` : 'Enter card number'}</Text>
         </View>
 
         <ScrollView contentContainerStyle={styles.listContainer}>
-          {input === '15' && filtered.length === 0 && (
-            <Text style={styles.emptyText}>No customers found</Text>
-          )}
-          {/* {input !== '15' && customers.length === 0 && (
-            <Text style={styles.placeholderText}>Enter 15 on the keypad to view card 15</Text>
-          )} */}
+          {input === '15' && filtered.length === 0 && <Text style={styles.emptyText}>No customers found</Text>}
           {filtered.map((name) => (
-            <TouchableOpacity
-              key={name}
-              style={styles.customerCard}
-              activeOpacity={0.85}
-              onPress={() => openSheet(name)}
-            >
-              <Text style={styles.customerName}>[15] {name}</Text>
+            <TouchableOpacity key={name} style={styles.customerCard} activeOpacity={0.85} onPress={() => openSheet(name)}>
+              <Text style={styles.customerName}>{name}</Text>
+              <View style={styles.cardRow}>
+                {products.map((p) => (
+                  <View key={p} style={styles.cardItem}>
+                    <Text style={styles.cardItemLabel}>{p}</Text>
+                    <View style={styles.cardItemBadge}>
+                      <Text style={styles.cardItemBadgeText}>{(quantities[p] ?? 0).toString()}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <View style={[styles.keypadWrapper, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={styles.keypadWrapper}>
           <View style={styles.keypadRow}>
             {['1', '2', '3'].map((d) => (
-              <TouchableOpacity
-                key={d}
-                style={styles.key}
-                activeOpacity={0.8}
-                onPress={() => onDigit(d)}
-              >
+              <TouchableOpacity key={d} style={styles.key} activeOpacity={0.8} onPress={() => onDigit(d)}>
                 <Text style={styles.keyText}>{d}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <View style={styles.keypadRow}>
             {['4', '5', '6'].map((d) => (
-              <TouchableOpacity
-                key={d}
-                style={styles.key}
-                activeOpacity={0.8}
-                onPress={() => onDigit(d)}
-              >
+              <TouchableOpacity key={d} style={styles.key} activeOpacity={0.8} onPress={() => onDigit(d)}>
                 <Text style={styles.keyText}>{d}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <View style={styles.keypadRow}>
             {['7', '8', '9'].map((d) => (
-              <TouchableOpacity
-                key={d}
-                style={styles.key}
-                activeOpacity={0.8}
-                onPress={() => onDigit(d)}
-              >
+              <TouchableOpacity key={d} style={styles.key} activeOpacity={0.8} onPress={() => onDigit(d)}>
                 <Text style={styles.keyText}>{d}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <View style={styles.keypadRow}>
-            <TouchableOpacity
-              style={[styles.key, styles.utilKey]}
-              activeOpacity={0.8}
-              onPress={onClear}
-            >
+            <TouchableOpacity style={[styles.key, styles.utilKey]} activeOpacity={0.8} onPress={onClear}>
               <Text style={styles.utilKeyText}>Clear</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.key} activeOpacity={0.8} onPress={() => onDigit('0')}>
               <Text style={styles.keyText}>0</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.key, styles.utilKey]}
-              activeOpacity={0.8}
-              onPress={onBackspace}
-            >
+            <TouchableOpacity style={[styles.key, styles.utilKey]} activeOpacity={0.8} onPress={onBackspace}>
               <Text style={styles.utilKeyText}>⌫</Text>
             </TouchableOpacity>
           </View>
@@ -194,19 +158,11 @@ export default function OwnerDashboard() {
                   <View key={p} style={styles.productRow}>
                     <Text style={styles.productName}>{p}</Text>
                     <View style={styles.qtyControls}>
-                      <TouchableOpacity
-                        style={styles.qtyButton}
-                        activeOpacity={0.85}
-                        onPress={() => dec(p)}
-                      >
+                      <TouchableOpacity style={styles.qtyButton} activeOpacity={0.85} onPress={() => dec(p)}>
                         <Text style={styles.qtyButtonText}>-</Text>
                       </TouchableOpacity>
                       <Text style={styles.qtyValue}>{quantities[p] ?? 0}</Text>
-                      <TouchableOpacity
-                        style={styles.qtyButton}
-                        activeOpacity={0.85}
-                        onPress={() => inc(p)}
-                      >
+                      <TouchableOpacity style={styles.qtyButton} activeOpacity={0.85} onPress={() => inc(p)}>
                         <Text style={styles.qtyButtonText}>+</Text>
                       </TouchableOpacity>
                     </View>
@@ -228,52 +184,38 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  searchBarWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  searchInput: {
-    width: '80%',
-    height: 44,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(248,248,248,0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
-    fontSize: 16,
-    color: Colors.light.text,
+    backgroundColor: '#f8f8f8',
   },
   headerCenter: {
     alignItems: 'center',
-    paddingVertical: 12,
   },
   title: {
-    fontStyle: 'italic',
-    fontSize: 25,
-    fontWeight: '900',
+    fontSize: 22,
+    fontWeight: '800',
     color: Colors.light.text,
-    marginBottom: 8,
   },
   subTitle: {
     marginTop: 4,
-    fontSize: 15,
-    color: '#555',
+    fontSize: 14,
+    color: '#666',
   },
   listContainer: {
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    paddingBottom: 8,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 14,
+    paddingVertical: 12,
   },
   customerCard: {
     borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: '#e0cde6ff',
+    padding: 12,
+    marginVertical: 8,
+    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: 'rgba(13,16,27,0.08)',
-    marginBottom: 10,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -284,18 +226,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: Colors.light.text,
+    marginBottom: 8,
   },
-  emptyText: {
-    textAlign: 'center',
-    color: '#666',
-    fontSize: 14,
-    paddingVertical: 12,
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  placeholderText: {
-    textAlign: 'center',
-    color: '#666',
+  cardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardItemLabel: {
     fontSize: 14,
-    paddingVertical: 12,
+    color: '#666',
+    marginRight: 8,
+  },
+  cardItemBadge: {
+    minWidth: 24,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    backgroundColor: '#0d101b',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardItemBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
   },
   keypadWrapper: {
     position: 'absolute',
