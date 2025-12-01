@@ -3,8 +3,8 @@ import Colors from '@/constants/Colors';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  Animated,
   ImageBackground,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,17 +12,17 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useWindowDimensions } from 'react-native';
 
-export default function OtpScreen() {
+export default function MpinScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const phone: string | undefined = route?.params?.phone;
-  const [code, setCode] = useState('');
+  const [pin, setPin] = useState('');
   const inputRef = useRef<TextInput>(null);
-  const canVerify = useMemo(() => code.length === 4, [code]);
+  const canContinue = useMemo(() => pin.length === 4, [pin]);
   const insets = useSafeAreaInsets();
   const keyboardOffset = insets.top;
   const { height: winH } = useWindowDimensions();
@@ -36,6 +36,19 @@ export default function OtpScreen() {
       return () => clearTimeout(t);
     }, []),
   );
+
+  function focusInput() {
+    inputRef.current?.focus();
+  }
+
+  function onForgot() {
+    navigation.navigate('Login');
+  }
+
+  function onContinue() {
+    if (!canContinue) return;
+    navigation.replace('Owner');
+  }
 
   const onFocus = () => {
     Animated.timing(overlayAnim, {
@@ -53,15 +66,6 @@ export default function OtpScreen() {
     }).start();
   };
 
-  function focusInput() {
-    inputRef.current?.focus();
-  }
-
-  function onVerify() {
-    if (!canVerify) return;
-    navigation.navigate('Mpin', { phone });
-  }
-
   return (
     <View style={styles.screen}>
       <View style={[styles.hero, { height: heroHeight }]}>
@@ -71,10 +75,7 @@ export default function OtpScreen() {
           imageStyle={styles.heroImageInner}
           resizeMode="cover"
         >
-          <Animated.View
-            style={[styles.heroOverlay, { opacity: overlayAnim }]}
-            pointerEvents="none"
-          />
+          <Animated.View style={[styles.heroOverlay, { opacity: overlayAnim }]} pointerEvents="none" />
         </ImageBackground>
       </View>
       <KeyboardAvoidingView
@@ -89,14 +90,14 @@ export default function OtpScreen() {
           bounces={false}
         >
           <View style={styles.card}>
-            <Text style={styles.title}>Enter OTP</Text>
-            <Text style={styles.subtitle}>Sent to {phone ? `+91 ${phone}` : 'your phone'}</Text>
+            <Text style={styles.title}>Enter MPIN</Text>
+            <Text style={styles.subtitle}>{phone ? `For +91 ${phone}` : 'Secure access to your account'}</Text>
 
             <TouchableWithoutFeedback onPress={focusInput}>
               <View style={styles.otpRow}>
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <View key={i} style={[styles.otpCell, code[i] && styles.otpCellFilled]}>
-                    <Text style={styles.otpText}>{code[i] || ''}</Text>
+                  <View key={i} style={[styles.otpCell, pin[i] && styles.otpCellFilled]}>
+                    <Text style={styles.otpText}>{pin[i] ? '•' : ''}</Text>
                   </View>
                 ))}
               </View>
@@ -104,25 +105,30 @@ export default function OtpScreen() {
 
             <TextInput
               ref={inputRef}
-              value={code}
-              onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 4))}
+              value={pin}
+              onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, 4))}
               onFocus={onFocus}
               onBlur={onBlur}
               keyboardType="number-pad"
               style={styles.hiddenInput}
               maxLength={4}
-              accessibilityLabel="Enter 4-digit OTP"
+              secureTextEntry
+              accessibilityLabel="Enter 4-digit MPIN"
             />
 
+            <TouchableOpacity onPress={onForgot} activeOpacity={0.8} style={styles.forgotLink}>
+              <Text style={styles.forgotText}>Forgot MPIN?</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
-              onPress={onVerify}
-              disabled={!canVerify}
+              onPress={onContinue}
+              disabled={!canContinue}
               activeOpacity={0.9}
-              style={[styles.button, !canVerify && styles.buttonDisabled]}
+              style={[styles.button, !canContinue && styles.buttonDisabled]}
               accessibilityRole="button"
-              accessibilityState={{ disabled: !canVerify }}
+              accessibilityState={{ disabled: !canContinue }}
             >
-              <Text style={styles.buttonText}>Verify</Text>
+              <Text style={styles.buttonText}>Continue</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -195,7 +201,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   otpCell: {
     height: 56,
@@ -209,7 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#a0c6ff',
   },
   otpText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
     color: Colors.light.text,
   },
@@ -219,12 +225,22 @@ const styles = StyleSheet.create({
     width: 0,
     opacity: 0,
   },
+  forgotLink: {
+    alignSelf: 'flex-end',
+    paddingVertical: 8,
+  },
+  forgotText: {
+    fontSize: 14,
+    color: Colors.light.tint,
+    fontWeight: '600',
+  },
   button: {
     height: 56,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.light.tint,
+    marginTop: 8,
   },
   buttonDisabled: {
     opacity: 0.5,
