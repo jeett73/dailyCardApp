@@ -1,138 +1,204 @@
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  ImageBackground,
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useWindowDimensions } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import React, { useMemo, useState } from 'react';
+import { ImageBackground, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function MpinScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const phone: string | undefined = route?.params?.phone;
-  const [pin, setPin] = useState('');
-  const inputRef = useRef<TextInput>(null);
-  const canContinue = useMemo(() => pin.length === 4, [pin]);
-  const insets = useSafeAreaInsets();
-  const keyboardOffset = insets.top;
-  const { height: winH } = useWindowDimensions();
-  const heroHeight = Math.max(420, Math.min(600, Math.round(winH * 0.62)));
-  const overlap = 90;
-  const overlayAnim = useRef(new Animated.Value(0)).current;
+  const name: string | undefined = route?.params?.name;
+  const [digits, setDigits] = useState<string[]>(['', '', '', '']);
+  const otp = useMemo(() => digits.join(''), [digits]);
+  const isValid = useMemo(() => otp.length === 4, [otp]);
+  const focused = true;
+  const [hasError, setHasError] = useState<boolean>(false);
+  const [success, setSuccess] = useState<boolean>(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      const t = setTimeout(() => inputRef.current?.focus(), 150);
-      return () => clearTimeout(t);
-    }, []),
-  );
-
-  function focusInput() {
-    inputRef.current?.focus();
+  function computeInitials(n?: string) {
+    const s = (n ?? '').trim();
+    if (!s) return '';
+    const parts = s.split(/\s+/);
+    const first = parts[0]?.[0] ?? '';
+    const last = parts[1]?.[0] ?? '';
+    return `${first}${last}`.toUpperCase();
   }
 
-  function onForgot() {
-    navigation.navigate('Login');
+  const initials = computeInitials(name) || 'GU';
+
+  function onDigit(d: string) {
+    setDigits((prev) => {
+      const arr = [...prev];
+      for (let i = 0; i < arr.length; i++) {
+        if (!arr[i]) {
+          arr[i] = d;
+          break;
+        }
+      }
+      return arr;
+    });
+    setHasError(false);
+    setSuccess(false);
   }
 
-  function onContinue() {
-    if (!canContinue) return;
+  function onBackspace() {
+    setDigits((prev) => {
+      const arr = [...prev];
+      for (let i = arr.length - 1; i >= 0; i--) {
+        if (arr[i]) {
+          arr[i] = '';
+          break;
+        }
+      }
+      return arr;
+    });
+    setSuccess(false);
+  }
+
+  function onClear() {
+    setDigits(['', '', '', '']);
+    setHasError(false);
+    setSuccess(false);
+  }
+
+  function handleContinue() {
+    const cleaned = otp.replace(/\D/g, '').slice(0, 4);
+    if (cleaned.length !== 4) {
+      setHasError(true);
+      return;
+    }
+    setHasError(false);
+    setSuccess(true);
     navigation.replace('Owner');
   }
 
-  const onFocus = () => {
-    Animated.timing(overlayAnim, {
-      toValue: 0.25,
-      duration: 180,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const onBlur = () => {
-    Animated.timing(overlayAnim, {
-      toValue: 0,
-      duration: 180,
-      useNativeDriver: true,
-    }).start();
-  };
-
   return (
     <View style={styles.screen}>
-      <View style={[styles.hero, { height: heroHeight }]}>
+      <View style={styles.hero}>
         <ImageBackground
           source={require('../../assets/images/bg.png')}
           style={styles.heroImage}
           imageStyle={styles.heroImageInner}
           resizeMode="cover"
-        >
-          <Animated.View style={[styles.heroOverlay, { opacity: overlayAnim }]} pointerEvents="none" />
-        </ImageBackground>
+          blurRadius={focused ? 10 : 0}
+        />
       </View>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={keyboardOffset}
-        style={styles.flex}
-      >
-        <ScrollView
-          contentContainerStyle={[styles.container, { paddingTop: heroHeight - overlap }]}
-          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-          keyboardShouldPersistTaps="handled"
-          bounces={false}
-        >
-          <View style={styles.card}>
-            <Text style={styles.title}>Enter MPIN</Text>
-            <Text style={styles.subtitle}>{phone ? `For +91 ${phone}` : 'Secure access to your account'}</Text>
-
-            <TouchableWithoutFeedback onPress={focusInput}>
-              <View style={styles.otpRow}>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <View key={i} style={[styles.otpCell, pin[i] && styles.otpCellFilled]}>
-                    <Text style={styles.otpText}>{pin[i] ? '•' : ''}</Text>
-                  </View>
-                ))}
-              </View>
-            </TouchableWithoutFeedback>
-
-            <TextInput
-              ref={inputRef}
-              value={pin}
-              onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, 4))}
-              onFocus={onFocus}
-              onBlur={onBlur}
-              keyboardType="number-pad"
-              style={styles.hiddenInput}
-              maxLength={4}
-              secureTextEntry
-              accessibilityLabel="Enter 4-digit MPIN"
-            />
-
-            <TouchableOpacity onPress={onForgot} activeOpacity={0.8} style={styles.forgotLink}>
-              <Text style={styles.forgotText}>Forgot MPIN?</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={onContinue}
-              disabled={!canContinue}
-              activeOpacity={0.9}
-              style={[styles.button, !canContinue && styles.buttonDisabled]}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !canContinue }}
-            >
-              <Text style={styles.buttonText}>Continue</Text>
-            </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={[styles.card, focused && styles.cardFloating]}>
+          <View style={styles.profileCircle} accessibilityLabel="User initials">
+            <Text style={styles.profileInitials}>{initials}</Text>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <Text style={styles.title}>Enter MPIN</Text>
+          <Text style={styles.subtitle}>
+            {phone ? `For +91 ${phone}` : 'Secure access to your account'}
+          </Text>
+          <View style={styles.inputWrapper}>
+            <View style={styles.otpRow}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.otpBox,
+                    hasError && styles.otpBoxError,
+                    success && styles.otpBoxSuccess,
+                  ]}
+                  accessibilityLabel={`MPIN digit ${i + 1}`}
+                  accessibilityHint="Filled by keypad"
+                >
+                  <Text style={styles.otpText}>{digits[i] ? '•' : ''}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={handleContinue}
+            activeOpacity={0.9}
+            disabled={!isValid}
+            style={[styles.button, !isValid && styles.buttonDisabled]}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !isValid }}
+            testID="mpin-verify-button"
+          >
+            <Text style={styles.buttonText}>Continue</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      <View style={styles.keypadWrapper}>
+        <View style={styles.keypadRow}>
+          {['1', '2', '3'].map((d) => (
+            <TouchableOpacity
+              key={d}
+              style={styles.key}
+              activeOpacity={0.8}
+              onPress={() => onDigit(d)}
+              accessibilityRole="button"
+              accessibilityLabel={`Digit ${d}`}
+            >
+              <Text style={styles.keyText}>{d}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.keypadRow}>
+          {['4', '5', '6'].map((d) => (
+            <TouchableOpacity
+              key={d}
+              style={styles.key}
+              activeOpacity={0.8}
+              onPress={() => onDigit(d)}
+              accessibilityRole="button"
+              accessibilityLabel={`Digit ${d}`}
+            >
+              <Text style={styles.keyText}>{d}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.keypadRow}>
+          {['7', '8', '9'].map((d) => (
+            <TouchableOpacity
+              key={d}
+              style={styles.key}
+              activeOpacity={0.8}
+              onPress={() => onDigit(d)}
+              accessibilityRole="button"
+              accessibilityLabel={`Digit ${d}`}
+            >
+              <Text style={styles.keyText}>{d}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.keypadRow}>
+          <TouchableOpacity
+            style={[styles.key, styles.utilKey]}
+            activeOpacity={0.8}
+            onPress={onClear}
+            accessibilityRole="button"
+            accessibilityLabel="Clear MPIN"
+          >
+            <Text style={styles.utilKeyText}>Clear</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.key}
+            activeOpacity={0.8}
+            onPress={() => onDigit('0')}
+            accessibilityRole="button"
+            accessibilityLabel="Digit 0"
+          >
+            <Text style={styles.keyText}>0</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.key, styles.utilKey]}
+            activeOpacity={0.8}
+            onPress={onBackspace}
+            accessibilityRole="button"
+            accessibilityLabel="Backspace"
+          >
+            <Text style={styles.utilKeyText}>⌫</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -145,6 +211,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    height: 550,
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
@@ -153,19 +220,12 @@ const styles = StyleSheet.create({
   },
   heroImage: { flex: 1 },
   heroImageInner: { width: '100%', height: '100%' },
-  heroOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-  },
   container: {
     flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 24,
+    paddingTop: 500,
     paddingBottom: 32,
   },
   card: {
@@ -174,8 +234,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingVertical: 32,
     paddingHorizontal: 20,
-    minHeight: 300,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    minHeight: 250,
+    backgroundColor: 'white',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.25)',
     shadowColor: '#000',
@@ -183,6 +243,34 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
     elevation: 8,
+  },
+  cardFloating: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    top: 210,
+    zIndex: 10000,
+    elevation: 20,
+  },
+  profileCircle: {
+    alignSelf: 'center',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.light.tint,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  profileInitials: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#fff',
   },
   title: {
     fontSize: 28,
@@ -195,44 +283,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     color: Colors.light.text,
-    marginBottom: 24,
+    marginBottom: 12,
+  },
+  inputWrapper: {
+    marginBottom: 12,
   },
   otpRow: {
-    backgroundColor: '#f8f8f8',
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginTop: 6,
   },
-  otpCell: {
-    height: 56,
-    width: 55,
+  otpBox: {
+    height: 50,
+    width: 50,
     borderRadius: 12,
-    backgroundColor: '#e0cde6ff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.12)',
+    backgroundColor: '#f8f8f8',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  otpCellFilled: {
-    backgroundColor: '#a0c6ff',
-  },
   otpText: {
-    fontSize: 24,
+    textAlign: 'center',
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.light.text,
   },
-  hiddenInput: {
-    position: 'absolute',
-    height: 0,
-    width: 0,
-    opacity: 0,
+  otpBoxError: {
+    borderColor: '#e53935',
   },
-  forgotLink: {
-    alignSelf: 'flex-end',
-    paddingVertical: 8,
-  },
-  forgotText: {
-    fontSize: 14,
-    color: Colors.light.tint,
-    fontWeight: '600',
+  otpBoxSuccess: {
+    borderColor: Colors.light.tint,
+    backgroundColor: '#a0c6ff',
   },
   button: {
     height: 56,
@@ -241,11 +324,57 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.light.tint,
     marginTop: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   buttonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  keypadWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 25,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  key: {
+    flex: 1,
+    height: 56,
+    marginHorizontal: 6,
+    borderRadius: 18,
+    backgroundColor: Colors.light.tint,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  keyText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  utilKey: {
+    backgroundColor: '#0d101b',
+  },
+  utilKeyText: {
     fontSize: 16,
     fontWeight: '700',
     color: '#fff',
