@@ -45,7 +45,7 @@ export default function SetMpinScreen() {
     setHasError(false);
     setSuccess(true);
     Keyboard.dismiss();
-    navigation.replace('Owner');
+    navigation.replace('Mpin');
   }
 
   return (

@@ -5,7 +5,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@/assets/*": ["./assets/*"]
+      "@/assets/*": ["./assets/*"],
+      "@/api/*": ["./src/api/*"],
+      "@/services/*": ["./src/services/*"],
+      "@api/*": ["./src/api/*"],
+      "@services/*": ["./src/services/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]

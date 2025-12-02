@@ -85,7 +85,10 @@ export default function OwnerScreen() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.flex}
+    >
       <View style={[styles.container, { paddingTop: insets.top + 60 }]}>
         <View style={styles.headerCenter}>
           <Text style={styles.title}>Patel Dairy & Sweet</Text>
@@ -93,16 +96,25 @@ export default function OwnerScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.listContainer}>
-          {input === '15' && filtered.length === 0 && <Text style={styles.emptyText}>No customers found</Text>}
+          {input === '15' && filtered.length === 0 && (
+            <Text style={styles.emptyText}>No customers found</Text>
+          )}
           {filtered.map((name) => (
-            <TouchableOpacity key={name} style={styles.customerCard} activeOpacity={0.85} onPress={() => openSheet(name)}>
+            <TouchableOpacity
+              key={name}
+              style={styles.customerCard}
+              activeOpacity={0.85}
+              onPress={() => openSheet(name)}
+            >
               <Text style={styles.customerName}>{name}</Text>
               <View style={styles.cardRow}>
                 {products.map((p) => (
                   <View key={p} style={styles.cardItem}>
                     <Text style={styles.cardItemLabel}>{p}</Text>
                     <View style={styles.cardItemBadge}>
-                      <Text style={styles.cardItemBadgeText}>{(quantities[p] ?? 0).toString()}</Text>
+                      <Text style={styles.cardItemBadgeText}>
+                        {(quantities[p] ?? 0).toString()}
+                      </Text>
                     </View>
                   </View>
                 ))}
@@ -114,33 +126,56 @@ export default function OwnerScreen() {
         <View style={styles.keypadWrapper}>
           <View style={styles.keypadRow}>
             {['1', '2', '3'].map((d) => (
-              <TouchableOpacity key={d} style={styles.key} activeOpacity={0.8} onPress={() => onDigit(d)}>
+              <TouchableOpacity
+                key={d}
+                style={styles.key}
+                activeOpacity={0.8}
+                onPress={() => onDigit(d)}
+              >
                 <Text style={styles.keyText}>{d}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <View style={styles.keypadRow}>
             {['4', '5', '6'].map((d) => (
-              <TouchableOpacity key={d} style={styles.key} activeOpacity={0.8} onPress={() => onDigit(d)}>
+              <TouchableOpacity
+                key={d}
+                style={styles.key}
+                activeOpacity={0.8}
+                onPress={() => onDigit(d)}
+              >
                 <Text style={styles.keyText}>{d}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <View style={styles.keypadRow}>
             {['7', '8', '9'].map((d) => (
-              <TouchableOpacity key={d} style={styles.key} activeOpacity={0.8} onPress={() => onDigit(d)}>
+              <TouchableOpacity
+                key={d}
+                style={styles.key}
+                activeOpacity={0.8}
+                onPress={() => onDigit(d)}
+              >
                 <Text style={styles.keyText}>{d}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <View style={styles.keypadRow}>
-            <TouchableOpacity style={[styles.key, styles.utilKey]} activeOpacity={0.8} onPress={onClear}>
+            <TouchableOpacity
+              style={[styles.key, styles.utilKey]}
+              activeOpacity={0.8}
+              onPress={onClear}
+            >
               <Text style={styles.utilKeyText}>Clear</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.key} activeOpacity={0.8} onPress={() => onDigit('0')}>
               <Text style={styles.keyText}>0</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.key, styles.utilKey]} activeOpacity={0.8} onPress={onBackspace}>
+            <TouchableOpacity
+              style={[styles.key, styles.utilKey]}
+              activeOpacity={0.8}
+              onPress={onBackspace}
+            >
               <Text style={styles.utilKeyText}>⌫</Text>
             </TouchableOpacity>
           </View>
@@ -158,11 +193,19 @@ export default function OwnerScreen() {
                   <View key={p} style={styles.productRow}>
                     <Text style={styles.productName}>{p}</Text>
                     <View style={styles.qtyControls}>
-                      <TouchableOpacity style={styles.qtyButton} activeOpacity={0.85} onPress={() => dec(p)}>
+                      <TouchableOpacity
+                        style={styles.qtyButton}
+                        activeOpacity={0.85}
+                        onPress={() => dec(p)}
+                      >
                         <Text style={styles.qtyButtonText}>-</Text>
                       </TouchableOpacity>
                       <Text style={styles.qtyValue}>{quantities[p] ?? 0}</Text>
-                      <TouchableOpacity style={styles.qtyButton} activeOpacity={0.85} onPress={() => inc(p)}>
+                      <TouchableOpacity
+                        style={styles.qtyButton}
+                        activeOpacity={0.85}
+                        onPress={() => inc(p)}
+                      >
                         <Text style={styles.qtyButtonText}>+</Text>
                       </TouchableOpacity>
                     </View>

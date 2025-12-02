@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import Colors from '../constants/Colors';
 
-export default function NewOptScreen() {
+export default function OptScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const phone: string | undefined = route?.params?.phone;

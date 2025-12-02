@@ -76,3 +76,25 @@ Opens Expo Go automatically if connected via USB or same network.
 
 - Only use libraries supported by Expo Go (managed workflow).
 - No native modules requiring config changes unless building a dev client.
+
+## Folders
+
+- `src/api` — HTTP client and method helpers
+  - Import via `@/api/...` or `@api/...`
+- `src/services` — cross-cutting utilities (storage, logger, etc.)
+  - Import via `@/services/...` or `@services/...`
+
+## Path Aliases
+
+- Configured in `tsconfig.json` and `babel.config.js`
+- Aliases:
+  - `@` → `src`
+  - `@api` → `src/api`
+  - `@services` → `src/services`
+  - `@/assets` → `assets`
+
+## Development
+
+- Lint: `npx eslint .`
+- Type check: `npx tsc --noEmit`
+- Expo dev: `npm run start`
