@@ -23,7 +23,7 @@ export default function LoginScreen() {
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length !== 10) return;
     Keyboard.dismiss();
-    navigation.navigate('Opt', { phone: cleaned });
+    navigation.navigate('Otp', { phone: cleaned });
   }
 
   return (
