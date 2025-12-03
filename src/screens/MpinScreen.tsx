@@ -2,7 +2,7 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
-import { ImageBackground, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function MpinScreen() {
   const navigation = useNavigation<any>();
@@ -15,6 +15,7 @@ export default function MpinScreen() {
   const focused = true;
   const [hasError, setHasError] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
+  const brandPurple = '#b3a0ff';
 
   function computeInitials(n?: string) {
     const s = (n ?? '').trim();
@@ -75,55 +76,35 @@ export default function MpinScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.hero}>
-        <ImageBackground
-          source={require('../../assets/images/bg.png')}
-          style={styles.heroImage}
-          imageStyle={styles.heroImageInner}
-          resizeMode="cover"
-          blurRadius={focused ? 10 : 0}
-        />
-      </View>
+      <View style={[styles.hero, { backgroundColor: brandPurple }]} />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={[styles.card, focused && styles.cardFloating]}>
-          <View style={styles.profileCircle} accessibilityLabel="User initials">
-            <Text style={styles.profileInitials}>{initials}</Text>
-          </View>
-          <Text style={styles.title}>Enter MPIN</Text>
-          <Text style={styles.subtitle}>
-            {phone ? `For +91 ${phone}` : 'Secure access to your account'}
-          </Text>
-          <View style={styles.inputWrapper}>
-            <View style={styles.otpRow}>
-              {Array.from({ length: 4 }).map((_, i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.otpBox,
-                    hasError && styles.otpBoxError,
-                    success && styles.otpBoxSuccess,
-                  ]}
-                  accessibilityLabel={`MPIN digit ${i + 1}`}
-                  accessibilityHint="Filled by keypad"
-                >
-                  <Text style={styles.otpText}>{digits[i] ? '•' : ''}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          <TouchableOpacity
-            onPress={handleContinue}
-            activeOpacity={0.9}
-            disabled={!isValid}
-            style={[styles.button, !isValid && styles.buttonDisabled]}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !isValid }}
-            testID="mpin-verify-button"
-          >
-            <Text style={styles.buttonText}>Continue</Text>
-          </TouchableOpacity>
+        <View style={styles.profileCircle} accessibilityLabel="User initials">
+          <Text style={styles.profileInitials}>{initials}</Text>
         </View>
+        <Text style={styles.title}>{name || 'Enter MPIN'}</Text>
+        {!!phone && <Text style={styles.phone}>{phone}</Text>}
+        <Text style={styles.subtitle}>Unlock using PIN</Text>
+        <View style={styles.inputWrapper}>
+          <View style={styles.otpRow}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.otpDot,
+                  hasError && styles.otpDotError,
+                  success && styles.otpDotSuccess,
+                ]}
+                accessibilityLabel={`MPIN digit ${i + 1}`}
+                accessibilityHint="Filled by keypad"
+              >
+                <Text style={styles.otpDotText}>{digits[i] ? '•' : ''}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+        <TouchableOpacity activeOpacity={0.8}>
+          <Text style={styles.forgot}>Forgot Login PIN?</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       <View style={styles.keypadWrapper}>
@@ -170,15 +151,7 @@ export default function MpinScreen() {
           ))}
         </View>
         <View style={styles.keypadRow}>
-          <TouchableOpacity
-            style={[styles.key, styles.utilKey]}
-            activeOpacity={0.8}
-            onPress={onClear}
-            accessibilityRole="button"
-            accessibilityLabel="Clear MPIN"
-          >
-            <Text style={styles.utilKeyText}>Clear</Text>
-          </TouchableOpacity>
+          <View style={styles.placeholderKey} />
           <TouchableOpacity
             style={styles.key}
             activeOpacity={0.8}
@@ -198,6 +171,9 @@ export default function MpinScreen() {
             <Text style={styles.utilKeyText}>⌫</Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity activeOpacity={0.8} style={styles.faceIdBtn}>
+          <Text style={styles.faceIdText}>USE FACE ID</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -211,33 +187,30 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 550,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
+    height: 120,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     overflow: 'hidden',
-    backgroundColor: '#f6f6f6',
     zIndex: 0,
   },
-  heroImage: { flex: 1 },
-  heroImageInner: { width: '100%', height: '100%' },
   container: {
     flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 24,
-    paddingTop: 500,
+    paddingTop: 150,
     paddingBottom: 32,
   },
   card: {
     width: '100%',
     maxWidth: 460,
     borderRadius: 24,
-    paddingVertical: 32,
+    paddingVertical: 24,
     paddingHorizontal: 20,
     minHeight: 250,
     backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: 'rgba(13,16,27,0.06)',
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -257,7 +230,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#f3d7dc',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -270,14 +243,20 @@ const styles = StyleSheet.create({
   profileInitials: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#fff',
+    color: '#e53935',
   },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     color: Colors.light.text,
+  },
+  phone: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: Colors.light.text,
+    marginBottom: 2,
   },
   subtitle: {
     fontSize: 14,
@@ -294,56 +273,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 6,
   },
-  otpBox: {
-    height: 50,
-    width: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.12)',
-    backgroundColor: '#f8f8f8',
+  otpDot: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: 'rgba(13,16,27,0.15)',
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  otpText: {
+  otpDotText: {
     textAlign: 'center',
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: '700',
     color: Colors.light.text,
   },
-  otpBoxError: {
+  otpDotError: {
     borderColor: '#e53935',
   },
-  otpBoxSuccess: {
+  otpDotSuccess: {
     borderColor: Colors.light.tint,
-    backgroundColor: '#a0c6ff',
-  },
-  button: {
-    height: 56,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.light.tint,
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
   },
   keypadWrapper: {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 25,
-    paddingHorizontal: 24,
+    bottom: 0,
+    top: 400,
+    paddingHorizontal: 30,
     paddingTop: 8,
   },
   keypadRow: {
@@ -353,30 +311,51 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   key: {
-    flex: 1,
-    height: 56,
-    marginHorizontal: 6,
-    borderRadius: 18,
-    backgroundColor: Colors.light.tint,
+    width: '30%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    backgroundColor: '#eef2ff',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  placeholderKey: {
+    width: '30%',
+    aspectRatio: 1,
   },
   keyText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#fff',
+    color: Colors.light.text,
   },
   utilKey: {
-    backgroundColor: '#0d101b',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.12)',
   },
   utilKeyText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#fff',
+    color: Colors.light.text,
+  },
+  forgot: {
+    color: Colors.light.tint,
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 6,
+  },
+  faceIdBtn: {
+    alignSelf: 'center',
+    marginTop: 6,
+  },
+  faceIdText: {
+    color: Colors.light.tint,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
