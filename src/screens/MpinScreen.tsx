@@ -1,8 +1,8 @@
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 
 export default function MpinScreen() {
   const navigation = useNavigation<any>();
@@ -12,10 +12,17 @@ export default function MpinScreen() {
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
   const otp = useMemo(() => digits.join(''), [digits]);
   const isValid = useMemo(() => otp.length === 4, [otp]);
-  const focused = true;
+  const [focused, setFocused] = useState<boolean>(false);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
   const brandPurple = '#b3a0ff';
+
+  const r0 = useRef<TextInput>(null);
+  const r1 = useRef<TextInput>(null);
+  const r2 = useRef<TextInput>(null);
+  const r3 = useRef<TextInput>(null);
+  const inputRefs = [r0, r1, r2, r3];
 
   function computeInitials(n?: string) {
     const s = (n ?? '').trim();
@@ -26,7 +33,7 @@ export default function MpinScreen() {
     return `${first}${last}`.toUpperCase();
   }
 
-  const initials = computeInitials(name) || 'GU';
+  const initials = computeInitials(name) || 'HD';
 
   function onDigit(d: string) {
     setDigits((prev) => {
@@ -44,17 +51,39 @@ export default function MpinScreen() {
   }
 
   function onBackspace() {
-    setDigits((prev) => {
-      const arr = [...prev];
-      for (let i = arr.length - 1; i >= 0; i--) {
-        if (arr[i]) {
-          arr[i] = '';
-          break;
-        }
-      }
-      return arr;
-    });
     setSuccess(false);
+    if (focusedIndex !== null) {
+      if (!digits[focusedIndex] && focusedIndex > 0) {
+        setDigits((prev) => {
+          const arr = [...prev];
+          arr[focusedIndex - 1] = '';
+          return arr;
+        });
+        inputRefs[focusedIndex - 1].current?.focus();
+        setFocusedIndex(focusedIndex - 1);
+        setFocused(true);
+      } else {
+        setDigits((prev) => {
+          const arr = [...prev];
+          arr[focusedIndex] = '';
+          return arr;
+        });
+      }
+    } else {
+      setDigits((prev) => {
+        const arr = [...prev];
+        for (let i = arr.length - 1; i >= 0; i--) {
+          if (arr[i]) {
+            arr[i] = '';
+            inputRefs[i].current?.focus();
+            setFocusedIndex(i);
+            setFocused(true);
+            break;
+          }
+        }
+        return arr;
+      });
+    }
   }
 
   function onClear() {
@@ -81,24 +110,68 @@ export default function MpinScreen() {
         <View style={styles.profileCircle} accessibilityLabel="User initials">
           <Text style={styles.profileInitials}>{initials}</Text>
         </View>
-        <Text style={styles.title}>{name || 'Enter MPIN'}</Text>
+        <Text style={styles.title}>Welcome Back {name || 'Hiren Dabhi'}</Text>
         {!!phone && <Text style={styles.phone}>{phone}</Text>}
         <Text style={styles.subtitle}>Unlock using PIN</Text>
         <View style={styles.inputWrapper}>
           <View style={styles.otpRow}>
             {Array.from({ length: 4 }).map((_, i) => (
-              <View
+              <TextInput
                 key={i}
+                ref={inputRefs[i]}
+                value={digits[i]}
+                onChangeText={(t) => {
+                  const v = t.replace(/\D/g, '').slice(0, 1);
+                  setDigits((prev) => {
+                    const arr = [...prev];
+                    arr[i] = v;
+                    return arr;
+                  });
+                  setHasError(false);
+                  if (v && i < 3) {
+                    inputRefs[i + 1].current?.focus();
+                  }
+                }}
+                onKeyPress={({ nativeEvent }) => {
+                  if (nativeEvent.key === 'Backspace') {
+                    if (!digits[i] && i > 0) {
+                      setDigits((prev) => {
+                        const arr = [...prev];
+                        arr[i - 1] = '';
+                        return arr;
+                      });
+                      inputRefs[i - 1].current?.focus();
+                    } else {
+                      setDigits((prev) => {
+                        const arr = [...prev];
+                        arr[i] = '';
+                        return arr;
+                      });
+                    }
+                  }
+                }}
+                onFocus={() => {
+                  setFocused(true);
+                  setFocusedIndex(i);
+                }}
+                onBlur={() => {
+                  setFocused(false);
+                  setFocusedIndex(null);
+                }}
+                keyboardType="number-pad"
+                maxLength={1}
+                returnKeyType={i === 3 ? 'done' : 'next'}
+                onSubmitEditing={i === 3 ? handleContinue : undefined}
                 style={[
-                  styles.otpDot,
-                  hasError && styles.otpDotError,
-                  success && styles.otpDotSuccess,
+                  styles.otpBox,
+                  focusedIndex === i && styles.otpBoxFocused,
+                  hasError && styles.otpBoxError,
+                  success && styles.otpBoxSuccess,
                 ]}
+                textContentType="oneTimeCode"
                 accessibilityLabel={`MPIN digit ${i + 1}`}
-                accessibilityHint="Filled by keypad"
-              >
-                <Text style={styles.otpDotText}>{digits[i] ? '•' : ''}</Text>
-              </View>
+                accessibilityHint="Enter digit"
+              />
             ))}
           </View>
         </View>
@@ -151,7 +224,15 @@ export default function MpinScreen() {
           ))}
         </View>
         <View style={styles.keypadRow}>
-          <View style={styles.placeholderKey} />
+          <TouchableOpacity
+            style={styles.key}
+            activeOpacity={0.8}
+            onPress={onClear}
+            accessibilityRole="button"
+            accessibilityLabel="Clear"
+          >
+            <Text style={styles.keyText}>Clear</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.key}
             activeOpacity={0.8}
@@ -162,7 +243,7 @@ export default function MpinScreen() {
             <Text style={styles.keyText}>0</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.key, styles.utilKey]}
+            style={[styles.key]}
             activeOpacity={0.8}
             onPress={onBackspace}
             accessibilityRole="button"
@@ -171,9 +252,9 @@ export default function MpinScreen() {
             <Text style={styles.utilKeyText}>⌫</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity activeOpacity={0.8} style={styles.faceIdBtn}>
+        {/* <TouchableOpacity activeOpacity={0.8} style={styles.faceIdBtn}>
           <Text style={styles.faceIdText}>USE FACE ID</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </View>
   );
@@ -265,13 +346,39 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   inputWrapper: {
-    marginBottom: 12,
+    marginBottom: 20,
+    width: '80%',
+    backgroundColor: 'white',
   },
   otpRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 6,
+    backgroundColor: 'white',
+  },
+  otpBox: {
+    height: 50,
+    width: 50,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.12)',
+    backgroundColor: '#f8f8f8',
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
+  otpBoxFocused: {
+    borderColor: Colors.light.tint,
+    backgroundColor: '#eaf4ff',
+  },
+  otpBoxError: {
+    borderColor: '#e53935',
+  },
+  otpBoxSuccess: {
+    borderColor: Colors.light.tint,
+    backgroundColor: '#a0c6ff',
   },
   otpDot: {
     height: 20,
@@ -300,19 +407,22 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    top: 400,
+    top: 500,
     paddingHorizontal: 30,
     paddingTop: 8,
+    backgroundColor: 'white',
+    width: '100%',
   },
   keypadRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
     marginBottom: 10,
+    backgroundColor: 'white',
   },
   key: {
-    width: '30%',
-    aspectRatio: 1,
+    height: 60,
+    width: 80,
     borderRadius: 12,
     backgroundColor: '#eef2ff',
     alignItems: 'center',
@@ -326,9 +436,10 @@ const styles = StyleSheet.create({
   placeholderKey: {
     width: '30%',
     aspectRatio: 1,
+    fontWeight: '700',
   },
   keyText: {
-    fontSize: 18,
+    fontSize: 25,
     fontWeight: '700',
     color: Colors.light.text,
   },
@@ -338,7 +449,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(13,16,27,0.12)',
   },
   utilKeyText: {
-    fontSize: 16,
+    fontSize: 25,
     fontWeight: '700',
     color: Colors.light.text,
   },
