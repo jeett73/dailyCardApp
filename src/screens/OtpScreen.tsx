@@ -1,6 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   ImageBackground,
   Keyboard,
   ScrollView,
@@ -10,7 +11,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { postRequest } from '../api/apiMethods';
+import apiEndpoint from '../constants/apiEndpoint';
 import Colors from '../constants/Colors';
+import { setItem } from '../services/storage';
 
 export default function OtpScreen() {
   const navigation = useNavigation<any>();
@@ -27,6 +31,7 @@ export default function OtpScreen() {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const otp = useMemo(() => digits.join(''), [digits]);
   const isValid = useMemo(() => otp.length === 4, [otp]);
 
@@ -72,16 +77,37 @@ export default function OtpScreen() {
     };
   }, []);
 
-  function handleVerify() {
+  async function handleVerify() {
     const cleaned = otp.replace(/\D/g, '').slice(0, 4);
     if (cleaned.length !== 4) {
       setHasError(true);
       return;
     }
     setHasError(false);
-    setSuccess(true);
     Keyboard.dismiss();
-    navigation.navigate('SetMpin', { phone });
+    try {
+      setLoading(true);
+      const res = await postRequest(apiEndpoint.auth.verifyOtp, { phone, otp: cleaned });
+      const { token, refreshToken, userId, entityType } = (res?.data as any) ?? {};
+      await Promise.all(
+        [
+          token && setItem('token', token),
+          refreshToken && setItem('refreshToken', refreshToken),
+          userId && setItem('userId', userId),
+          entityType && setItem('entityType', entityType),
+        ].filter(Boolean),
+      );
+      setSuccess(true);
+      navigation.navigate('SetMpin', { phone });
+    } catch (e) {
+      const msg =
+        (e as any)?.response?.data?.message ||
+        (e as any)?.message ||
+        'OTP verification failed. Please try again.';
+      Alert.alert('Failed to verify OTP', String(msg));
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleResend() {
@@ -192,8 +218,8 @@ export default function OtpScreen() {
           <TouchableOpacity
             onPress={handleVerify}
             activeOpacity={0.9}
-            disabled={!isValid}
-            style={[styles.button, !isValid && styles.buttonDisabled]}
+            disabled={!isValid || loading}
+            style={[styles.button, (!isValid || loading) && styles.buttonDisabled]}
             testID="otp-verify-button"
           >
             <Text style={styles.buttonText}>Verify OTP</Text>

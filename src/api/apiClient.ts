@@ -1,9 +1,10 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import apiEndpoint from '../constants/apiEndpoint';
 import { log, error as logError } from '../services/logger';
-import { getItem, removeItem } from '../services/storage';
+import { getItem, removeItem, setItem } from '../services/storage';
 
 const api = axios.create({
-  baseURL: 'https://api.example.com',
+  baseURL: apiEndpoint.baseUrl,
   timeout: 10000,
 });
 
@@ -26,8 +27,38 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const status = error.response?.status;
     logError('API Error', status, error.message);
-    if (status === 401) {
-      await removeItem('token');
+    const originalRequest: any = error.config;
+    if (
+      status === 401 &&
+      !originalRequest?._retry &&
+      originalRequest?.url !== apiEndpoint.auth.refresh
+    ) {
+      originalRequest._retry = true;
+      const rt = await getItem('refreshToken');
+      if (!rt) {
+        await removeItem('token');
+        return Promise.reject(error);
+      }
+      try {
+        const res = await axios.post(apiEndpoint.auth.refresh, { refreshToken: rt });
+        const newToken: string | undefined = (res.data as any)?.token;
+        const newRefresh: string | undefined = (res.data as any)?.refreshToken;
+        if (newToken) {
+          await setItem('token', newToken);
+        }
+        if (newRefresh) {
+          await setItem('refreshToken', newRefresh);
+        }
+        originalRequest.headers = {
+          ...(originalRequest.headers || {}),
+          Authorization: `Bearer ${newToken}`,
+        };
+        return api.request(originalRequest);
+      } catch (refreshErr) {
+        await removeItem('token');
+        await removeItem('refreshToken');
+        return Promise.reject(refreshErr);
+      }
     }
     return Promise.reject(error);
   },

@@ -6,13 +6,27 @@ import OtpScreen from '@/screens/OtpScreen';
 import OwnerScreen from '@/screens/OwnerScreen';
 import SetMpinScreen from '@/screens/SetMpinScreen';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getItem } from '@/services/storage';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
+  const [initialRoute, setInitialRoute] = useState<'Login' | 'Mpin' | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const token = await getItem('token');
+      setInitialRoute(token ? 'Mpin' : 'Login');
+    })();
+  }, []);
+
+  if (!initialRoute) {
+    return null;
+  }
+
   return (
-    <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Otp" component={OtpScreen} />
       <Stack.Screen name="Mpin" component={MpinScreen} />

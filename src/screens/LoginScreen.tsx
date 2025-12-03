@@ -2,6 +2,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
 import {
+  Alert,
   ImageBackground,
   Keyboard,
   ScrollView,
@@ -11,19 +12,34 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { postRequest } from '../api/apiMethods';
+import apiEndpoint from '../constants/apiEndpoint';
 import Colors from '../constants/Colors';
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();
   const [phone, setPhone] = useState('');
   const [focused, setFocused] = useState(false);
+  const [loading, setLoading] = useState(false);
   const isValid = useMemo(() => phone.length === 10, [phone]);
 
-  function handleContinue() {
+  async function handleContinue() {
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length !== 10) return;
     Keyboard.dismiss();
-    navigation.navigate('Otp', { phone: cleaned });
+    try {
+      setLoading(true);
+      await postRequest(apiEndpoint.auth.sendOtp, { phone: cleaned });
+      navigation.navigate('Otp', { phone: cleaned });
+    } catch (e) {
+      const msg =
+        (e as any)?.response?.data?.message ||
+        (e as any)?.message ||
+        'Unable to send OTP. Please try again.';
+      Alert.alert('Failed to send OTP', String(msg));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -59,8 +75,8 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={handleContinue}
             activeOpacity={0.9}
-            disabled={!isValid}
-            style={[styles.button, !isValid && styles.buttonDisabled]}
+            disabled={!isValid || loading}
+            style={[styles.button, (!isValid || loading) && styles.buttonDisabled]}
           >
             <Text style={styles.buttonText}>Send OTP</Text>
           </TouchableOpacity>

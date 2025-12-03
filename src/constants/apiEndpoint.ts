@@ -1,6 +1,5 @@
 type Id = string | number;
-// process.env.EXPO_PUBLIC_API_BASE_URL ||
-const API_BASE_URL = 'https://api.example.com';
+const API_BASE_URL = 'http://172.20.10.2:3000';
 
 const url = (path: string) => `${API_BASE_URL}${path}`;
 
@@ -10,11 +9,14 @@ export const apiEndpoint = {
   auth: {
     login: url('/auth/login'),
     otpVerify: url('/auth/otp/verify'),
+    verifyOtp: url('/auth/verify-otp'),
     logout: url('/auth/logout'),
+    sendOtp: url('/auth/send-otp'),
+    refresh: url('/auth/refresh-token'),
   },
   mpin: {
-    set: url('/auth/mpin/set'),
-    verify: url('/auth/mpin/verify'),
+    set: url('/auth/set-mpin'),
+    verify: url('/auth/verify-mpin'),
   },
   users: {
     me: url('/users/me'),

@@ -9,8 +9,12 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import Colors from '../constants/Colors';
+import { postRequest } from '../api/apiMethods';
+import apiEndpoint from '../constants/apiEndpoint';
+import { getItem } from '../services/storage';
 
 export default function SetMpinScreen() {
   const navigation = useNavigation<any>();
@@ -29,6 +33,7 @@ export default function SetMpinScreen() {
   const [success, setSuccess] = useState<boolean>(false);
   const otp = useMemo(() => digits.join(''), [digits]);
   const isValid = useMemo(() => otp.length === 4, [otp]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const r0 = useRef<TextInput>(null);
   const r1 = useRef<TextInput>(null);
@@ -36,16 +41,38 @@ export default function SetMpinScreen() {
   const r3 = useRef<TextInput>(null);
   const inputRefs = [r0, r1, r2, r3];
 
-  function handleVerify() {
+  async function handleVerify() {
     const cleaned = otp.replace(/\D/g, '').slice(0, 4);
     if (cleaned.length !== 4) {
       setHasError(true);
       return;
     }
     setHasError(false);
-    setSuccess(true);
     Keyboard.dismiss();
-    navigation.replace('Mpin');
+    try {
+      setLoading(true);
+      const userId = await getItem('userId');
+      if (!userId) {
+        Alert.alert('Missing Info', 'User ID not found');
+        return;
+      }
+      await postRequest(apiEndpoint.mpin.set, { userId, mpin: cleaned });
+      setSuccess(true);
+      const entityType = (await getItem('entityType')) || 'customer';
+      if (entityType === 'shop') {
+        navigation.replace('Owner');
+      } else {
+        navigation.replace('Customer');
+      }
+    } catch (e) {
+      const msg =
+        (e as any)?.response?.data?.message ||
+        (e as any)?.message ||
+        'Failed to set MPIN. Please try again.';
+      Alert.alert('Failed to set MPIN', String(msg));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -130,8 +157,8 @@ export default function SetMpinScreen() {
           <TouchableOpacity
             onPress={handleVerify}
             activeOpacity={0.9}
-            disabled={!isValid}
-            style={[styles.button, !isValid && styles.buttonDisabled]}
+            disabled={!isValid || loading}
+            style={[styles.button, (!isValid || loading) && styles.buttonDisabled]}
             testID="otp-verify-button"
           >
             <Text style={styles.buttonText}>Continue</Text>

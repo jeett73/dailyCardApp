@@ -1,8 +1,11 @@
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { postRequest } from '../api/apiMethods';
+import apiEndpoint from '../constants/apiEndpoint';
+import { getItem } from '../services/storage';
 
 export default function MpinScreen() {
   const navigation = useNavigation<any>();
@@ -17,6 +20,7 @@ export default function MpinScreen() {
   const [hasError, setHasError] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
   const brandPurple = '#b3a0ff';
+  const autoVerifyFiredRef = useRef<boolean>(false);
 
   const r0 = useRef<TextInput>(null);
   const r1 = useRef<TextInput>(null);
@@ -34,6 +38,15 @@ export default function MpinScreen() {
   }
 
   const initials = computeInitials(name) || 'HD';
+
+  useEffect(() => {
+    if (isValid && !autoVerifyFiredRef.current) {
+      autoVerifyFiredRef.current = true;
+      handleContinue();
+    } else if (!isValid) {
+      autoVerifyFiredRef.current = false;
+    }
+  }, [isValid]);
 
   function onDigit(d: string) {
     setDigits((prev) => {
@@ -92,15 +105,34 @@ export default function MpinScreen() {
     setSuccess(false);
   }
 
-  function handleContinue() {
+  async function handleContinue() {
     const cleaned = otp.replace(/\D/g, '').slice(0, 4);
     if (cleaned.length !== 4) {
       setHasError(true);
       return;
     }
     setHasError(false);
-    setSuccess(true);
-    navigation.replace('Owner');
+    try {
+      const userId = await getItem('userId');
+      if (!userId) {
+        Alert.alert('Missing Info', 'User ID not found');
+        return;
+      }
+      const res = await postRequest(apiEndpoint.mpin.verify, { userId, mpin: cleaned });
+      setSuccess(true);
+      const entityType: string | undefined = (res?.data as any)?.entityType;
+      if (entityType === 'shop') {
+        navigation.replace('Owner');
+      } else {
+        navigation.replace('Customer');
+      }
+    } catch (e) {
+      const msg =
+        (e as any)?.response?.data?.message ||
+        (e as any)?.message ||
+        'Failed to verify MPIN. Please try again.';
+      Alert.alert('Failed to verify MPIN', String(msg));
+    }
   }
 
   return (
@@ -110,7 +142,7 @@ export default function MpinScreen() {
         <View style={styles.profileCircle} accessibilityLabel="User initials">
           <Text style={styles.profileInitials}>{initials}</Text>
         </View>
-        <Text style={styles.title}>Welcome Back {name || 'Hiren Dabhi'}</Text>
+        <Text style={styles.title}>{name || 'Hiren Dabhi'}</Text>
         {!!phone && <Text style={styles.phone}>{phone}</Text>}
         <Text style={styles.subtitle}>Unlock using PIN</Text>
         <View style={styles.inputWrapper}>
@@ -281,6 +313,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 150,
     paddingBottom: 32,
+    top: 40,
   },
   card: {
     width: '100%',
@@ -422,8 +455,8 @@ const styles = StyleSheet.create({
   },
   key: {
     height: 60,
-    width: 80,
-    borderRadius: 12,
+    width: 90,
+    borderRadius: 5,
     backgroundColor: '#eef2ff',
     alignItems: 'center',
     justifyContent: 'center',
