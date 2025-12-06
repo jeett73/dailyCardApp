@@ -1,0 +1,248 @@
+import { Text, View } from '@/components/Themed';
+import Colors from '@/constants/Colors';
+import Feather from '@expo/vector-icons/Feather';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import React from 'react';
+import {
+  Alert,
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Root tab route names are available via MainTabs; navigation is typed to any here to support
+// stack routes like MonthWiseReport and tab routes.
+
+type MenuLabel = 'Past Statements' | 'Logout' | 'Customers' | 'Products';
+
+type MenuOptionProps = {
+  label: MenuLabel;
+  onPress: () => void;
+};
+
+function MenuOption({ label, onPress }: MenuOptionProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
+      onPress={onPress}
+      style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+    >
+      <Text style={styles.menuLabel}>{label}</Text>
+      <Feather name="chevron-right" size={18} color={Colors.light.text} />
+    </Pressable>
+  );
+}
+
+export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const navigation = useNavigation<NavigationProp<any>>();
+
+  const avatarSize = width >= 768 ? 64 : 56;
+
+  function gotoStatements() {
+    navigation.navigate('MonthWiseReport');
+  }
+
+  function gotoCustomers() {
+    navigation.navigate('Dashboard');
+  }
+
+  function gotoProducts() {
+    Alert.alert('Production', 'Coming soon');
+  }
+
+  async function handleLogout() {
+    Alert.alert('Logout', 'You have been logged out');
+    navigation.navigate('Dashboard');
+  }
+
+  function handleCall() {
+    Linking.openURL('tel:7600924242').catch(() => {
+      Alert.alert('Call failed', 'Unable to initiate call');
+    });
+  }
+
+  const menuItems = [
+    { label: 'Past Statements', onPress: gotoStatements },
+    { label: 'Logout', onPress: handleLogout },
+    { label: 'Customers', onPress: gotoCustomers },
+    { label: 'Products', onPress: gotoProducts },
+  ] as const;
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top + 5 }]}>
+      <View style={[styles.hero, { backgroundColor: Colors.light.brandPurple }]} />
+
+      <ScrollView contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}>
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <Image
+            source={require('../../assets/images/bg.png')}
+            style={[
+              styles.avatar,
+              { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
+            ]}
+            accessibilityLabel="Profile avatar"
+          />
+
+          <View style={styles.headerCenter}>
+            <Text style={styles.customerName}>Jeet Patel</Text>
+            <Text style={styles.balance}>+91 98765 43210</Text>
+          </View>
+
+          <View style={styles.headerRightSpacer} />
+        </View>
+
+        {/* Menu */}
+        <View
+          style={styles.summaryCard}
+          accessibilityRole="summary"
+          accessibilityLabel="Profile summary"
+        >
+          <Text style={styles.summaryTitle}>Profile Summary</Text>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Card Number</Text>
+            <Text style={styles.summaryValue}>#15</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Deposit</Text>
+            <Text style={styles.summaryValue}>₹5000</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Mobile Number</Text>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="Call mobile number"
+              onPress={handleCall}
+              style={({ pressed }) => [styles.callRow, pressed && styles.callRowPressed]}
+            >
+              <Text style={[styles.summaryValue, styles.infoLink]}>7600924242</Text>
+            </Pressable>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Address</Text>
+            <Text style={styles.summaryValue}>Gujarat</Text>
+          </View>
+        </View>
+
+        <View style={styles.menuCard} accessibilityRole="menu">
+          {menuItems.map((m) => (
+            <MenuOption key={m.label} label={m.label} onPress={m.onPress} />
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.light.background },
+
+  hero: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    overflow: 'hidden',
+    zIndex: 0,
+  },
+
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: Colors.light.brandPurple,
+  },
+
+  avatar: { resizeMode: 'cover' },
+
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: Colors.light.brandPurple,
+  },
+
+  customerName: { fontSize: 18, fontWeight: '800', color: Colors.light.text },
+
+  balance: { marginTop: 4, fontSize: 14, color: '#111' },
+
+  headerRightSpacer: { width: 56 },
+
+  menuCard: {
+    marginTop: 8,
+    marginHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.08)',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
+  },
+
+  menuItem: {
+    minHeight: 48,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+  },
+
+  menuItemPressed: { backgroundColor: '#f2f4f7' },
+
+  menuLabel: { fontSize: 16, color: Colors.light.text, fontWeight: '700' },
+
+  summaryCard: {
+    marginTop: 8,
+    marginHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.08)',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: Colors.light.text,
+    marginBottom: 6,
+    backgroundColor: '#fff',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    backgroundColor: '#fff',
+  },
+  summaryLabel: { fontSize: 14, color: '#555' },
+  summaryValue: { fontSize: 14, color: Colors.light.text, fontWeight: '700' },
+  callRow: { minHeight: 32, justifyContent: 'center' },
+  callRowPressed: { opacity: 0.7 },
+  infoLink: { color: Colors.light.tint },
+});

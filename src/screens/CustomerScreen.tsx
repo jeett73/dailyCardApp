@@ -1,61 +1,79 @@
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+// import { LinearGradient } from 'expo-linear-gradient';
+import GreetingCard from '@/components/GreetingCard';
 import React, { useState } from 'react';
-import { Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CustomerScreen() {
   const insets = useSafeAreaInsets();
-  const today = new Date();
-  const dateText = today.toLocaleDateString(undefined, {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-  const [active, setActive] = useState<'home' | 'icons' | 'profile'>('home');
+  const [active, setActive] = useState<'home' | 'statements' | 'profile'>('home');
+  const cardNo = '#007';
+  const items: { name: string; qty: number }[] = [
+    { name: 'Amul Gold', qty: 2 },
+    { name: 'Shaktii', qty: 1 },
+    { name: 'Butter Milk', qty: 5 },
+    { name: 'Cow 9', qty: 9 },
+  ];
+  const totalText = 'Total 100 Rs';
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
-      <View style={styles.headerRow}>
-        <Image source={require('../../assets/images/bg.png')} style={styles.avatar} />
+    <View style={styles.screen}>
+      <View style={[styles.hero, { backgroundColor: Colors.light.brandPurple }]} />
+      <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.headerRow}>
+          <Image source={require('../../assets/images/bg.png')} style={styles.avatar} />
 
-        <View style={styles.headerCenter}>
-          <Text style={styles.customerName}>Jeet Patel</Text>
-          <Text style={styles.date}>{dateText}</Text>
+          <View style={styles.headerCenter}>
+            <Text style={styles.customerName}>Jeet Patel</Text>
+            <Text style={styles.balance}>{cardNo}</Text>
+          </View>
+
+          <View style={styles.headerRightSpacer} />
         </View>
 
-        <View style={styles.headerRightSpacer} />
-      </View>
+        <GreetingCard
+          shopName="Patel Dairy and Sweet Store"
+          message="We are delighted to serve your daily dairy needs."
+        />
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Amul Gold 2</Text>
-        <Text style={styles.cardTitle}>Shaktii 1</Text>
-        <Text style={styles.cardTitle}>Butter Milk 5</Text>
-        <Text style={styles.cardTitle}>Cow 9</Text>
-      </View>
-
-      <View style={[styles.bottomNavWrapper, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <View style={styles.navBar}>
-          <TouchableOpacity style={styles.tabItem} activeOpacity={0.8} onPress={() => setActive('home')}>
-            <View style={[styles.activeBubble, active !== 'home' && styles.inactiveBubble]}>
-              <FontAwesome name="home" size={25} color={active === 'home' ? '#0d101b' : '#fff'} />
+        <View style={styles.statementCard}>
+          <Text style={styles.statementTitle}>This Last Dairy Order</Text>
+          <View style={styles.statementDivider} />
+          {items.map((it) => (
+            <View key={it.name} style={styles.statementRow}>
+              <Text style={styles.itemName}>{it.name}</Text>
+              <Text style={styles.itemQty}>{it.qty}</Text>
             </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.tabItem} activeOpacity={0.8} onPress={() => setActive('icons')}>
-            <FontAwesome name="th-large" size={25} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.tabItem} activeOpacity={0.8} onPress={() => setActive('profile')}>
-            <FontAwesome name="user" size={25} color="#fff" />
-          </TouchableOpacity>
+          ))}
+          <View style={[styles.statementRow, { marginTop: 8 }]}>
+            <Text style={styles.itemName}>{totalText}</Text>
+          </View>
         </View>
+
+        {/* Bottom navigation is now handled globally by MainTabs */}
       </View>
     </View>
   );
 }
 
+// GreetingCard component moved to src/components/GreetingCard.tsx
+
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#fff' },
+  hero: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    overflow: 'hidden',
+    zIndex: 0,
+    backgroundColor: Colors.light.brandPurple,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
@@ -76,6 +94,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
+  balance: {
+    marginTop: 4,
+    fontSize: 14,
+    color: '#111',
+  },
   headerRightSpacer: {
     width: 56,
   },
@@ -89,33 +112,45 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#555',
   },
-  card: {
-    marginTop: 35,
+  statementCard: {
+    marginTop: 24,
     marginHorizontal: 16,
-    borderRadius: 17,
-    padding: 16,
-    backgroundColor: '#b3a0ff',
+    borderRadius: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
     minHeight: 180,
+    backgroundColor: '#a69af7',
   },
-  cardTitle: {
+  statementTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '800',
     color: '#fff',
   },
-  cardSubtitle: {
-    marginTop: 2,
-    fontSize: 12,
-    color: '#e8d9f2',
+  statementDivider: {
+    height: 1,
+    marginVertical: 12,
   },
-  statLabel: {
-    marginTop: 2,
-    fontSize: 11,
-    color: '#f3e8ff',
+  statementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    backgroundColor: '#a69af7',
+  },
+  itemName: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  itemQty: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: '600',
   },
   bottomNavWrapper: {
     position: 'absolute',

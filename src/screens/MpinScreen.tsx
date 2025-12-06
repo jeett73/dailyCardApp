@@ -19,7 +19,7 @@ export default function MpinScreen() {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
-  const brandPurple = '#b3a0ff';
+
   const autoVerifyFiredRef = useRef<boolean>(false);
 
   const r0 = useRef<TextInput>(null);
@@ -137,7 +137,7 @@ export default function MpinScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.hero, { backgroundColor: brandPurple }]} />
+      <View style={[styles.hero, { backgroundColor: Colors.light.brandPurple }]} />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.profileCircle} accessibilityLabel="User initials">
           <Text style={styles.profileInitials}>{initials}</Text>
