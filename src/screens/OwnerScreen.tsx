@@ -1,6 +1,11 @@
+import { getRequest, postRequest } from '@/api/apiMethods';
+import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
+import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
-import React, { useMemo, useState } from 'react';
+import { getItem } from '@/services/storage';
+
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Animated,
   KeyboardAvoidingView,
@@ -8,9 +13,13 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+const brandPurple = '#b3a0ff';
+type Customer = { _id?: any; name?: string; cardNumber?: string | number };
+type ShopProduct = { _id?: any; productId: string; price: number; productName?: string };
 
 export default function OwnerScreen() {
   const insets = useSafeAreaInsets();
@@ -20,30 +29,54 @@ export default function OwnerScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const sheetY = useMemo(() => new Animated.Value(500), []);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [products, setProducts] = useState<ShopProduct[]>([]);
 
-  const cards: Record<number, string[]> = {
-    15: ['Jeet Patel', 'Anita Shah', 'Ravi Desai', 'Meera Joshi'],
-    9: ['Karan Mehta', 'Priya Singh'],
-    12: ['Vishal Sharma'],
-  };
-
-  const selectedCard = useMemo(() => {
-    const n = parseInt(input || '');
-    return Number.isFinite(n) ? n : undefined;
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchCustomers() {
+      const q = input.trim();
+      if (!q) {
+        if (!cancelled) setCustomers([]);
+        return;
+      }
+      try {
+        const token = await getItem('token');
+        const shopId = await getItem('userId');
+        const res = await getRequest(apiEndpoint.customers.list, {
+          params: { shopId: shopId, q },
+          headers: { authorization: token ? `Bearer ${token}` : '' },
+        });
+        const data = (res?.data ?? []) as any;
+        const arr = Array.isArray(data?.customers) ? data?.customers : [];
+        const list: Customer[] = arr
+          .map((item: any) => {
+            if (typeof item === 'string') {
+              return { name: item } as Customer;
+            }
+            return {
+              _id: item?._id,
+              name: item?.name,
+              cardNumber: item?.cardNumber,
+            } as Customer;
+          })
+          .filter((c: Customer) => !!(c.name && String(c.name).trim()));
+        if (!cancelled) setCustomers(list);
+      } catch (e) {
+        if (!cancelled) setCustomers([]);
+      }
+    }
+    fetchCustomers();
+    return () => {
+      cancelled = true;
+    };
   }, [input]);
-
-  const customers = useMemo(() => {
-    if (selectedCard && cards[selectedCard]) return cards[selectedCard];
-    return [];
-  }, [selectedCard]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return customers;
-    return customers.filter((n) => n.toLowerCase().includes(q));
+    return customers.filter((c) => (c.name || '').toLowerCase().includes(q));
   }, [customers, query]);
-
-  const products = useMemo(() => ['Amul Gold', 'Shaktii', 'Butter Milk', 'Cow'], []);
 
   function onDigit(d: string) {
     setInput((prev) => (prev + d).slice(0, 3));
@@ -59,10 +92,10 @@ export default function OwnerScreen() {
 
   function openSheet(name: string) {
     setSelectedName(name);
-    setQuantities({ 'Amul Gold': 2, Shaktii: 1, 'Butter Milk': 5, Cow: 9 });
     setSheetVisible(true);
     sheetY.setValue(500);
     Animated.timing(sheetY, { toValue: 0, duration: 220, useNativeDriver: true }).start();
+    loadProducts();
   }
 
   function closeSheet() {
@@ -80,8 +113,59 @@ export default function OwnerScreen() {
     setQuantities((q) => ({ ...q, [p]: Math.max(0, (q[p] ?? 0) - 1) }));
   }
 
-  function save() {
-    closeSheet();
+  async function loadProducts() {
+    try {
+      const token = await getItem('token');
+      const storedShopId = await getItem('userId');
+      const shopId = storedShopId;
+      const res = await getRequest(apiEndpoint.shopProducts.listShopProducts, {
+        params: { shopId },
+        headers: { authorization: token ? `Bearer ${token}` : '' },
+      });
+      const data = (res?.data ?? {}) as any;
+      const arr = Array.isArray(data?.shopProducts) ? data?.shopProducts : [];
+      const list: ShopProduct[] = arr.map((p: any) => ({
+        _id: p?._id,
+        productId: String(p?.productId || ''),
+        price: Number(p?.price ?? 0),
+        productName: String(p?.productName || ''),
+      }));
+      setProducts(list);
+    } catch (e) {
+      setProducts([]);
+    }
+  }
+
+  async function save() {
+    try {
+      const token = await getItem('token');
+      const storedShopId = await getItem('userId');
+      const shopId = storedShopId ? String(storedShopId) : '';
+      const customer = customers.find((c) => (c.name || '') === (selectedName || '')) || null;
+      const items: { productId: string; time: number; qty: number; price: number }[] = [];
+      for (const p of products) {
+        const qty = quantities[p._id] ?? 0;
+        if (qty > 0) {
+          items.push({ productId: p._id, time: Date.now(), qty, price: p.price });
+        }
+      }
+      if (items.length === 0) {
+        closeSheet();
+        return;
+      }
+      const payload = {
+        customerId: customer?._id ? String(customer._id) : '',
+        shopId,
+        products: [{ day: new Date().getDate(), product: items }],
+      };
+      await postRequest(apiEndpoint.cards.order, payload, {
+        headers: { authorization: token ? `Bearer ${token}` : '' },
+      });
+      closeSheet();
+      setQuantities({});
+    } catch (e) {
+      closeSheet();
+    }
   }
 
   return (
@@ -89,36 +173,35 @@ export default function OwnerScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.flex}
     >
-      <View style={[styles.container, { paddingTop: insets.top + 60 }]}>
-        <View style={styles.headerCenter}>
-          <Text style={styles.title}>Patel Dairy & Sweet</Text>
-          <Text style={styles.subTitle}>{input ? `Card #${input}` : 'Enter card number'}</Text>
+      <HeroHeader color={brandPurple} title="Patel Dairy & Sweet" />
+      <View style={[styles.container, { paddingTop: insets.top + 150 }]}>
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Enter card number..."
+            placeholderTextColor="#aaa"
+            value={input}
+            editable={false}
+          />
+          <View style={styles.searchIconWrap}>
+            <Text style={styles.searchIcon}>🔍</Text>
+          </View>
         </View>
 
         <ScrollView contentContainerStyle={styles.listContainer}>
-          {input === '15' && filtered.length === 0 && (
+          {input && filtered.length === 0 && (
             <Text style={styles.emptyText}>No customers found</Text>
           )}
-          {filtered.map((name) => (
+          {filtered.map((c) => (
             <TouchableOpacity
-              key={name}
+              key={String(c._id ?? `${c.name}-${c.cardNumber ?? ''}`)}
               style={styles.customerCard}
               activeOpacity={0.85}
-              onPress={() => openSheet(name)}
+              onPress={() => openSheet(c.name || '')}
             >
-              <Text style={styles.customerName}>{name}</Text>
-              <View style={styles.cardRow}>
-                {products.map((p) => (
-                  <View key={p} style={styles.cardItem}>
-                    <Text style={styles.cardItemLabel}>{p}</Text>
-                    <View style={styles.cardItemBadge}>
-                      <Text style={styles.cardItemBadgeText}>
-                        {(quantities[p] ?? 0).toString()}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
+              <Text style={styles.customerName}>
+                [{String(c.cardNumber ?? '-')}] {c.name}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -190,21 +273,23 @@ export default function OwnerScreen() {
               </View>
               <View style={styles.sheetCard}>
                 {products.map((p) => (
-                  <View key={p} style={styles.productRow}>
-                    <Text style={styles.productName}>{p}</Text>
+                  <View key={String(p._id ?? p.productId)} style={styles.productRow}>
+                    <Text
+                      style={styles.productName}
+                    >{`${p.productName || p.productId} (₹${p.price})`}</Text>
                     <View style={styles.qtyControls}>
                       <TouchableOpacity
                         style={styles.qtyButton}
                         activeOpacity={0.85}
-                        onPress={() => dec(p)}
+                        onPress={() => dec(p._id)}
                       >
                         <Text style={styles.qtyButtonText}>-</Text>
                       </TouchableOpacity>
-                      <Text style={styles.qtyValue}>{quantities[p] ?? 0}</Text>
+                      <Text style={styles.qtyValue}>{quantities[p._id] ?? 0}</Text>
                       <TouchableOpacity
                         style={styles.qtyButton}
                         activeOpacity={0.85}
-                        onPress={() => inc(p)}
+                        onPress={() => inc(p._id)}
                       >
                         <Text style={styles.qtyButtonText}>+</Text>
                       </TouchableOpacity>
@@ -241,6 +326,42 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 14,
     color: '#666',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: -50,
+    height: 55,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.08)',
+    paddingLeft: 16,
+    paddingRight: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    width: '92%',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  searchIconWrap: {
+    marginLeft: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchIcon: {
+    fontSize: 16,
+    color: '#0d101b',
   },
   listContainer: {
     paddingVertical: 12,
@@ -303,7 +424,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 25,
+    bottom: 40,
+    minHeight: 320,
     paddingHorizontal: 24,
     paddingTop: 8,
   },
@@ -311,14 +433,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   key: {
     flex: 1,
-    height: 56,
+    height: 68,
     marginHorizontal: 6,
     borderRadius: 18,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#a0c6ff',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -377,12 +499,8 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   sheetCard: {
-    borderRadius: 18,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: '#f8f8f8',
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
   },
   productRow: {
     flexDirection: 'row',

@@ -88,7 +88,8 @@ export default function OtpScreen() {
     try {
       setLoading(true);
       const res = await postRequest(apiEndpoint.auth.verifyOtp, { phone, otp: cleaned });
-      const { token, refreshToken, userId, entityType } = (res?.data as any) ?? {};
+      const { token, refreshToken, userId, entityType, isMpinAlreadySet } =
+        (res?.data as any) ?? {};
       await Promise.all(
         [
           token && setItem('token', token),
@@ -98,7 +99,15 @@ export default function OtpScreen() {
         ].filter(Boolean),
       );
       setSuccess(true);
-      navigation.navigate('SetMpin', { phone });
+      if (isMpinAlreadySet === null || isMpinAlreadySet === '') {
+        navigation.navigate('SetMpin', { phone });
+      } else {
+        if (entityType === 'shop') {
+          navigation.replace('Owner');
+        } else {
+          navigation.replace('Customer');
+        }
+      }
     } catch (e) {
       const msg =
         (e as any)?.response?.data?.message ||
@@ -182,7 +191,6 @@ export default function OtpScreen() {
                   }}
                   keyboardType="number-pad"
                   maxLength={1}
-                  returnKeyType={i === 3 ? 'done' : 'next'}
                   onSubmitEditing={i === 3 ? handleVerify : undefined}
                   style={[
                     styles.otpBox,

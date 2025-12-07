@@ -1,6 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   ImageBackground,
   Keyboard,
   ScrollView,
@@ -9,11 +10,10 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  Alert,
 } from 'react-native';
-import Colors from '../constants/Colors';
 import { postRequest } from '../api/apiMethods';
 import apiEndpoint from '../constants/apiEndpoint';
+import Colors from '../constants/Colors';
 import { getItem } from '../services/storage';
 
 export default function SetMpinScreen() {
@@ -60,9 +60,9 @@ export default function SetMpinScreen() {
       setSuccess(true);
       const entityType = (await getItem('entityType')) || 'customer';
       if (entityType === 'shop') {
-        navigation.replace('Owner');
+        navigation.reset({ index: 0, routes: [{ name: 'Owner' }] });
       } else {
-        navigation.replace('Customer');
+        navigation.reset({ index: 0, routes: [{ name: 'Customer' }] });
       }
     } catch (e) {
       const msg =
@@ -138,7 +138,6 @@ export default function SetMpinScreen() {
                   }}
                   keyboardType="number-pad"
                   maxLength={1}
-                  returnKeyType={i === 3 ? 'done' : 'next'}
                   onSubmitEditing={i === 3 ? handleVerify : undefined}
                   style={[
                     styles.otpBox,

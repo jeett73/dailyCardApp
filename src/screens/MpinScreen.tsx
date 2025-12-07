@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { postRequest } from '../api/apiMethods';
 import apiEndpoint from '../constants/apiEndpoint';
-import { getItem } from '../services/storage';
+import { getItem, setItem } from '../services/storage';
 
 export default function MpinScreen() {
   const navigation = useNavigation<any>();
@@ -121,10 +121,14 @@ export default function MpinScreen() {
       const res = await postRequest(apiEndpoint.mpin.verify, { userId, mpin: cleaned });
       setSuccess(true);
       const entityType: string | undefined = (res?.data as any)?.entityType;
+      const token: string | undefined = (res?.data as any)?.token;
+      if (token) {
+        Promise.all([setItem('token', token)]);
+      }
       if (entityType === 'shop') {
-        navigation.replace('Owner');
+        navigation.reset({ index: 0, routes: [{ name: 'Owner' }] });
       } else {
-        navigation.replace('Customer');
+        navigation.reset({ index: 0, routes: [{ name: 'Customer' }] });
       }
     } catch (e) {
       const msg =
@@ -137,7 +141,7 @@ export default function MpinScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.hero, { backgroundColor: Colors.light.brandPurple }]} />
+      <View style={[{ backgroundColor: Colors.light.brandPurple }]} />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.profileCircle} accessibilityLabel="User initials">
           <Text style={styles.profileInitials}>{initials}</Text>
@@ -192,7 +196,6 @@ export default function MpinScreen() {
                 }}
                 keyboardType="number-pad"
                 maxLength={1}
-                returnKeyType={i === 3 ? 'done' : 'next'}
                 onSubmitEditing={i === 3 ? handleContinue : undefined}
                 style={[
                   styles.otpBox,
@@ -295,17 +298,6 @@ export default function MpinScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: '#fff' },
-  hero: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 120,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    overflow: 'hidden',
-    zIndex: 0,
-  },
   container: {
     flexGrow: 1,
     alignItems: 'center',

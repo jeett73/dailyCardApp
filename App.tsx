@@ -1,4 +1,5 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { initAuthFromStorage } from '@/api/http';
 import AppNavigator from '@/navigation/AppNavigator';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
@@ -23,6 +24,10 @@ function App() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  useEffect(() => {
+    initAuthFromStorage();
+  }, []);
 
   const colorScheme = useColorScheme();
 

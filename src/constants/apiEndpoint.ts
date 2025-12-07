@@ -12,20 +12,26 @@ export const apiEndpoint = {
     verifyOtp: url('/auth/verify-otp'),
     logout: url('/auth/logout'),
     sendOtp: url('/auth/send-otp'),
-    refresh: url('/auth/refresh-token'),
+    refresh: url('/auth/refresh'),
   },
   mpin: {
     set: url('/auth/set-mpin'),
     verify: url('/auth/verify-mpin'),
   },
-  users: {
-    me: url('/users/me'),
+  customers: {
+    list: url('/customers'),
   },
   entries: {
     list: url('/entries'),
     create: url('/entries'),
     detail: (id: Id) => url(`/entries/${id}`),
     delete: (id: Id) => url(`/entries/${id}`),
+  },
+  cards: {
+    order: url('/cards/order'),
+  },
+  shopProducts: {
+    listShopProducts: url('/shop-products'),
   },
 } as const;
 
