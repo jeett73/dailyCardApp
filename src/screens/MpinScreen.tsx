@@ -1,3 +1,4 @@
+import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -6,6 +7,7 @@ import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'reac
 import { postRequest } from '../api/apiMethods';
 import apiEndpoint from '../constants/apiEndpoint';
 import { getItem, setItem } from '../services/storage';
+const brandPurple = '#b3a0ff';
 
 export default function MpinScreen() {
   const navigation = useNavigation<any>();
@@ -141,7 +143,7 @@ export default function MpinScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={[{ backgroundColor: Colors.light.brandPurple }]} />
+      <HeroHeader color={brandPurple} title="" />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.profileCircle} accessibilityLabel="User initials">
           <Text style={styles.profileInitials}>{initials}</Text>

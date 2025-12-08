@@ -62,7 +62,7 @@ export default function SetMpinScreen() {
       if (entityType === 'shop') {
         navigation.reset({ index: 0, routes: [{ name: 'Owner' }] });
       } else {
-        navigation.reset({ index: 0, routes: [{ name: 'Customer' }] });
+        navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
       }
     } catch (e) {
       const msg =
