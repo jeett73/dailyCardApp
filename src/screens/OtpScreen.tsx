@@ -103,9 +103,9 @@ export default function OtpScreen() {
         navigation.navigate('SetMpin', { phone });
       } else {
         if (entityType === 'shop') {
-          navigation.replace('Owner');
+          navigation.reset({ index: 0, routes: [{ name: 'Owner' }] });
         } else {
-          navigation.replace('MainTabs');
+          navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
         }
       }
     } catch (e) {
