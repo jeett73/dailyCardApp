@@ -105,7 +105,7 @@ export default function OtpScreen() {
         if (entityType === 'shop') {
           navigation.replace('Owner');
         } else {
-          navigation.replace('Customer');
+          navigation.replace('MainTabs');
         }
       }
     } catch (e) {

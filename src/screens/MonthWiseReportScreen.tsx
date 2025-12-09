@@ -1,3 +1,4 @@
+import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
@@ -136,7 +137,8 @@ export default function MonthWiseReportScreen() {
   }, [months, loading, error, cardWidth, navigation, navLoading]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
+    <View style={[styles.container, { paddingTop: insets.top + 30 }]}>
+      <HeroHeader color={Colors.light.brandPurple} title={`Past Monthly Statement`} />
       <ScrollView
         contentContainerStyle={[
           styles.listContainer,

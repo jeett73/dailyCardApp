@@ -1,5 +1,5 @@
 import { getRequest, postRequest } from '@/api/apiMethods';
-import HeroHeader from '@/components/HeroHeader';
+import HeroHeader, { AvatarInitials, toTitleCase } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
@@ -88,6 +88,19 @@ export default function OwnerScreen() {
 
   function onClear() {
     setInput('');
+  }
+
+  function formatCardNumber(card?: string | number) {
+    const digits = String(card ?? '').replace(/\D/g, '');
+    if (!digits) return '—';
+    return digits.replace(/(.{4})/g, '$1 ').trim();
+  }
+
+  function formatMobile(mobile?: string | number) {
+    const digits = String(mobile ?? '').replace(/\D/g, '');
+    if (!digits) return 'N/A';
+    const n = digits.slice(-10);
+    return `+91 ${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)}`;
   }
 
   function openSheet(name: string) {
@@ -192,18 +205,35 @@ export default function OwnerScreen() {
           {input && filtered.length === 0 && (
             <Text style={styles.emptyText}>No customers found</Text>
           )}
-          {filtered.map((c) => (
-            <TouchableOpacity
-              key={String(c._id ?? `${c.name}-${c.cardNumber ?? ''}`)}
-              style={styles.customerCard}
-              activeOpacity={0.85}
-              onPress={() => openSheet(c.name || '')}
-            >
-              <Text style={styles.customerName}>
-                [{String(c.cardNumber ?? '-')}] {c.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {filtered.map((c) => {
+            const name = toTitleCase(String(c.name || '').trim());
+            const cardFormatted = formatCardNumber(c.cardNumber);
+            const mobileFormatted = formatMobile((c as any)?.mobile);
+            return (
+              <TouchableOpacity
+                key={String(c._id ?? `${c.name}-${c.cardNumber ?? ''}`)}
+                style={styles.customerCard}
+                activeOpacity={0.85}
+                onPress={() => openSheet(c.name || '')}
+                accessibilityLabel={`${name || 'Unknown'} • Card ${cardFormatted} • Mobile ${mobileFormatted}`}
+              >
+                <View style={styles.customerRow}>
+                  <AvatarInitials title={name || 'Unknown'} />
+                  <View style={styles.customerInfo}>
+                    <Text style={styles.customerTitle}>{name || 'Hiren Dabhi'}</Text>
+                    <View style={styles.metaRow}>
+                      <Text style={styles.metaLabel}>Card</Text>
+                      <Text style={styles.metaValue}>#{cardFormatted}</Text>
+                    </View>
+                    <View style={styles.metaRow}>
+                      <Text style={styles.metaLabel}>Mobile</Text>
+                      <Text style={styles.metaValue}>{7600924242}</Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
         <View style={styles.keypadWrapper}>
@@ -392,6 +422,12 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
     marginBottom: 8,
   },
+  customerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
+  customerInfo: { flex: 1, backgroundColor: '#fff' },
+  customerTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, backgroundColor: '#fff' },
+  metaLabel: { fontSize: 12, color: '#666', marginRight: 8 },
+  metaValue: { fontSize: 12, color: Colors.light.text, fontWeight: '700' },
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',

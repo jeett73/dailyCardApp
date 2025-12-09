@@ -1,3 +1,4 @@
+import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React, { memo, useMemo, useState } from 'react';
@@ -184,11 +185,14 @@ export default function MonthlyStatementScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}>
-        <Text style={[styles.screenTitle, { fontSize: Math.round(22 * scale) }]}>
-          Monthly Statement
-        </Text>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <HeroHeader color={Colors.light.brandPurple} title={`Monthly Statement - ${fmtDay(1)}`} />
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: insets.top + 55,
+          paddingBottom: Math.max(insets.bottom, 24),
+        }}
+      >
         {error ? (
           <View style={styles.statementCard}>
             <Text style={[styles.itemName, { fontSize: Math.round(18 * scale) }]}>

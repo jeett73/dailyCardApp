@@ -1,17 +1,10 @@
+import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
-import {
-  Alert,
-  Image,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-} from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Root tab route names are available via MainTabs; navigation is typed to any here to support
@@ -78,29 +71,15 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 5 }]}>
-      <View style={[styles.hero, { backgroundColor: Colors.light.brandPurple }]} />
-
-      <ScrollView contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <Image
-            source={require('../../assets/images/bg.png')}
-            style={[
-              styles.avatar,
-              { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
-            ]}
-            accessibilityLabel="Profile avatar"
-          />
-
-          <View style={styles.headerCenter}>
-            <Text style={styles.customerName}>Jeet Patel</Text>
-            <Text style={styles.balance}>+91 98765 43210</Text>
-          </View>
-
-          <View style={styles.headerRightSpacer} />
-        </View>
-
-        {/* Menu */}
+      <HeroHeader
+        color={Colors.light.brandPurple}
+        showProfile={true}
+        profileName="Hiren Dabhi"
+        profileSubtitle="Card #007"
+        avatarSize={55}
+        title="Hiren Dabhi"
+      />
+      <View style={[styles.container, { paddingTop: insets.top + 55 }]}>
         <View
           style={styles.summaryCard}
           accessibilityRole="summary"
@@ -137,7 +116,7 @@ export default function ProfileScreen() {
             <MenuOption key={m.label} label={m.label} onPress={m.onPress} />
           ))}
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }

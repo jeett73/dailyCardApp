@@ -2,6 +2,7 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 // import { LinearGradient } from 'expo-linear-gradient';
 import GreetingCard from '@/components/GreetingCard';
+import HeroHeader from '@/components/HeroHeader';
 import React, { useState } from 'react';
 import { Image, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,7 +21,14 @@ export default function CustomerScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.hero, { backgroundColor: Colors.light.brandPurple }]} />
+      <HeroHeader
+        color={Colors.light.brandPurple}
+        showProfile={true}
+        profileName="Hiren Dabhi"
+        profileSubtitle="Card #007"
+        avatarSize={55}
+        title="Hiren Dabhi"
+      />
       <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerRow}>
           <Image source={require('../../assets/images/bg.png')} style={styles.avatar} />
