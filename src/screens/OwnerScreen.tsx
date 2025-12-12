@@ -204,7 +204,7 @@ export default function OwnerScreen() {
       style={styles.flex}
     >
       <HeroHeader color={brandPurple} title="Patel Dairy & Sweet" />
-      <View style={[styles.container, { paddingTop: insets.top + 150 }]}>
+      <View style={[styles.container, { paddingTop: insets.top + 90 }]}>
         <View style={styles.searchBar}>
           <TextInput
             style={styles.searchInput}
@@ -332,21 +332,33 @@ export default function OwnerScreen() {
                     <ActivityIndicator size="small" color={Colors.light.tint} />
                   </View>
                 ) : (
-                  <View style={styles.productsList}>
-                    {products.map((p) => {
+                  <ScrollView
+                    style={{ maxHeight: Math.round(height * 0.9) }}
+                    contentContainerStyle={styles.productsList}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {products.map((p, i) => {
                       const id = String(p._id ?? p.productId);
                       const qty = quantities[p._id] ?? 0;
                       const scale =
                         qtyScales.current[id] ?? (qtyScales.current[id] = new Animated.Value(1));
                       return (
-                        <View key={id} style={styles.productItem}>
-                          <Image
-                            source={require('../../assets/images/bg.png')}
-                            style={styles.productThumb}
-                            resizeMode="cover"
-                            accessibilityRole="image"
-                            accessibilityLabel={`${p.productName || p.productId} image`}
-                          />
+                        <View key={id + i} style={styles.productItem}>
+                          <View style={styles.thumbWrap}>
+                            <Image
+                              source={require('../../assets/images/bg.png')}
+                              style={styles.productThumb}
+                              resizeMode="cover"
+                              accessibilityRole="image"
+                              accessibilityLabel={`${p.productName || p.productId} image`}
+                            />
+                            <Animated.View
+                              style={[styles.qtyChipImage, { transform: [{ scale }] }]}
+                              accessibilityLabel={`Quantity ${qty}`}
+                            >
+                              <Text style={styles.qtyChipText}>{qty}</Text>
+                            </Animated.View>
+                          </View>
                           <View style={styles.productInfoBlock}>
                             <Text style={styles.productTitle} numberOfLines={1}>
                               {p.productName || p.productId}
@@ -354,12 +366,6 @@ export default function OwnerScreen() {
                             <Text style={styles.productSubPrice}>₹{p.price}</Text>
                           </View>
                           <View style={styles.rowRight}>
-                            <Animated.View
-                              style={[styles.qtyChip, { transform: [{ scale }] }]}
-                              accessibilityLabel={`Quantity ${qty}`}
-                            >
-                              <Text style={styles.qtyChipText}>{qty}</Text>
-                            </Animated.View>
                             <View style={styles.actionRow}>
                               <TouchableOpacity
                                 style={styles.pillButton}
@@ -392,7 +398,7 @@ export default function OwnerScreen() {
                         </View>
                       );
                     })}
-                  </View>
+                  </ScrollView>
                 )}
 
                 <View style={styles.totalRow}>
@@ -434,7 +440,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    marginTop: -50,
+    marginTop: 10,
     height: 55,
     borderRadius: 22,
     backgroundColor: '#fff',
@@ -446,7 +452,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
-    width: '92%',
+    width: '90%',
   },
   searchInput: {
     flex: 1,
@@ -609,11 +615,11 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   sheetCard: {
-    paddingVertical: 12,
+    paddingVertical: 0,
     paddingHorizontal: 12,
     backgroundColor: '#fff',
   },
-  productsList: { gap: 8, backgroundColor: '#fff' },
+  productsList: { gap: 5, backgroundColor: '#fff' },
   productItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -628,6 +634,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     padding: 8,
   },
+  thumbWrap: { width: 72, height: 56, marginRight: 12, borderRadius: 8, position: 'relative' },
   productThumb: { width: 72, height: 56, borderRadius: 8, marginRight: 12 },
   productInfoBlock: {
     flex: 1,
@@ -646,8 +653,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginBottom: 6,
   },
+  qtyChipImage: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    minWidth: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#0d101b',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
   qtyChipText: { fontSize: 12, fontWeight: '700', color: '#fff' },
-  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: '#fff' },
   pillButton: {
     width: 36,
     height: 36,

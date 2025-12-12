@@ -1,6 +1,7 @@
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { clear } from '@/services/storage';
 import Feather from '@expo/vector-icons/Feather';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
@@ -53,7 +54,8 @@ export default function ProfileScreen() {
 
   async function handleLogout() {
     Alert.alert('Logout', 'You have been logged out');
-    navigation.navigate('Dashboard');
+    await clear();
+    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
   }
 
   function handleCall() {
