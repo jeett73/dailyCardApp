@@ -70,7 +70,7 @@ export default function ProfileScreen() {
   ] as const;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 5 }]}>
+    <View style={[styles.container]}>
       <HeroHeader
         color={Colors.light.brandPurple}
         showProfile={true}
@@ -79,7 +79,7 @@ export default function ProfileScreen() {
         avatarSize={55}
         title="Hiren Dabhi"
       />
-      <View style={[styles.container, { paddingTop: insets.top + 55 }]}>
+      <View style={[styles.container, { paddingTop: insets.top + 90 }]}>
         <View
           style={styles.summaryCard}
           accessibilityRole="summary"

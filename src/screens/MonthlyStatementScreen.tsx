@@ -185,11 +185,11 @@ export default function MonthlyStatementScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title={`Monthly Statement - ${fmtDay(1)}`} />
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 55,
+          paddingTop: insets.top + 90,
           paddingBottom: Math.max(insets.bottom, 24),
         }}
       >

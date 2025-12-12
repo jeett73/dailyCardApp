@@ -64,7 +64,7 @@ export default function HeroHeader({
           </View>
         </View>
       )}
-      {!!title && (
+      {!showProfile && !!title && (
         <Text style={[styles.heroTitle, { color: titleColor }, titleStyle]}>{title}</Text>
       )}
     </View>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    marginTop: 12,
+    top: 20,
     gap: 12,
   },
   avatar: {
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 22, fontWeight: '800' },
   nameBlock: { flex: 1 },
   nameText: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  subtitleText: { marginTop: 2, fontSize: 16, color: '#555' },
+  subtitleText: { marginTop: 1, fontSize: 16, color: '#555' },
   initialsCircle: {
     width: 50,
     height: 50,
@@ -143,8 +143,8 @@ const styles = StyleSheet.create({
   },
   initialsText: { fontSize: 18, fontWeight: '700', color: '#111' },
   heroTitle: {
-    top: 30,
-    fontSize: 23,
+    top: 20,
+    fontSize: 22,
     fontWeight: '800',
   },
 });

@@ -4,7 +4,7 @@ import Colors from '@/constants/Colors';
 import GreetingCard from '@/components/GreetingCard';
 import HeroHeader from '@/components/HeroHeader';
 import React, { useState } from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CustomerScreen() {
@@ -29,18 +29,7 @@ export default function CustomerScreen() {
         avatarSize={55}
         title="Hiren Dabhi"
       />
-      <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
-        <View style={styles.headerRow}>
-          <Image source={require('../../assets/images/bg.png')} style={styles.avatar} />
-
-          <View style={styles.headerCenter}>
-            <Text style={styles.customerName}>Jeet Patel</Text>
-            <Text style={styles.balance}>{cardNo}</Text>
-          </View>
-
-          <View style={styles.headerRightSpacer} />
-        </View>
-
+      <View style={[styles.container, { paddingTop: insets.top + 90 }]}>
         <GreetingCard
           shopName="Patel Dairy and Sweet Store"
           message="We are delighted to serve your daily dairy needs."

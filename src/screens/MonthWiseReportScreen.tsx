@@ -137,15 +137,15 @@ export default function MonthWiseReportScreen() {
   }, [months, loading, error, cardWidth, navigation, navLoading]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 30 }]}>
+    <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title={`Past Monthly Statement`} />
       <ScrollView
         contentContainerStyle={[
           styles.listContainer,
+          { paddingTop: insets.top + 90 },
           { paddingBottom: Math.max(insets.bottom, 24) },
         ]}
       >
-        <Text style={styles.screenTitle}>Month-wise Report</Text>
         <View style={styles.grid}>{content}</View>
         {navLoading && (
           <View style={styles.navOverlay} pointerEvents="none">
