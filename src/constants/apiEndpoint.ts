@@ -1,9 +1,10 @@
 type Id = string | number;
-const API_BASE_URL = 'http://172.20.10.2:3000';
+// const API_BASE_URL = 'http://172.20.10.2:3000';
+const API_BASE_URL = 'http://10.210.52.6:3000';
 
 const url = (path: string) => `${API_BASE_URL}${path}`;
 
-export const apiEndpoint = {
+const apiEndpoint = {
   baseUrl: API_BASE_URL,
   url,
   auth: {
@@ -20,6 +21,7 @@ export const apiEndpoint = {
   },
   customers: {
     list: url('/customers'),
+    add: url('/customers/add'),
   },
   entries: {
     list: url('/entries'),

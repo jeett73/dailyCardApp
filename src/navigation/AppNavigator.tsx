@@ -1,4 +1,6 @@
 import MainTabs from '@/navigation/MainTabs';
+import CreateCustomerScreen from '@/screens/CreateCustomerScreen';
+import CustomerListScreen from '@/screens/CustomerListScreen';
 import CustomerScreen from '@/screens/CustomerScreen';
 import LoginScreen from '@/screens/LoginScreen';
 import ModalScreen from '@/screens/ModalScreen';
@@ -45,6 +47,8 @@ export default function AppNavigator() {
         component={CustomerScreen}
         options={{ gestureEnabled: false }}
       />
+      <Stack.Screen name="CustomerList" component={CustomerListScreen} />
+      <Stack.Screen name="CreateCustomer" component={CreateCustomerScreen} />
       <Stack.Screen name="Owner" component={OwnerScreen} options={{ gestureEnabled: false }} />
       <Stack.Screen name="Modal" component={ModalScreen} />
     </Stack.Navigator>

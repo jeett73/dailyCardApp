@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   },
   initialsText: { fontSize: 18, fontWeight: '700', color: '#111' },
   heroTitle: {
-    top: 20,
+    top: 30,
     fontSize: 22,
     fontWeight: '800',
   },
