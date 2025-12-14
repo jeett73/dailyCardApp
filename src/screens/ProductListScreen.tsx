@@ -1,14 +1,21 @@
-import { useCustomerList } from '@/components/CustomerListComponent';
-import HeroHeader, { AvatarInitials } from '@/components/HeroHeader';
+import { useProductList } from '@/component/ProductListComponent';
+import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React, { useMemo } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TouchableOpacity,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function CustomerListScreen() {
+export default function ProductListScreen() {
   const insets = useSafeAreaInsets();
-  const { items, loading, error, onAddPress } = useCustomerList();
+  const { items, loading, error, onToggle, onAddPress } = useProductList();
 
   const content = useMemo(() => {
     if (loading) {
@@ -22,42 +29,41 @@ export default function CustomerListScreen() {
       return <Text style={styles.error}>{error}</Text>;
     }
     if (!items || items.length === 0) {
-      return <Text style={styles.emptyText}>No customers found</Text>;
+      return <Text style={styles.emptyText}>No products found</Text>;
     }
     return items.map((it) => {
       return (
-        <TouchableOpacity
+        <View
           key={it.id}
-          style={styles.customerCard}
-          activeOpacity={0.85}
-          accessibilityLabel={`${it.name || 'Unknown'} • Card ${it.card} • Mobile ${it.mobile}`}
+          style={styles.productCard}
+          accessibilityLabel={`${it.name} • ${it.priceDisplay}`}
         >
-          <View style={styles.customerRow}>
-            <AvatarInitials title={it.name || 'Unknown'} />
-            <View style={styles.customerInfo}>
-              <Text style={styles.customerTitle}>{it.name || 'Unknown'}</Text>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Card</Text>
-                <Text style={styles.metaValue}>{it.card}</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Mobile</Text>
-                <Text style={styles.metaValue}>{it.mobile}</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Last Due</Text>
-                <Text style={styles.metaValue}>{it.dueDisplay}</Text>
-              </View>
+          <View style={styles.productRow}>
+            <Image
+              source={require('../../assets/images/bg.png')}
+              style={styles.productThumb}
+              resizeMode="cover"
+            />
+            <View style={styles.productInfo}>
+              <Text style={styles.productTitle}>{it.name}</Text>
+              <Text style={styles.productPrice}>{it.priceDisplay}</Text>
             </View>
+            <Switch
+              value={it.enabled}
+              onValueChange={(v) => onToggle(it.id, v)}
+              trackColor={{ false: '#e0e0e0', true: '#a0c6ff' }}
+              thumbColor={it.enabled ? Colors.light.tint : '#f4f3f4'}
+              style={styles.productSwitch}
+            />
           </View>
-        </TouchableOpacity>
+        </View>
       );
     });
-  }, [items, loading, error]);
+  }, [items, loading, error, onToggle]);
 
   return (
     <View style={[styles.container]}>
-      <HeroHeader color={Colors.light.brandPurple} title="Customers" />
+      <HeroHeader color={Colors.light.brandPurple} title="Products" />
       <ScrollView
         contentContainerStyle={[
           styles.listContainer,
@@ -71,7 +77,7 @@ export default function CustomerListScreen() {
         style={[styles.fab, { bottom: Math.max(insets.bottom, 24) + 12 }, { right: 16 }]}
         activeOpacity={0.9}
         accessibilityRole="button"
-        accessibilityLabel="Add Customer"
+        accessibilityLabel="Add Product"
         onPress={onAddPress}
       >
         <Text style={styles.fabText}>＋</Text>
@@ -83,7 +89,7 @@ export default function CustomerListScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   listContainer: { paddingVertical: 12, paddingHorizontal: 16 },
-  customerCard: {
+  productCard: {
     borderRadius: 16,
     padding: 12,
     marginVertical: 8,
@@ -96,12 +102,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-  customerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
-  customerInfo: { flex: 1, backgroundColor: '#fff' },
-  customerTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, backgroundColor: '#fff' },
-  metaLabel: { fontSize: 12, color: '#666', marginRight: 8 },
-  metaValue: { fontSize: 12, color: Colors.light.text, fontWeight: '700' },
+  productRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
+  productThumb: { width: 56, height: 56, borderRadius: 12 },
+  productInfo: { flex: 1, backgroundColor: '#fff' },
+  productTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
+  productPrice: { marginTop: 4, fontSize: 14, color: '#555' },
+  productSwitch: {},
   emptyText: { textAlign: 'center', color: '#666', fontSize: 14, paddingVertical: 12 },
   error: { fontSize: 14, color: '#e53935' },
   fab: {

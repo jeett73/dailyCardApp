@@ -1,4 +1,4 @@
-import { useCreateCustomer } from '@/component/CreateCustomerComponent';
+import { useCreateCustomer } from '@/components/CreateCustomerComponent';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';

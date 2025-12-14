@@ -1,4 +1,5 @@
 import MainTabs from '@/navigation/MainTabs';
+import AddProductScreen from '@/screens/AddProductScreen';
 import CreateCustomerScreen from '@/screens/CreateCustomerScreen';
 import CustomerListScreen from '@/screens/CustomerListScreen';
 import CustomerScreen from '@/screens/CustomerScreen';
@@ -8,6 +9,7 @@ import MonthWiseReportScreen from '@/screens/MonthWiseReportScreen';
 import MpinScreen from '@/screens/MpinScreen';
 import OtpScreen from '@/screens/OtpScreen';
 import OwnerScreen from '@/screens/OwnerScreen';
+import ProductListScreen from '@/screens/ProductListScreen';
 import SetMpinScreen from '@/screens/SetMpinScreen';
 import { getItem } from '@/services/storage';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -48,6 +50,8 @@ export default function AppNavigator() {
         options={{ gestureEnabled: false }}
       />
       <Stack.Screen name="CustomerList" component={CustomerListScreen} />
+      <Stack.Screen name="ProductList" component={ProductListScreen} />
+      <Stack.Screen name="AddProduct" component={AddProductScreen} />
       <Stack.Screen name="CreateCustomer" component={CreateCustomerScreen} />
       <Stack.Screen name="Owner" component={OwnerScreen} options={{ gestureEnabled: false }} />
       <Stack.Screen name="Modal" component={ModalScreen} />
