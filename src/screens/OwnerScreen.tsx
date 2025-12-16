@@ -1,11 +1,8 @@
-import { getRequest, postRequest } from '@/api/apiMethods';
+import { useOwner } from '@/component/OwnerComponent';
 import HeroHeader, { AvatarInitials, toTitleCase } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
-import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
-import { getItem } from '@/services/storage';
-
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -17,186 +14,36 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 const brandPurple = '#b3a0ff';
-type Customer = { _id?: any; name?: string; cardNumber?: string | number };
-type ShopProduct = { _id?: any; productId: string; price: number; productName?: string };
 
 export default function OwnerScreen() {
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const [query, setQuery] = useState('');
-  const [input, setInput] = useState('');
-  const [selectedName, setSelectedName] = useState<string | null>(null);
-  const [sheetVisible, setSheetVisible] = useState(false);
-  const sheetY = useMemo(() => new Animated.Value(0), []);
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<ShopProduct[]>([]);
-  const qtyScales = useRef<Record<string, Animated.Value>>({});
-  const totalAmount = useMemo(
-    () => products.reduce((sum, p) => sum + (quantities[p._id] ?? 0) * p.price, 0),
-    [products, quantities],
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchCustomers() {
-      const q = input.trim();
-      if (!q) {
-        if (!cancelled) setCustomers([]);
-        return;
-      }
-      try {
-        const token = await getItem('token');
-        const shopId = await getItem('userId');
-        const res = await getRequest(apiEndpoint.customers.list, {
-          params: { shopId: shopId, q },
-          headers: { authorization: token ? `Bearer ${token}` : '' },
-        });
-        const data = (res?.data ?? []) as any;
-        const arr = Array.isArray(data?.customers) ? data?.customers : [];
-        const list: Customer[] = arr
-          .map((item: any) => {
-            if (typeof item === 'string') {
-              return { name: item } as Customer;
-            }
-            return {
-              _id: item?._id,
-              name: item?.name,
-              cardNumber: item?.cardNumber,
-            } as Customer;
-          })
-          .filter((c: Customer) => !!(c.name && String(c.name).trim()));
-        if (!cancelled) setCustomers(list);
-      } catch (e) {
-        if (!cancelled) setCustomers([]);
-      }
-    }
-    fetchCustomers();
-    return () => {
-      cancelled = true;
-    };
-  }, [input]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return customers;
-    return customers.filter((c) => (c.name || '').toLowerCase().includes(q));
-  }, [customers, query]);
-
-  function onDigit(d: string) {
-    setInput((prev) => (prev + d).slice(0, 3));
-  }
-
-  function onBackspace() {
-    setInput((prev) => prev.slice(0, -1));
-  }
-
-  function onClear() {
-    setInput('');
-  }
-
-  function formatCardNumber(card?: string | number) {
-    const digits = String(card ?? '').replace(/\D/g, '');
-    if (!digits) return '—';
-    return digits.replace(/(.{4})/g, '$1 ').trim();
-  }
-
-  function formatMobile(mobile?: string | number) {
-    const digits = String(mobile ?? '').replace(/\D/g, '');
-    if (!digits) return 'N/A';
-    const n = digits.slice(-10);
-    return `+91 ${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)}`;
-  }
-
-  function openSheet(name: string) {
-    setSelectedName(name);
-    setSheetVisible(true);
-    sheetY.setValue(500);
-    Animated.timing(sheetY, { toValue: 0, duration: 220, useNativeDriver: true }).start();
-    loadProducts();
-  }
-
-  function closeSheet() {
-    Animated.timing(sheetY, { toValue: 500, duration: 180, useNativeDriver: true }).start(() => {
-      setSheetVisible(false);
-      setSelectedName(null);
-    });
-  }
-
-  function inc(p: string) {
-    setQuantities((q) => ({ ...q, [p]: (q[p] ?? 0) + 1 }));
-  }
-
-  function dec(p: string) {
-    setQuantities((q) => ({ ...q, [p]: Math.max(0, (q[p] ?? 0) - 1) }));
-  }
-
-  function pulseQty(id: string) {
-    const v = qtyScales.current[id] ?? (qtyScales.current[id] = new Animated.Value(1));
-    Animated.sequence([
-      Animated.timing(v, { toValue: 1.1, duration: 100, useNativeDriver: true }),
-      Animated.spring(v, { toValue: 1, useNativeDriver: true }),
-    ]).start();
-  }
-
-  async function loadProducts() {
-    try {
-      const token = await getItem('token');
-      const storedShopId = await getItem('userId');
-      const shopId = storedShopId;
-      const res = await getRequest(apiEndpoint.shopProducts.listShopProducts, {
-        params: { shopId },
-        headers: { authorization: token ? `Bearer ${token}` : '' },
-      });
-      const data = (res?.data ?? {}) as any;
-      const arr = Array.isArray(data?.shopProducts) ? data?.shopProducts : [];
-      const list: ShopProduct[] = arr.map((p: any) => ({
-        _id: p?._id,
-        productId: String(p?.productId || ''),
-        price: Number(p?.price ?? 0),
-        productName: String(p?.productName || ''),
-      }));
-      setProducts(list);
-    } catch (e) {
-      setProducts([]);
-    }
-  }
-
-  async function save() {
-    try {
-      const token = await getItem('token');
-      const storedShopId = await getItem('userId');
-      const shopId = storedShopId ? String(storedShopId) : '';
-      const customer = customers.find((c) => (c.name || '') === (selectedName || '')) || null;
-      const items: { productId: string; time: number; qty: number; price: number }[] = [];
-      for (const p of products) {
-        const qty = quantities[p._id] ?? 0;
-        if (qty > 0) {
-          items.push({ productId: p._id, time: Date.now(), qty, price: p.price });
-        }
-      }
-      if (items.length === 0) {
-        closeSheet();
-        return;
-      }
-      const payload = {
-        customerId: customer?._id ? String(customer._id) : '',
-        shopId,
-        products: [{ day: new Date().getDate(), product: items }],
-      };
-      await postRequest(apiEndpoint.cards.order, payload, {
-        headers: { authorization: token ? `Bearer ${token}` : '' },
-      });
-      closeSheet();
-      setQuantities({});
-    } catch (e) {
-      closeSheet();
-    }
-  }
+  const {
+    height,
+    input,
+    selectedName,
+    sheetVisible,
+    sheetY,
+    quantities,
+    products,
+    qtyScales,
+    totalAmount,
+    filtered,
+    onDigit,
+    onBackspace,
+    onClear,
+    formatCardNumber,
+    formatMobile,
+    openSheet,
+    closeSheet,
+    inc,
+    dec,
+    pulseQty,
+    save,
+  } = useOwner();
 
   return (
     <KeyboardAvoidingView
@@ -626,80 +473,124 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    borderColor: 'rgba(13,16,27,0.06)',
     padding: 8,
+    marginBottom: 8,
   },
-  thumbWrap: { width: 72, height: 56, marginRight: 12, borderRadius: 8, position: 'relative' },
-  productThumb: { width: 72, height: 56, borderRadius: 8, marginRight: 12 },
-  productInfoBlock: {
-    flex: 1,
-    backgroundColor: '#fff',
+  thumbWrap: {
+    position: 'relative',
+    marginRight: 12,
   },
-  productTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
-  productSubPrice: { marginTop: 4, fontSize: 14, color: '#555' },
-  rowRight: { alignItems: 'flex-end', backgroundColor: '#fff' },
-  qtyChip: {
-    minWidth: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#0d101b',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-    marginBottom: 6,
+  productThumb: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    backgroundColor: '#f2f2f2',
   },
   qtyChipImage: {
     position: 'absolute',
-    top: -10,
-    right: -10,
-    minWidth: 26,
-    height: 26,
-    borderRadius: 13,
+    top: -6,
+    right: -6,
     backgroundColor: '#0d101b',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    borderWidth: 1.5,
+    borderColor: '#fff',
+    zIndex: 2,
   },
-  qtyChipText: { fontSize: 12, fontWeight: '700', color: '#fff' },
-  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: '#fff' },
-  pillButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#eee',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    alignItems: 'center',
+  qtyChipText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  productInfoBlock: {
+    flex: 1,
     justifyContent: 'center',
   },
-  pillButtonPrimary: { backgroundColor: '#e6f0ff', borderColor: '#c7defa' },
-  pillButtonText: { fontSize: 18, fontWeight: '800', color: '#333' },
-  totalRow: {
-    marginTop: 12,
-    paddingHorizontal: 8,
+  productTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: 2,
+  },
+  productSubPrice: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '600',
+  },
+  rowRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    gap: 12,
   },
-  totalLabel: { fontSize: 16, fontWeight: '700', color: '#555' },
-  totalValue: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
-  saveButton: {
-    marginTop: 12,
-    height: 50,
-    borderRadius: 18,
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    padding: 2,
+  },
+  pillButton: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.light.tint,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  pillButtonPrimary: {
+    backgroundColor: '#0d101b',
+  },
+  pillButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0d101b',
+    lineHeight: 20,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    marginTop: 8,
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  totalValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: Colors.light.text,
+  },
+  saveButton: {
+    backgroundColor: '#0d101b',
+    borderRadius: 16,
+    height: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    marginBottom: 24,
+    shadowColor: '#0d101b',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   saveButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '700',
-    color: '#fff',
   },
 });

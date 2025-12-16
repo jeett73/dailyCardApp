@@ -11,14 +11,14 @@ import OtpScreen from '@/screens/OtpScreen';
 import OwnerScreen from '@/screens/OwnerScreen';
 import ProductListScreen from '@/screens/ProductListScreen';
 import SetMpinScreen from '@/screens/SetMpinScreen';
-import { getItem } from '@/services/storage';
+import { clear, getItem } from '@/services/storage';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
 
-// export async function clearAppStorage() {
-//   await clear();
-// }
-// clearAppStorage();
+export async function clearAppStorage() {
+  await clear();
+}
+clearAppStorage();
 
 const Stack = createNativeStackNavigator();
 

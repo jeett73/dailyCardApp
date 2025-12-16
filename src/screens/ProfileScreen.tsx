@@ -1,22 +1,15 @@
-import { postRequest } from '@/api/apiMethods';
+import { useProfile } from '@/component/ProfileComponent';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
-import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
-import { clear, getItem } from '@/services/storage';
 import Feather from '@expo/vector-icons/Feather';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { Alert, Linking, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-// Root tab route names are available via MainTabs; navigation is typed to any here to support
-// stack routes like MonthWiseReport and tab routes.
+import { Pressable, StyleSheet } from 'react-native';
 
 type MenuLabel = 'Past Statements' | 'Logout' | 'Customers' | 'Products';
 
 type MenuOptionProps = {
-  label: MenuLabel;
+  label: MenuLabel | string;
   onPress: () => void;
 };
 
@@ -36,51 +29,7 @@ function MenuOption({ label, onPress }: MenuOptionProps) {
 }
 
 export default function ProfileScreen() {
-  const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const navigation = useNavigation<NavigationProp<any>>();
-
-  const avatarSize = width >= 768 ? 64 : 56;
-
-  function gotoStatements() {
-    navigation.navigate('MonthWiseReport');
-  }
-
-  function gotoCustomers() {
-    navigation.navigate('Dashboard');
-  }
-
-  function gotoProducts() {
-    Alert.alert('Production', 'Coming soon');
-  }
-
-  async function handleLogout() {
-    try {
-      const userId = await getItem('userId');
-      if (userId) {
-        await postRequest(apiEndpoint.url(`/logout/${userId}`), {});
-      }
-    } catch (e) {
-      // noop: proceed to clear storage and navigate regardless
-    } finally {
-      await clear();
-      Alert.alert('Logout', 'You have been logged out');
-      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-    }
-  }
-
-  function handleCall() {
-    Linking.openURL('tel:7600924242').catch(() => {
-      Alert.alert('Call failed', 'Unable to initiate call');
-    });
-  }
-
-  const menuItems = [
-    { label: 'Past Statements', onPress: gotoStatements },
-    { label: 'Logout', onPress: handleLogout },
-    { label: 'Customers', onPress: gotoCustomers },
-    { label: 'Products', onPress: gotoProducts },
-  ] as const;
+  const { insets, handleCall, menuItems } = useProfile();
 
   return (
     <View style={[styles.container]}>
