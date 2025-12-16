@@ -165,7 +165,7 @@ export default function OwnerScreen() {
                 styles.sheet,
                 {
                   transform: [{ translateY: sheetY }],
-                  maxHeight: Math.round(height * 0.9),
+                  maxHeight: Math.round(height * 0.6),
                 },
               ]}
             >
@@ -464,6 +464,7 @@ const styles = StyleSheet.create({
   sheetCard: {
     paddingVertical: 0,
     paddingHorizontal: 12,
+    height: '90%',
     backgroundColor: '#fff',
   },
   productsList: { gap: 5, backgroundColor: '#fff' },
@@ -509,6 +510,7 @@ const styles = StyleSheet.create({
   productInfoBlock: {
     flex: 1,
     justifyContent: 'center',
+    backgroundColor: '#fff',
   },
   productTitle: {
     fontSize: 15,
@@ -525,17 +527,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    backgroundColor: '#fff',
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 2,
   },
   pillButton: {
     width: 32,
     height: 32,
+    margin: 5,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
@@ -547,12 +551,11 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   pillButtonPrimary: {
-    backgroundColor: '#0d101b',
+    backgroundColor: Colors.light.brandPurple,
   },
   pillButtonText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#0d101b',
     lineHeight: 20,
   },
   totalRow: {
