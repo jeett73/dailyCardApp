@@ -2,9 +2,15 @@ import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-type ShopProduct = { _id?: any; productId: string; price: number; productName?: string; enabled?: boolean };
+type ShopProduct = {
+  _id?: any;
+  productId: string;
+  price: number;
+  productName?: string;
+  enabled?: boolean;
+};
 
 export function useProductList() {
   const navigation = useNavigation<any>();
@@ -51,6 +57,7 @@ export function useProductList() {
       products.map((p) => ({
         id: String(p._id ?? p.productId),
         name: String(p.productName || p.productId),
+        price: Number(p.price ?? 0),
         priceDisplay: `₹${Number(p.price ?? 0)}`,
         enabled: enabledMap[String(p._id ?? p.productId)] ?? true,
       })),

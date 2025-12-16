@@ -118,6 +118,7 @@ export function useCreateCustomer() {
     try {
       setLoading(true);
       const token = await getItem('token');
+      const shopId = await getItem('userId');
       const payload = {
         name: form.name.trim(),
         address: {
@@ -129,7 +130,9 @@ export function useCreateCustomer() {
         },
         phone: form.phone.trim(),
         cardNumber: form.cardNumber.trim(),
+        regularProduct: [],
         depositeAmount: Number(form.depositeAmount),
+        shopId: shopId,
       };
       await postRequest(apiEndpoint.customers.add, payload, {
         headers: { authorization: token ? `Bearer ${token}` : '' },

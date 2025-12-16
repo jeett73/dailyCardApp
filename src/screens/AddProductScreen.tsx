@@ -56,7 +56,9 @@ export default function AddProductScreen() {
               resizeMode="cover"
             />
             <View style={styles.productInfo}>
-              <Text style={styles.productTitle, it.selected && styles.productRowSelected}>{it.name}</Text>
+              <Text style={(styles.productTitle, it.selected && styles.productRowSelected)}>
+                {it.name}
+              </Text>
             </View>
             <TouchableOpacity
               style={[styles.checkbox, it.selected && styles.checkboxChecked]}
@@ -114,7 +116,7 @@ export default function AddProductScreen() {
           ]}
           activeOpacity={0.9}
           onPress={saveAll}
-          disabled={saving || !items.some((i) => i.selected)}
+          disabled={saving}
         >
           <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save'}</Text>
         </TouchableOpacity>

@@ -2,13 +2,13 @@ import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type Customer = {
   _id?: any;
   name?: string;
   cardNumber?: string | number;
-  mobile?: string | number;
+  phone?: string | number;
   dueAmount?: number;
 };
 
@@ -18,8 +18,8 @@ function formatCardNumber(card?: string | number) {
   return digits.replace(/(.{4})/g, '$1 ').trim();
 }
 
-function formatMobile(mobile?: string | number) {
-  const digits = String(mobile ?? '').replace(/\D/g, '');
+function formatMobile(phone?: string | number) {
+  const digits = String(phone ?? '').replace(/\D/g, '');
   if (!digits) return 'N/A';
   const n = digits.slice(-10);
   return `+91 ${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)}`;
@@ -55,7 +55,7 @@ export function useCustomerList() {
             _id: item?._id,
             name: item?.name,
             cardNumber: item?.cardNumber,
-            mobile: item?.mobile,
+            phone: item?.phone,
             dueAmount: Number(item?.lastDueAmount ?? item?.dueAmount ?? 0),
           }))
           .filter((c: Customer) => !!(c.name && String(c.name).trim()));
@@ -74,7 +74,7 @@ export function useCustomerList() {
         id: String(c._id ?? `${c.name}-${c.cardNumber ?? ''}`),
         name: toTitleCaseLocal(String(c.name || '').trim()),
         card: `#${formatCardNumber(c.cardNumber)}`,
-        mobile: formatMobile(c.mobile),
+        mobile: formatMobile(c.phone),
         dueDisplay: `₹${Number(c?.dueAmount ?? 0)}`,
       })),
     [customers],

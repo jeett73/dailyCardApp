@@ -20,10 +20,18 @@ export function useAddProduct() {
     (async () => {
       try {
         const token = await getItem('token');
-        const res = await getRequest(apiEndpoint.products.list, {
-          headers: { authorization: token ? `Bearer ${token}` : '' },
-        });
-        const data = (res?.data ?? {}) as any;
+        const shopId = await getItem('userId');
+        const [catalogRes, shopRes] = await Promise.all([
+          getRequest(apiEndpoint.products.list, {
+            headers: { authorization: token ? `Bearer ${token}` : '' },
+          }),
+          getRequest(apiEndpoint.shopProducts.listShopProducts, {
+            params: { shopId },
+            headers: { authorization: token ? `Bearer ${token}` : '' },
+          }),
+        ]);
+
+        const data = (catalogRes?.data ?? {}) as any;
         const arr = Array.isArray(data?.products)
           ? data?.products
           : Array.isArray(data)
@@ -35,9 +43,32 @@ export function useAddProduct() {
             name: String(p?.Name ?? p?.name ?? p?.productName ?? p?.title ?? ''),
           }))
           .filter((p: CatalogProduct) => !!p._id && !!p.name.trim());
-        console.log('products', list);
+
+        const shopData = (shopRes?.data ?? {}) as any;
+        const shopArr = Array.isArray(shopData?.shopProducts) ? shopData?.shopProducts : [];
+        const shopMap = new Map<string, number>();
+        shopArr.forEach((p: any) => {
+          const pid = String(p?.productId || '');
+          const price = Number(p?.price ?? 0);
+          if (pid) shopMap.set(pid, price);
+        });
+
+        const initSelected: Record<string, SelectedProduct> = {};
+        const initPrices: Record<string, string> = {};
+
+        list.forEach((p) => {
+          if (shopMap.has(p._id)) {
+            const price = shopMap.get(p._id) || 0;
+            if (price > 0) {
+              initSelected[p._id] = { productId: p._id, price };
+              initPrices[p._id] = String(price);
+            }
+          }
+        });
 
         setProducts(list);
+        setSelectedProducts(initSelected);
+        setEnteredPrices(initPrices);
         setLoading(false);
       } catch {
         setError('Failed to load products');
@@ -81,9 +112,8 @@ export function useAddProduct() {
   }
 
   async function saveAll() {
-    const keys = Object.keys(selectedProducts);
-    if (keys.length === 0) return;
-    const invalid = keys.filter((id) => {
+    const selectedKeys = Object.keys(selectedProducts);
+    const invalid = selectedKeys.filter((id) => {
       const v = (enteredPrices[id] ?? '').trim();
       const n = Number(v);
       return !(v.length > 0 && Number.isFinite(n) && n > 0);
@@ -96,11 +126,19 @@ export function useAddProduct() {
     try {
       const token = await getItem('token');
       const shopId = await getItem('userId');
-      const payloads = keys.map((id) => ({
-        shopId: String(shopId ?? ''),
-        productId: selectedProducts[id].productId,
-        price: Number(enteredPrices[id] ?? 0),
-      }));
+      const payloads = products.map((p) => {
+        const id = p._id;
+        const isSelected = !!selectedProducts[id];
+        let price = 0;
+        if (isSelected) {
+          price = Number(enteredPrices[id] ?? 0);
+        }
+        return {
+          shopId: String(shopId ?? ''),
+          productId: id,
+          price,
+        };
+      });
       const results = await Promise.allSettled(
         payloads.map((payload) =>
           postRequest(apiEndpoint.shopProducts.add, payload, {

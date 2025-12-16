@@ -1,7 +1,9 @@
+import { postRequest } from '@/api/apiMethods';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
+import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
-import { clear } from '@/services/storage';
+import { clear, getItem } from '@/services/storage';
 import Feather from '@expo/vector-icons/Feather';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
@@ -53,9 +55,18 @@ export default function ProfileScreen() {
   }
 
   async function handleLogout() {
-    Alert.alert('Logout', 'You have been logged out');
-    await clear();
-    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+    try {
+      const userId = await getItem('userId');
+      if (userId) {
+        await postRequest(apiEndpoint.url(`/logout/${userId}`), {});
+      }
+    } catch (e) {
+      // noop: proceed to clear storage and navigate regardless
+    } finally {
+      await clear();
+      Alert.alert('Logout', 'You have been logged out');
+      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+    }
   }
 
   function handleCall() {

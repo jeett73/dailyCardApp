@@ -31,7 +31,11 @@ export default function ProductListScreen() {
     if (!items || items.length === 0) {
       return <Text style={styles.emptyText}>No products found</Text>;
     }
-    return items.map((it) => {
+    const filteredItems = items.filter((it) => it.price > 0);
+    if (filteredItems.length === 0) {
+      return <Text style={styles.emptyText}>No products found</Text>;
+    }
+    return filteredItems.map((it) => {
       return (
         <View
           key={it.id}
