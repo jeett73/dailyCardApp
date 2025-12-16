@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { useWindowDimensions, DimensionValue } from 'react-native';
 
 export type Txn = { id: string; date: string; item: string; qty: number; amount: number };
 export type MonthSummary = { year: number; month: number; label: string; total: number };
@@ -59,7 +59,7 @@ export function useMonthWiseReport() {
   const [navLoading, setNavLoading] = useState(false);
 
   const isWide = width >= 768;
-  const cardWidth = isWide ? '48%' : '100%';
+  const cardWidth: DimensionValue = isWide ? '48%' : '100%';
 
   useEffect(() => {
     try {

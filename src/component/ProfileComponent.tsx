@@ -17,11 +17,11 @@ export function useProfile() {
   }
 
   function gotoCustomers() {
-    navigation.navigate('Dashboard');
+    navigation.navigate('CustomerList');
   }
 
   function gotoProducts() {
-    Alert.alert('Production', 'Coming soon');
+    navigation.navigate('ProductList');
   }
 
   async function handleLogout() {

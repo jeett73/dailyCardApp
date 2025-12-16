@@ -50,7 +50,7 @@ export default function OwnerScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.flex}
     >
-      <HeroHeader color={brandPurple} title="Patel Dairy & Sweet" />
+      <HeroHeader color={brandPurple} title="Patel Dairy & Sweet" showHomeIcon={true} />
       <View style={[styles.container, { paddingTop: insets.top + 90 }]}>
         <View style={styles.searchBar}>
           <TextInput

@@ -1,6 +1,8 @@
 import Colors from '@/constants/Colors';
+import Feather from '@expo/vector-icons/Feather';
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
+import { StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 /**
  * HeroHeader props
@@ -19,6 +21,7 @@ type Props = {
   avatarSize?: number;
   avatarBg?: string;
   avatarTextColor?: string;
+  showHomeIcon?: boolean;
 };
 
 export default function HeroHeader({
@@ -35,7 +38,9 @@ export default function HeroHeader({
   avatarSize = 48,
   avatarBg = '#fff',
   avatarTextColor = Colors.light.text,
+  showHomeIcon = false,
 }: Props) {
+  const navigation = useNavigation<any>();
   const name = typeof profileName === 'string' ? profileName : undefined;
   const displayName = name ? toTitleCase(name) : undefined;
   return (
@@ -65,7 +70,22 @@ export default function HeroHeader({
         </View>
       )}
       {!showProfile && !!title && (
-        <Text style={[styles.heroTitle, { color: titleColor }, titleStyle]}>{title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={[styles.heroTitle, { color: titleColor, textAlign: 'center' }, titleStyle]}>
+            {title}
+          </Text>
+          {showHomeIcon && (
+            <TouchableOpacity
+              style={styles.homeButton}
+              onPress={() => navigation.navigate('Profile')}
+              accessibilityRole="button"
+              accessibilityLabel="Go to Profile"
+              hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+            >
+              <Feather name="home" size={22} color={titleColor} />
+            </TouchableOpacity>
+          )}
+        </View>
       )}
     </View>
   );
@@ -142,9 +162,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#E6E8EC',
   },
   initialsText: { fontSize: 18, fontWeight: '700', color: '#111' },
+  titleRow: { width: '100%', position: 'relative', alignItems: 'center', justifyContent: 'center' },
   heroTitle: {
     top: 30,
     fontSize: 22,
     fontWeight: '800',
+  },
+  homeButton: {
+    position: 'absolute',
+    right: 16,
+    top: 25,
+    padding: 8,
   },
 });

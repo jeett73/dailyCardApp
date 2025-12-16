@@ -21,11 +21,13 @@ export default function MonthWiseReportScreen() {
       <Pressable
         key={`${m.year}-${m.month}`}
         onPress={() => handleNavigate(m)}
-        style={({ pressed }) => [
-          styles.statementCard,
-          { width: cardWidth },
-          pressed && styles.cardPressed,
-        ]}
+        style={({ pressed }) =>
+          StyleSheet.flatten([
+            styles.statementCard,
+            { width: cardWidth },
+            pressed && styles.cardPressed,
+          ])
+        }
         accessibilityRole="button"
         accessibilityLabel={`Open ${m.label}`}
         accessibilityHint="Shows monthly statement for selected month"
