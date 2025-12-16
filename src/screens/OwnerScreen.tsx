@@ -2,7 +2,7 @@ import { useOwner } from '@/component/OwnerComponent';
 import HeroHeader, { AvatarInitials, toTitleCase } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -44,6 +44,7 @@ export default function OwnerScreen() {
     pulseQty,
     save,
   } = useOwner();
+  const [otherPurchased, setOtherPurchased] = useState<string>('');
 
   return (
     <KeyboardAvoidingView
@@ -184,7 +185,7 @@ export default function OwnerScreen() {
                     contentContainerStyle={styles.productsList}
                     showsVerticalScrollIndicator={false}
                   >
-                    {products.map((p, i) => {
+                    {products?.filter(p=>p.price).map((p, i) => {
                       const id = String(p._id ?? p.productId);
                       const qty = quantities[p._id] ?? 0;
                       const scale =
@@ -215,7 +216,7 @@ export default function OwnerScreen() {
                           <View style={styles.rowRight}>
                             <View style={styles.actionRow}>
                               <TouchableOpacity
-                                style={styles.pillButton}
+                                style={[styles.pillButton, styles.pillButtonSeconder]}
                                 activeOpacity={0.85}
                                 accessibilityRole="button"
                                 accessibilityLabel={`Decrease quantity for ${p.productName || p.productId}`}
@@ -247,6 +248,17 @@ export default function OwnerScreen() {
                     })}
                   </ScrollView>
                 )}
+
+                <View style={styles.labelInputRow}>
+                  <Text style={styles.label50}>Other Purchased</Text>
+                  <TextInput
+                    style={styles.input50}
+                    value={otherPurchased}
+                    onChangeText={(t) => setOtherPurchased(t.replace(/\D/g, ''))}
+                    keyboardType="numeric"
+                    placeholderTextColor="#666"
+                  />
+                </View>
 
                 <View style={styles.totalRow}>
                   <Text style={styles.totalLabel}>Total:</Text>
@@ -553,6 +565,9 @@ const styles = StyleSheet.create({
   pillButtonPrimary: {
     backgroundColor: Colors.light.brandPurple,
   },
+  pillButtonSeconder: {
+    backgroundColor: Colors.light.tint,
+  },
   pillButtonText: {
     fontSize: 18,
     fontWeight: '600',
@@ -564,8 +579,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: '#fff',
     marginTop: 8,
+    backgroundColor: '#fff',
   },
   totalLabel: {
     fontSize: 16,
@@ -575,6 +591,31 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 20,
     fontWeight: '800',
+    color: Colors.light.text,
+  },
+  labelInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+  },
+  label50: {
+    width: '50%',
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+    paddingRight: 8,
+  },
+  input50: {
+    width: '50%',
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.12)',
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    fontSize: 14,
     color: Colors.light.text,
   },
   saveButton: {
