@@ -45,6 +45,12 @@ export default function MainTabs() {
       <Tab.Screen
         name="Statements"
         component={MonthlyStatementScreen}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('Statements', { refreshTimestamp: Date.now() });
+          },
+        })}
         options={{
           tabBarLabel: 'Statements',
           tabBarIcon: ({ color, size, focused }) => (

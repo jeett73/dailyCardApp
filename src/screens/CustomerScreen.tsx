@@ -1,23 +1,32 @@
-import { Text, View } from '@/components/Themed';
-import Colors from '@/constants/Colors';
-// import { LinearGradient } from 'expo-linear-gradient';
+import { useMonthlyStatement } from '@/component/MonthlyStatementComponent';
 import GreetingCard from '@/components/GreetingCard';
 import HeroHeader from '@/components/HeroHeader';
-import React, { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { Text, View } from '@/components/Themed';
+import Colors from '@/constants/Colors';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CustomerScreen() {
   const insets = useSafeAreaInsets();
   const [active, setActive] = useState<'home' | 'statements' | 'profile'>('home');
   const cardNo = '#007';
-  const items: { name: string; qty: number }[] = [
-    { name: 'Amul Gold', qty: 2 },
-    { name: 'Shaktii', qty: 1 },
-    { name: 'Butter Milk', qty: 5 },
-    { name: 'Cow 9', qty: 9 },
-  ];
-  const totalText = 'Total 100 Rs';
+
+  const { groupedByDay, loading, refetch } = useMonthlyStatement();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
+
+  const todayData = useMemo(() => {
+    const today = new Date().getDate();
+    return groupedByDay[today] ?? { orders: [], total: 0 };
+  }, [groupedByDay]);
+
+  const totalText = `Total ₹${todayData.total}`;
 
   return (
     <View style={styles.screen}>
@@ -36,17 +45,25 @@ export default function CustomerScreen() {
         />
 
         <View style={styles.statementCard}>
-          <Text style={styles.statementTitle}>This Last Dairy Order</Text>
+          <Text style={styles.statementTitle}>Today's Dairy Order</Text>
           <View style={styles.statementDivider} />
-          {items.map((it) => (
-            <View key={it.name} style={styles.statementRow}>
-              <Text style={styles.itemName}>{it.name}</Text>
-              <Text style={styles.itemQty}>{it.qty}</Text>
-            </View>
-          ))}
-          <View style={[styles.statementRow, { marginTop: 8 }]}>
-            <Text style={styles.itemName}>{totalText}</Text>
-          </View>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : todayData.orders.length > 0 ? (
+            <>
+              {todayData.orders.map((it) => (
+                <View key={it.id} style={styles.statementRow}>
+                  <Text style={styles.itemName}>{it.item}</Text>
+                  <Text style={styles.itemQty}>{it.qty}</Text>
+                </View>
+              ))}
+              <View style={[styles.statementRow, { marginTop: 8 }]}>
+                <Text style={styles.itemName}>{totalText}</Text>
+              </View>
+            </>
+          ) : (
+            <Text style={styles.itemName}>No orders for today</Text>
+          )}
         </View>
 
         {/* Bottom navigation is now handled globally by MainTabs */}

@@ -1,9 +1,39 @@
-import { useMemo, useState } from 'react';
+import { getRequest } from '@/api/apiMethods';
+import apiEndpoint from '@/constants/apiEndpoint';
+import { useCallback, useMemo, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 
 export type Txn = { id: string; date: string; item: string; qty: number; amount: number };
 export type DayEntry = { orders: Txn[]; total: number };
-export type CatalogItem = { item: string; price: number };
+
+// API Response Types
+interface ProductItem {
+  productId: string;
+  time: number;
+  qty: number;
+  price: number;
+  productName: string;
+  icon: string;
+}
+
+interface DailyProduct {
+  day: number;
+  product: ProductItem[];
+}
+
+interface CardData {
+  _id: string;
+  customerId: string;
+  shopId: string;
+  month: number;
+  year: number;
+  totalBill: number;
+  products: DailyProduct[];
+}
+
+interface MonthlyStatementResponse {
+  card: CardData;
+}
 
 const MONTHS_SHORT = [
   'Jan',
@@ -20,35 +50,8 @@ const MONTHS_SHORT = [
   'Dec',
 ];
 
-const catalog: CatalogItem[] = [
-  { item: 'Amul Gold', price: 60 },
-  { item: 'Shaktii', price: 45 },
-  { item: 'Butter Milk', price: 20 },
-  { item: 'Cow Milk', price: 20 },
-  { item: 'Heritage Toned Milk 1L', price: 50 },
-  { item: 'Amul Fresh Cream 250ml', price: 70 },
-  { item: 'Britannia Rusk 300g', price: 35 },
-  { item: 'Gowardhan Butter 100g', price: 48 },
-  { item: 'Nandini Curd 500g', price: 30 },
-  { item: 'Sanchi Ghee 200ml', price: 95 },
-];
-
-function generateMonthlyTxns(year: number, month: number): Txn[] {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const txns: Txn[] = [];
-  for (let day = 1; day <= daysInMonth; day++) {
-    const itemsCount = Math.floor(Math.random() * 5);
-    for (let i = 0; i < itemsCount; i++) {
-      const ci = catalog[Math.floor(Math.random() * catalog.length)];
-      const qty = 1 + Math.floor(Math.random() * 5);
-      const amount = qty * ci.price;
-      const id = `m-${year}-${month + 1}-${day}-${i}`;
-      const date = new Date(year, month, day).toISOString().split('T')[0];
-      txns.push({ id, date, item: ci.item, qty, amount });
-    }
-  }
-  return txns;
-}
+const CUSTOMER_ID = '692f094fe67bb831e6496202';
+const SHOP_ID = '692f04d99800aaaa111ccd9b';
 
 export function useMonthlyStatement() {
   const { width } = useWindowDimensions();
@@ -59,16 +62,46 @@ export function useMonthlyStatement() {
   const currentMonth = today.getMonth();
   const upto = today.getDate();
 
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cardData, setCardData] = useState<CardData | null>(null);
+
+  const fetchStatement = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const url = apiEndpoint.cards.monthlyStatement(CUSTOMER_ID, SHOP_ID);
+      const res = await getRequest(url);
+      const data = res.data as MonthlyStatementResponse;
+      setCardData(data.card);
+    } catch (err) {
+      console.error('Failed to fetch monthly statement', err);
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const txns = useMemo(() => {
-    try {
-      return generateMonthlyTxns(currentYear, currentMonth);
-    } catch {
-      setError('Failed to load data');
-      return [];
-    }
-  }, [currentYear, currentMonth]);
+    if (!cardData || !cardData.products) return [];
+
+    const allTxns: Txn[] = [];
+
+    cardData.products.forEach((daily) => {
+      daily.product.forEach((prod) => {
+        const date = new Date(prod.time).toISOString().split('T')[0];
+        allTxns.push({
+          id: `${prod.productId}-${prod.time}`,
+          date: date,
+          item: prod.productName,
+          qty: prod.qty,
+          amount: prod.qty * prod.price,
+        });
+      });
+    });
+
+    return allTxns;
+  }, [cardData]);
 
   const days = useMemo(() => Array.from({ length: upto }, (_, i) => i + 1), [upto]);
 
@@ -113,5 +146,7 @@ export function useMonthlyStatement() {
     scale,
     error,
     fmtDay,
+    loading,
+    refetch: fetchStatement,
   };
 }

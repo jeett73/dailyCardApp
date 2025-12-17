@@ -1,10 +1,11 @@
+import { Txn, useMonthlyStatement } from '@/component/MonthlyStatementComponent';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import React, { memo } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
+import React, { memo, useCallback, useEffect } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useMonthlyStatement, Txn } from '@/component/MonthlyStatementComponent';
 
 const StatementCard = memo(function StatementCard({
   dayLabel,
@@ -83,6 +84,7 @@ const SummaryCard = memo(function SummaryCard({
 
 export default function MonthlyStatementScreen() {
   const insets = useSafeAreaInsets();
+  const route = useRoute<any>();
   const {
     days,
     groupedByDay,
@@ -92,43 +94,63 @@ export default function MonthlyStatementScreen() {
     scale,
     error,
     fmtDay,
+    loading,
+    refetch,
   } = useMonthlyStatement();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
+
+  useEffect(() => {
+    if (route.params?.refreshTimestamp) {
+      refetch();
+    }
+  }, [route.params?.refreshTimestamp, refetch]);
 
   return (
     <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title={`Monthly Statement - ${fmtDay(1)}`} />
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: insets.top + 90,
-          paddingBottom: Math.max(insets.bottom, 24),
-        }}
-      >
-        {error ? (
-          <View style={styles.statementCard}>
-            <Text style={[styles.itemName, { fontSize: Math.round(18 * scale) }]}>
-              Unable to load data
-            </Text>
-          </View>
-        ) : null}
-        {days.map((day) => {
-          const entry = groupedByDay[day] ?? { orders: [], total: 0 };
-          return (
-            <StatementCard
-              key={`day-${day}`}
-              dayLabel={fmtDay(day)}
-              orders={entry.orders}
-              total={entry.total}
-              scale={scale}
-            />
-          );
-        })}
-        <SummaryCard
-          totalTxns={totalTxns}
-          totalAmount={totalAmount}
-          avgAmount={avgAmount}
-          scale={scale}
-        />
-      </ScrollView>
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.light.brandPurple} />
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={{
+            paddingTop: insets.top + 90,
+            paddingBottom: Math.max(insets.bottom, 24),
+          }}
+        >
+          {error ? (
+            <View style={styles.statementCard}>
+              <Text style={[styles.itemName, { fontSize: Math.round(18 * scale) }]}>
+                Unable to load data
+              </Text>
+            </View>
+          ) : null}
+          {days.map((day) => {
+            const entry = groupedByDay[day] ?? { orders: [], total: 0 };
+            return (
+              <StatementCard
+                key={`day-${day}`}
+                dayLabel={fmtDay(day)}
+                orders={entry.orders}
+                total={entry.total}
+                scale={scale}
+              />
+            );
+          })}
+          <SummaryCard
+            totalTxns={totalTxns}
+            totalAmount={totalAmount}
+            avgAmount={avgAmount}
+            scale={scale}
+          />
+        </ScrollView>
+      )}
     </View>
   );
 }

@@ -28,13 +28,12 @@ export function useProfile() {
     try {
       const userId = await getItem('userId');
       if (userId) {
-        await postRequest(apiEndpoint.url(`/logout/${userId}`), {});
+        await postRequest(apiEndpoint.auth.logoutUser(userId), {});
       }
     } catch (e) {
       // noop: proceed to clear storage and navigate regardless
     } finally {
       await clear();
-      Alert.alert('Logout', 'You have been logged out');
       navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
     }
   }
