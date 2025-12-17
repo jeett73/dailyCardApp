@@ -174,7 +174,8 @@ export default function OwnerScreen() {
                 styles.sheet,
                 {
                   transform: [{ translateY: sheetY }],
-                  maxHeight: Math.round(height * 0.6),
+                  maxHeight: Math.round(height * 0.9),
+                  paddingBottom: 24,
                 },
               ]}
             >
