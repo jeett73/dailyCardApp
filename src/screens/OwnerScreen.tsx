@@ -101,7 +101,15 @@ export default function OwnerScreen() {
           })}
         </ScrollView>
 
-        <View style={styles.keypadWrapper}>
+        <View
+          style={[
+            styles.keypadWrapper,
+            {
+              bottom: 0,
+              paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 12) : 0,
+            },
+          ]}
+        >
           <View style={styles.keypadRow}>
             {['1', '2', '3'].map((d) => (
               <TouchableOpacity
@@ -181,76 +189,77 @@ export default function OwnerScreen() {
                   </View>
                 ) : (
                   <ScrollView
-                    style={{ maxHeight: Math.round(height * 0.9) }}
                     contentContainerStyle={styles.productsList}
                     showsVerticalScrollIndicator={false}
                   >
-                    {products?.filter(p=>p.price).map((p, i) => {
-                      const id = String(p._id ?? p.productId);
-                      const qty = quantities[p._id] ?? 0;
-                      const scale =
-                        qtyScales.current[id] ?? (qtyScales.current[id] = new Animated.Value(1));
-                      return (
-                        <View key={id + i} style={styles.productItem}>
-                          <View style={styles.thumbWrap}>
-                            <Image
-                              source={require('../../assets/images/bg.png')}
-                              style={styles.productThumb}
-                              resizeMode="cover"
-                              accessibilityRole="image"
-                              accessibilityLabel={`${p.productName || p.productId} image`}
-                            />
-                            <Animated.View
-                              style={[styles.qtyChipImage, { transform: [{ scale }] }]}
-                              accessibilityLabel={`Quantity ${qty}`}
-                            >
-                              <Text style={styles.qtyChipText}>{qty}</Text>
-                            </Animated.View>
-                          </View>
-                          <View style={styles.productInfoBlock}>
-                            <Text style={styles.productTitle} numberOfLines={1}>
-                              {p.productName || p.productId}
-                            </Text>
-                            <Text style={styles.productSubPrice}>₹{p.price}</Text>
-                          </View>
-                          <View style={styles.rowRight}>
-                            <View style={styles.actionRow}>
-                              <TouchableOpacity
-                                style={[styles.pillButton, styles.pillButtonSeconder]}
-                                activeOpacity={0.85}
-                                accessibilityRole="button"
-                                accessibilityLabel={`Decrease quantity for ${p.productName || p.productId}`}
-                                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                                onPress={() => {
-                                  dec(p._id);
-                                  pulseQty(id);
-                                }}
+                    {products
+                      ?.filter((p) => p.price)
+                      .map((p, i) => {
+                        const id = String(p._id ?? p.productId);
+                        const qty = quantities[p._id] ?? 0;
+                        const scale =
+                          qtyScales.current[id] ?? (qtyScales.current[id] = new Animated.Value(1));
+                        return (
+                          <View key={id + i} style={styles.productItem}>
+                            <View style={styles.thumbWrap}>
+                              <Image
+                                source={require('../../assets/images/bg.png')}
+                                style={styles.productThumb}
+                                resizeMode="cover"
+                                accessibilityRole="image"
+                                accessibilityLabel={`${p.productName || p.productId} image`}
+                              />
+                              <Animated.View
+                                style={[styles.qtyChipImage, { transform: [{ scale }] }]}
+                                accessibilityLabel={`Quantity ${qty}`}
                               >
-                                <Text style={styles.pillButtonText}>−</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={[styles.pillButton, styles.pillButtonPrimary]}
-                                activeOpacity={0.85}
-                                accessibilityRole="button"
-                                accessibilityLabel={`Increase quantity for ${p.productName || p.productId}`}
-                                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                                onPress={() => {
-                                  inc(p._id);
-                                  pulseQty(id);
-                                }}
-                              >
-                                <Text style={styles.pillButtonText}>+</Text>
-                              </TouchableOpacity>
+                                <Text style={styles.qtyChipText}>{qty}</Text>
+                              </Animated.View>
+                            </View>
+                            <View style={styles.productInfoBlock}>
+                              <Text style={styles.productTitle} numberOfLines={1}>
+                                {p.productName || p.productId}
+                              </Text>
+                              <Text style={styles.productSubPrice}>₹{p.price}</Text>
+                            </View>
+                            <View style={styles.rowRight}>
+                              <View style={styles.actionRow}>
+                                <TouchableOpacity
+                                  style={[styles.pillButton, styles.pillButtonSeconder]}
+                                  activeOpacity={0.85}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`Decrease quantity for ${p.productName || p.productId}`}
+                                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                                  onPress={() => {
+                                    dec(p._id);
+                                    pulseQty(id);
+                                  }}
+                                >
+                                  <Text style={styles.pillButtonText}>−</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={[styles.pillButton, styles.pillButtonPrimary]}
+                                  activeOpacity={0.85}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`Increase quantity for ${p.productName || p.productId}`}
+                                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                                  onPress={() => {
+                                    inc(p._id);
+                                    pulseQty(id);
+                                  }}
+                                >
+                                  <Text style={styles.pillButtonText}>+</Text>
+                                </TouchableOpacity>
+                              </View>
                             </View>
                           </View>
-                        </View>
-                      );
-                    })}
+                        );
+                      })}
                   </ScrollView>
                 )}
 
                 <View style={styles.labelInputRow}>
-                  <Text style={styles.label50}>Other Purchased</Text>
+                  <Text style={styles.label50}>Other</Text>
                   <TextInput
                     style={styles.input50}
                     value={otherPurchased}
@@ -260,10 +269,10 @@ export default function OwnerScreen() {
                   />
                 </View>
 
-                <View style={styles.totalRow}>
+                {/* <View style={styles.totalRow}>
                   <Text style={styles.totalLabel}>Total:</Text>
                   <Text style={styles.totalValue}>₹{totalAmount}</Text>
-                </View>
+                </View> */}
                 <TouchableOpacity style={styles.saveButton} activeOpacity={0.9} onPress={save}>
                   <Text style={styles.saveButtonText}>Order</Text>
                 </TouchableOpacity>
@@ -398,7 +407,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 40,
+    bottom: 0,
     minHeight: 320,
     paddingHorizontal: 24,
     paddingTop: 8,
@@ -453,8 +462,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
     paddingTop: 8,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 8,
   },
   sheetHeader: {
     alignItems: 'center',
@@ -476,7 +484,7 @@ const styles = StyleSheet.create({
   sheetCard: {
     paddingVertical: 0,
     paddingHorizontal: 12,
-    height: '90%',
+    flex: 1,
     backgroundColor: '#fff',
   },
   productsList: { gap: 5, backgroundColor: '#fff' },
@@ -625,7 +633,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
-    marginBottom: 24,
     shadowColor: '#0d101b',
     shadowOpacity: 0.2,
     shadowRadius: 8,

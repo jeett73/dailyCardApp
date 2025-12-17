@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
-import { useWindowDimensions, DimensionValue } from 'react-native';
+import { DimensionValue, useWindowDimensions } from 'react-native';
 
 export type Txn = { id: string; date: string; item: string; qty: number; amount: number };
 export type MonthSummary = { year: number; month: number; label: string; total: number };
