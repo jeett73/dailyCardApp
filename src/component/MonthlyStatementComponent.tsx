@@ -50,6 +50,21 @@ const MONTHS_SHORT = [
   'Dec',
 ];
 
+const MONTHS_FULL = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
 const CUSTOMER_ID = '692f094fe67bb831e6496202';
 const SHOP_ID = '692f04d99800aaaa111ccd9b';
 
@@ -103,7 +118,7 @@ export function useMonthlyStatement() {
     return allTxns;
   }, [cardData]);
 
-  const days = useMemo(() => Array.from({ length: upto }, (_, i) => i + 1), [upto]);
+  const days = useMemo(() => Array.from({ length: upto }, (_, i) => upto - i), [upto]);
 
   const filtered = useMemo(() => {
     return txns.filter((t) => {
@@ -137,6 +152,8 @@ export function useMonthlyStatement() {
     return `${day} ${MONTHS_SHORT[currentMonth]} ${currentYear}`;
   }
 
+  const currentMonthLabel = `${MONTHS_FULL[currentMonth]} ${currentYear}`;
+
   return {
     days,
     groupedByDay,
@@ -148,5 +165,6 @@ export function useMonthlyStatement() {
     fmtDay,
     loading,
     refetch: fetchStatement,
+    currentMonthLabel,
   };
 }

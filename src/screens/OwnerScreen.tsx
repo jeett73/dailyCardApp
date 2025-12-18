@@ -2,6 +2,7 @@ import { useOwner } from '@/component/OwnerComponent';
 import HeroHeader, { AvatarInitials, toTitleCase } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -45,6 +46,7 @@ export default function OwnerScreen() {
     save,
   } = useOwner();
   const [otherPurchased, setOtherPurchased] = useState<string>('');
+  const [isFocused, setIsFocused] = useState(false);
 
   return (
     <KeyboardAvoidingView
@@ -190,6 +192,7 @@ export default function OwnerScreen() {
                   </View>
                 ) : (
                   <ScrollView
+                    style={isFocused ? { maxHeight: 150 } : undefined}
                     contentContainerStyle={styles.productsList}
                     showsVerticalScrollIndicator={false}
                   >
@@ -232,6 +235,7 @@ export default function OwnerScreen() {
                                   accessibilityLabel={`Decrease quantity for ${p.productName || p.productId}`}
                                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                                   onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     dec(p._id);
                                     pulseQty(id);
                                   }}
@@ -245,6 +249,7 @@ export default function OwnerScreen() {
                                   accessibilityLabel={`Increase quantity for ${p.productName || p.productId}`}
                                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                                   onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     inc(p._id);
                                     pulseQty(id);
                                   }}
@@ -267,6 +272,8 @@ export default function OwnerScreen() {
                     onChangeText={(t) => setOtherPurchased(t.replace(/\D/g, ''))}
                     keyboardType="numeric"
                     placeholderTextColor="#666"
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                   />
                 </View>
 

@@ -96,6 +96,7 @@ export default function MonthlyStatementScreen() {
     fmtDay,
     loading,
     refetch,
+    currentMonthLabel,
   } = useMonthlyStatement();
 
   useFocusEffect(
@@ -112,7 +113,7 @@ export default function MonthlyStatementScreen() {
 
   return (
     <View style={[styles.container]}>
-      <HeroHeader color={Colors.light.brandPurple} title={`Monthly Statement - ${fmtDay(1)}`} />
+      <HeroHeader color={Colors.light.brandPurple} title={currentMonthLabel} />
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={Colors.light.brandPurple} />
@@ -143,12 +144,12 @@ export default function MonthlyStatementScreen() {
               />
             );
           })}
-          <SummaryCard
+          {/* <SummaryCard
             totalTxns={totalTxns}
             totalAmount={totalAmount}
             avgAmount={avgAmount}
             scale={scale}
-          />
+          /> */}
         </ScrollView>
       )}
     </View>
@@ -171,25 +172,25 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
     minHeight: 120,
-    backgroundColor: '#a69af7',
+    backgroundColor: Colors.light.orange,
   },
 
-  statementTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
+  statementTitle: { fontSize: 20, fontWeight: '800', color: '#000' },
   statementDivider: {
     height: StyleSheet.hairlineWidth,
     marginVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.9)',
   },
   statementRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 6,
-    backgroundColor: '#a69af7',
+    backgroundColor: Colors.light.orange,
   },
 
-  itemName: { fontSize: 18, color: '#fff', fontWeight: '600' },
-  itemQty: { fontSize: 18, color: '#fff', fontWeight: '600' },
+  itemName: { fontSize: 18, color: '#000', fontWeight: '600' },
+  itemQty: { fontSize: 18, color: '#000', fontWeight: '600' },
 
   summaryCard: {
     marginTop: 16,

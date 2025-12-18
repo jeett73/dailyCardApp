@@ -22,8 +22,9 @@ export function GreetingCard({ shopName, message }: GreetingCardProps) {
   const scheme = useColorScheme();
   const titleSize = Math.max(24, Math.min(32, width * 0.07));
   const subSize = Math.max(14, Math.min(16, width * 0.04));
-  const cardBg = scheme === 'dark' ? Colors.light.orange : '#fff';
-  const titleColor = scheme === 'dark' ? '#000' : Colors.light.text;
+  const cardBg = Colors.light.orange;
+  const titleColor = '#000';
+
   return (
     <View style={[styles.card, { backgroundColor: cardBg }]}>
       <Text style={[styles.title, { fontSize: titleSize, color: titleColor }]}>

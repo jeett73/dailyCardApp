@@ -26,7 +26,7 @@ type Props = {
 
 export default function HeroHeader({
   color = '#b3a0ff',
-  height = 120,
+  height = 110,
   radius = 28,
   title,
   titleColor = '#fff',
