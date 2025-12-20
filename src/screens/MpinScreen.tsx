@@ -1,9 +1,9 @@
+import { useMpin } from '@/component/MpinComponent';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React from 'react';
 import { ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import { useMpin } from '@/component/MpinComponent';
 
 const brandPurple = '#b3a0ff';
 
@@ -82,6 +82,7 @@ export default function MpinScreen() {
                   setFocused(false);
                   setFocusedIndex(null);
                 }}
+                showSoftInputOnFocus={false}
                 keyboardType="number-pad"
                 maxLength={1}
                 onSubmitEditing={i === 3 ? handleContinue : undefined}

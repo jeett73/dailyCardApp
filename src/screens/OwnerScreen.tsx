@@ -81,7 +81,10 @@ export default function OwnerScreen() {
                 key={String(c._id ?? `${c.name}-${c.cardNumber ?? ''}`)}
                 style={styles.customerCard}
                 activeOpacity={0.85}
-                onPress={() => openSheet(c.name || '')}
+                onPress={() => {
+                  setIsFocused(false);
+                  openSheet(c.name || '');
+                }}
                 accessibilityLabel={`${name || 'Unknown'} • Card ${cardFormatted} • Mobile ${mobileFormatted}`}
               >
                 <View style={styles.customerRow}>
@@ -170,7 +173,13 @@ export default function OwnerScreen() {
         </View>
         {sheetVisible && (
           <>
-            <Pressable style={styles.overlay} onPress={closeSheet} />
+            <Pressable
+              style={styles.overlay}
+              onPress={() => {
+                setIsFocused(false);
+                closeSheet();
+              }}
+            />
             <Animated.View
               style={[
                 styles.sheet,

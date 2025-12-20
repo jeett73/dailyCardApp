@@ -4,7 +4,6 @@ import ProfileScreen from '@/screens/ProfileScreen';
 import Feather from '@expo/vector-icons/Feather';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
-import { Platform } from 'react-native';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,11 +15,13 @@ export default function MainTabs() {
         tabBarActiveTintColor: '#fff',
         tabBarInactiveTintColor: '#9aa0a6',
         tabBarStyle: {
+          position: 'absolute',
+          borderTopWidth: 0,
           backgroundColor: '#0d101b',
           height: 60,
           borderRadius: 28,
           marginHorizontal: 20,
-          marginBottom: Platform.OS === 'web' ? 20 : 10,
+          marginBottom: 20,
           paddingHorizontal: 20,
           shadowColor: '#000',
           shadowOpacity: 0.15,
