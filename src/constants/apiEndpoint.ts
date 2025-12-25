@@ -12,6 +12,7 @@ const apiEndpoint = {
     otpVerify: url('/auth/otp/verify'),
     verifyOtp: url('/auth/verify-otp'),
     logout: url('/auth/logout'),
+    logoutUser: (id: Id) => url(`/auth/logout/${id}`),
     sendOtp: url('/auth/send-otp'),
     refresh: url('/auth/refresh'),
   },
@@ -31,6 +32,8 @@ const apiEndpoint = {
   },
   cards: {
     order: url('/cards/order'),
+    monthlyStatement: (customerId: string, shopId: string) =>
+      url(`/cards?customerId=${customerId}&shopId=${shopId}`),
   },
   shopProducts: {
     listShopProducts: url('/shop-products'),
