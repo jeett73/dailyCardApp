@@ -2,6 +2,7 @@ import { postRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { clear, getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Linking, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,6 +12,14 @@ export function useProfile() {
   const navigation = useNavigation<any>();
 
   const avatarSize = width >= 768 ? 64 : 56;
+  const [entityType, setEntityType] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const t = await getItem('entityType');
+      setEntityType(t);
+    })();
+  }, []);
 
   function gotoStatements() {
     navigation.navigate('MonthWiseReport');
@@ -44,18 +53,23 @@ export function useProfile() {
     });
   }
 
-  const menuItems = [
+  const baseMenuItems = [
     { label: 'Past Statements', onPress: gotoStatements },
-    { label: 'Logout', onPress: handleLogout },
     { label: 'Customers', onPress: gotoCustomers },
     { label: 'Products', onPress: gotoProducts },
+    { label: 'Logout', onPress: handleLogout },
   ] as const;
+  const menuItems = useMemo(() => {
+    if (entityType === 'shop') {
+      return baseMenuItems.filter((item) => item.label !== 'Past Statements');
+    }
+    if (entityType === 'customer') {
+      return baseMenuItems.filter(
+        (item) => item.label !== 'Products' && item.label !== 'Customers',
+      );
+    }
+    return baseMenuItems;
+  }, [entityType, baseMenuItems]);
 
-  return {
-    insets,
-    width,
-    avatarSize,
-    menuItems,
-    handleCall,
-  };
+  return { insets, width, avatarSize, menuItems, handleCall, entityType };
 }

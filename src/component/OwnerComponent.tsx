@@ -5,7 +5,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, useWindowDimensions } from 'react-native';
 
 export type Customer = { _id?: any; name?: string; cardNumber?: string | number };
-export type ShopProduct = { _id?: any; productId: string; price: number; productName?: string };
+export type ShopProduct = {
+  _id?: any;
+  productId: string;
+  price: number;
+  productName?: string;
+  icon: string;
+};
 
 export function useOwner() {
   const { width, height } = useWindowDimensions();
@@ -142,6 +148,7 @@ export function useOwner() {
         productId: String(p?.productId || ''),
         price: Number(p?.price ?? 0),
         productName: String(p?.productName || ''),
+        icon: String(p?.icon ?? '../../assets/images/bg.png'),
       }));
       setProducts(list);
     } catch (e) {

@@ -29,7 +29,7 @@ function MenuOption({ label, onPress }: MenuOptionProps) {
 }
 
 export default function ProfileScreen() {
-  const { insets, handleCall, menuItems } = useProfile();
+  const { insets, handleCall, menuItems, entityType } = useProfile();
 
   return (
     <View style={[styles.container]}>
@@ -41,38 +41,40 @@ export default function ProfileScreen() {
         avatarSize={55}
         title="Hiren Dabhi"
       />
-      <View style={[styles.container, { paddingTop: insets.top + 90 }]}>
-        <View
-          style={styles.summaryCard}
-          accessibilityRole="summary"
-          accessibilityLabel="Profile summary"
-        >
-          <Text style={styles.summaryTitle}>Profile Summary</Text>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Card Number</Text>
-            <Text style={styles.summaryValue}>#15</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Deposit</Text>
-            <Text style={styles.summaryValue}>₹5000</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Mobile Number</Text>
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel="Call mobile number"
-              onPress={handleCall}
-              style={({ pressed }) => [styles.callRow, pressed && styles.callRowPressed]}
-            >
-              <Text style={[styles.summaryValue, styles.infoLink]}>7600924242</Text>
-            </Pressable>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Address</Text>
-            <Text style={styles.summaryValue}>Gujarat</Text>
-          </View>
-        </View>
 
+      <View style={[styles.container, { paddingTop: insets.top + 90 }]}>
+        {entityType === 'customer' && (
+          <View
+            style={styles.summaryCard}
+            accessibilityRole="summary"
+            accessibilityLabel="Profile summary"
+          >
+            <Text style={styles.summaryTitle}>Profile Summary</Text>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Card Number</Text>
+              <Text style={styles.summaryValue}>#15</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Deposit</Text>
+              <Text style={styles.summaryValue}>₹5000</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Mobile Number</Text>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Call mobile number"
+                onPress={handleCall}
+                style={({ pressed }) => [styles.callRow, pressed && styles.callRowPressed]}
+              >
+                <Text style={[styles.summaryValue, styles.infoLink]}>7600924242</Text>
+              </Pressable>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Address</Text>
+              <Text style={styles.summaryValue}>Gujarat</Text>
+            </View>
+          </View>
+        )}
         <View style={styles.menuCard} accessibilityRole="menu">
           {menuItems.map((m) => (
             <MenuOption key={m.label} label={m.label} onPress={m.onPress} />

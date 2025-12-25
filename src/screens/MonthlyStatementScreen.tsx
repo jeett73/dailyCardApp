@@ -4,7 +4,7 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import React, { memo, useCallback, useEffect } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const StatementCard = memo(function StatementCard({
@@ -121,7 +121,7 @@ export default function MonthlyStatementScreen() {
       ) : (
         <ScrollView
           contentContainerStyle={{
-            paddingTop: insets.top + 90,
+            paddingTop: Platform.OS === 'ios' ? 90 : insets.top + 90,
             paddingBottom: Math.max(insets.bottom, 24),
           }}
         >

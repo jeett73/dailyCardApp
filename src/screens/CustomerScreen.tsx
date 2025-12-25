@@ -5,7 +5,8 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet } from 'react-native';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CustomerScreen() {
@@ -38,7 +39,14 @@ export default function CustomerScreen() {
         avatarSize={55}
         title="Hiren Dabhi"
       />
-      <View style={[styles.container, { paddingTop: insets.top + 90 }]}>
+      <View
+        style={[
+          styles.container,
+          {
+            paddingTop: Platform.OS === 'ios' ? 90 : insets.top + 90,
+          },
+        ]}
+      >
         <GreetingCard
           shopName="Patel Dairy and Sweet Store"
           message="We are delighted to serve your daily dairy needs."

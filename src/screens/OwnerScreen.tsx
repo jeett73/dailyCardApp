@@ -216,7 +216,7 @@ export default function OwnerScreen() {
                           <View key={id + i} style={styles.productItem}>
                             <View style={styles.thumbWrap}>
                               <Image
-                                source={require('../../assets/images/bg.png')}
+                                source={{ uri: p.icon }}
                                 style={styles.productThumb}
                                 resizeMode="cover"
                                 accessibilityRole="image"
@@ -530,9 +530,9 @@ const styles = StyleSheet.create({
     top: -6,
     right: -6,
     backgroundColor: '#0d101b',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    borderRadius: 20,
+    minWidth: 30,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   },
   qtyChipText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 15,
     fontWeight: '800',
   },
   productInfoBlock: {
