@@ -76,6 +76,9 @@ export function useCustomerList() {
         card: `#${formatCardNumber(c.cardNumber)}`,
         mobile: formatMobile(c.phone),
         dueDisplay: `₹${Number(c?.dueAmount ?? 0)}`,
+        dueAmount: Number(c?.dueAmount ?? 0),
+        phone: String(c?.phone ?? ''),
+        cardNumber: String(c?.cardNumber ?? ''),
       })),
     [customers],
   );

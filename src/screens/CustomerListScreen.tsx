@@ -2,6 +2,8 @@ import { useCustomerList } from '@/components/CustomerListComponent';
 import HeroHeader, { AvatarInitials } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import Feather from '@expo/vector-icons/Feather';
+import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CustomerListScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const { items, loading, error, onAddPress } = useCustomerList();
   const [query, setQuery] = useState('');
 
@@ -46,6 +49,28 @@ export default function CustomerListScreen() {
       return <Text style={styles.emptyText}>No customers found</Text>;
     }
     return filtered.map((it) => {
+      const canPay = Number(it?.dueAmount ?? 0) > 0;
+      function handleEdit() {
+        const phoneDigits = String(it?.phone ?? '')
+          .replace(/\D/g, '')
+          .slice(-10);
+        const cardDigits = String(it?.cardNumber ?? '')
+          .replace(/\s+/g, '')
+          .replace(/[^A-Za-z0-9-]/g, '');
+        navigation.navigate('CreateCustomer', {
+          mode: 'edit',
+          initial: {
+            id: it.id,
+            name: it.name,
+            phone: phoneDigits,
+            cardNumber: cardDigits,
+          },
+        });
+      }
+      function handlePayment() {
+        if (!canPay) return;
+        navigation.navigate('Customer', { customerId: it.id });
+      }
       return (
         <TouchableOpacity
           key={it.id}
@@ -68,6 +93,27 @@ export default function CustomerListScreen() {
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Last Due</Text>
                 <Text style={styles.metaValue}>{it.dueDisplay}</Text>
+              </View>
+              <View style={styles.actionsRow}>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  activeOpacity={0.8}
+                  onPress={handleEdit}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit customer"
+                >
+                  <Feather name="edit-3" size={18} color="#0d101b" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionBtn, !canPay && styles.actionBtnDisabled]}
+                  activeOpacity={0.8}
+                  onPress={handlePayment}
+                  disabled={!canPay}
+                  accessibilityRole="button"
+                  accessibilityLabel="Pay due"
+                >
+                  <Text style={styles.actionIcon}>₹</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -174,6 +220,32 @@ const styles = StyleSheet.create({
   metaValue: { fontSize: 12, color: Colors.light.text, fontWeight: '700' },
   emptyText: { textAlign: 'center', color: '#666', fontSize: 14, paddingVertical: 12 },
   error: { fontSize: 14, color: '#e53935' },
+  actionsRow: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fff',
+  },
+  actionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  actionBtnDisabled: { opacity: 0.5 },
+  actionIcon: { fontSize: 18, color: '#0d101b' },
   fab: {
     position: 'absolute',
     width: 56,

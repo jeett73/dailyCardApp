@@ -1,4 +1,4 @@
-import { postRequest } from '@/api/apiMethods';
+import { getRequest, postRequest, putRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
@@ -21,19 +21,28 @@ function isNumeric(str: string): boolean {
   return /^[0-9]+$/.test(str);
 }
 
-export function useCreateCustomer() {
+export function useCreateCustomer(params?: {
+  mode?: 'edit';
+  initial?: Partial<FormState> & { id?: string };
+}) {
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(false);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState<string | null>(null);
+  const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<Record<string, number>>({});
+  const isEdit = params?.mode === 'edit';
+  const customerIdRef = useRef<string | undefined>(params?.initial?.id);
   const [form, setForm] = useState<FormState>({
-    name: '',
-    phone: '',
-    cardNumber: '',
-    depositeAmount: '',
-    street1: '',
-    street2: '',
-    city: '',
-    state: 'Gujarat',
-    postalCode: '',
+    name: String(params?.initial?.name ?? ''),
+    phone: String(params?.initial?.phone ?? ''),
+    cardNumber: String(params?.initial?.cardNumber ?? ''),
+    depositeAmount: String(params?.initial?.depositeAmount ?? ''),
+    street1: String(params?.initial?.street1 ?? ''),
+    street2: String(params?.initial?.street2 ?? ''),
+    city: String(params?.initial?.city ?? ''),
+    state: String(params?.initial?.state ?? 'Gujarat'),
+    postalCode: String(params?.initial?.postalCode ?? ''),
   });
 
   const scrollRef = useRef<ScrollView | null>(null);
@@ -61,6 +70,32 @@ export function useCreateCustomer() {
       showSub.remove();
       hideSub.remove();
     };
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await getItem('token');
+        const shopId = await getItem('userId');
+        const res = await getRequest(apiEndpoint.shopProducts.listShopProducts, {
+          params: { shopId },
+          headers: { authorization: token ? `Bearer ${token}` : '' },
+        });
+        const data = (res?.data ?? {}) as any;
+        const arr = Array.isArray(data?.shopProducts) ? data?.shopProducts : [];
+        const list = arr
+          .map((p: any) => ({
+            id: String(p?._id ?? p?.productId ?? ''),
+            name: String(p?.productName || p?.productId || ''),
+          }))
+          .filter((p: { id: string; name: string }) => !!p.id && !!p.name.trim());
+        setProducts(list);
+        setProductsLoading(false);
+      } catch {
+        setProductsError('Failed to load products');
+        setProductsLoading(false);
+      }
+    })();
   }, []);
 
   function setField<K extends keyof FormState>(k: K, v: string) {
@@ -109,6 +144,28 @@ export function useCreateCustomer() {
     };
   }
 
+  function toggleProduct(id: string) {
+    setSelectedProducts((prev) => {
+      if (prev[id]) {
+        const { [id]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [id]: 1 };
+    });
+  }
+
+  function setProductQty(id: string, qtyText: string) {
+    const t = qtyText.replace(/\D/g, '');
+    const n = Number(t);
+    setSelectedProducts((prev) => {
+      if (!t) {
+        const { [id]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [id]: Number.isFinite(n) && n > 0 ? n : 0 };
+    });
+  }
+
   async function handleSave() {
     const errs = validate();
     if (errs.length > 0) {
@@ -120,6 +177,9 @@ export function useCreateCustomer() {
       setLoading(true);
       const token = await getItem('token');
       const shopId = await getItem('userId');
+      const regularProduct = Object.entries(selectedProducts)
+        .map(([productId, qty]) => ({ productId, qty }))
+        .filter((p) => Number(p.qty) > 0);
       const payload = {
         name: form.name.trim(),
         address: {
@@ -131,17 +191,24 @@ export function useCreateCustomer() {
         },
         phone: form.phone.trim(),
         cardNumber: form.cardNumber.trim(),
-        regularProduct: [],
+        regularProduct,
         depositeAmount: Number(form.depositeAmount),
         shopId: shopId,
       };
-      await postRequest(apiEndpoint.customers.add, payload, {
-        headers: { authorization: token ? `Bearer ${token}` : '' },
-      });
-      Alert.alert('Success', 'Customer created successfully');
+      if (isEdit && customerIdRef.current) {
+        await putRequest(apiEndpoint.customers.update(customerIdRef.current), payload, {
+          headers: { authorization: token ? `Bearer ${token}` : '' },
+        });
+        Alert.alert('Success', 'Customer updated successfully');
+      } else {
+        await postRequest(apiEndpoint.customers.add, payload, {
+          headers: { authorization: token ? `Bearer ${token}` : '' },
+        });
+        Alert.alert('Success', 'Customer created successfully');
+      }
       navigation.navigate('CustomerList');
     } catch {
-      Alert.alert('Failed', 'Unable to create customer');
+      Alert.alert('Failed', isEdit ? 'Unable to update customer' : 'Unable to create customer');
     } finally {
       setLoading(false);
     }
@@ -157,5 +224,12 @@ export function useCreateCustomer() {
     keyboardPadding,
     scrollToField,
     getHandlers,
+    products,
+    productsLoading,
+    productsError,
+    selectedProducts,
+    toggleProduct,
+    setProductQty,
+    isEdit,
   };
 }

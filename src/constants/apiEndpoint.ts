@@ -23,6 +23,7 @@ const apiEndpoint = {
   customers: {
     list: url('/customers'),
     add: url('/customers/add'),
+    update: (id: Id) => url(`/customers/${id}`),
   },
   entries: {
     list: url('/entries'),

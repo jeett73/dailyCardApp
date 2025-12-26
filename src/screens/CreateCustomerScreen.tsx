@@ -2,8 +2,9 @@ import { useCreateCustomer } from '@/components/CreateCustomerComponent';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,11 +13,28 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRoute } from '@react-navigation/native';
 
 export default function CreateCustomerScreen() {
   const insets = useSafeAreaInsets();
-  const { form, setField, loading, handleSave, scrollRef, keyboardPadding, getHandlers } =
-    useCreateCustomer();
+  const route = useRoute<any>();
+  const {
+    form,
+    setField,
+    loading,
+    handleSave,
+    scrollRef,
+    keyboardPadding,
+    getHandlers,
+    products,
+    productsLoading,
+    productsError,
+    selectedProducts,
+    toggleProduct,
+    setProductQty,
+    isEdit,
+  } = useCreateCustomer(route?.params);
+  const [productsOpen, setProductsOpen] = useState(false);
 
   return (
     <View style={[styles.container]}>
@@ -117,12 +135,58 @@ export default function CreateCustomerScreen() {
             /> */}
 
             <TouchableOpacity
+              style={[styles.dropdownHeader]}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.label}>Regular Products</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.dropdownBody}>
+              {productsLoading ? (
+                <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={Colors.light.tint} />
+                </View>
+              ) : productsError ? (
+                <Text style={styles.error}>{productsError}</Text>
+              ) : products.length === 0 ? (
+                <Text style={styles.emptyText}>No products found</Text>
+              ) : (
+                products.map((p) => {
+                  const qty = selectedProducts[p.id] ?? 0;
+                  const selected = qty > 0;
+                  return (
+                    <View key={p.id} style={styles.productRow}>
+                      <TouchableOpacity
+                        style={[styles.checkbox, selected && styles.checkboxChecked]}
+                        onPress={() => toggleProduct(p.id)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.checkboxIcon}>{selected ? '✓' : ''}</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.productName}>{p.name}</Text>
+                      <TextInput
+                        style={styles.qtyInput}
+                        placeholder="Qty"
+                        placeholderTextColor="#999"
+                        keyboardType="number-pad"
+                        value={qty ? String(qty) : ''}
+                        onChangeText={(t) => setProductQty(p.id, t)}
+                      />
+                    </View>
+                  );
+                })
+              )}
+            </View>
+
+            <TouchableOpacity
               style={[styles.saveButton, loading && styles.saveButtonDisabled]}
               activeOpacity={0.9}
               onPress={handleSave}
               disabled={loading}
             >
-              <Text style={styles.saveButtonText}>{loading ? 'Saving…' : 'Save Customer'}</Text>
+              <Text style={styles.saveButtonText}>
+                {loading ? 'Saving…' : isEdit ? 'Update Customer' : 'Save Customer'}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -163,6 +227,68 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     fontSize: 14,
     color: Colors.light.text,
+  },
+  emptyText: { textAlign: 'center', color: '#666', fontSize: 14, paddingVertical: 12 },
+  error: { fontSize: 14, color: '#e53935' },
+  dropdownHeader: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownChevron: {
+    fontSize: 16,
+    color: Colors.light.text,
+    marginLeft: 12,
+  },
+  dropdownBody: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.12)',
+    padding: 8,
+    backgroundColor: '#fff',
+  },
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    backgroundColor: '#fff',
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.light.tint,
+    borderColor: Colors.light.tint,
+  },
+  checkboxIcon: {
+    fontSize: 14,
+    color: '#fff',
+  },
+  productName: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  qtyInput: {
+    width: 70,
+    height: 38,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.12)',
+    paddingHorizontal: 10,
+    backgroundColor: '#fff',
+    fontSize: 14,
+    color: Colors.light.text,
+    textAlign: 'center',
   },
   textArea: {
     height: 80,
