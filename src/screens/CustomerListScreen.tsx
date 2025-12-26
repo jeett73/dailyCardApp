@@ -1,5 +1,6 @@
 import { useCustomerList } from '@/components/CustomerListComponent';
 import HeroHeader, { AvatarInitials } from '@/components/HeroHeader';
+import PaymentModal from '@/components/PaymentModal';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
@@ -19,6 +20,14 @@ export default function CustomerListScreen() {
   const navigation = useNavigation<any>();
   const { items, loading, error, onAddPress } = useCustomerList();
   const [query, setQuery] = useState('');
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentCustomer, setPaymentCustomer] = useState<{
+    id: string;
+    name: string;
+    phone: string;
+    cardNumber: string;
+  } | null>(null);
+  const [dueOverrides, setDueOverrides] = useState<Record<string, number>>({});
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -49,7 +58,9 @@ export default function CustomerListScreen() {
       return <Text style={styles.emptyText}>No customers found</Text>;
     }
     return filtered.map((it) => {
-      const canPay = Number(it?.dueAmount ?? 0) > 0;
+      const currentDue =
+        typeof dueOverrides[it.id] === 'number' ? dueOverrides[it.id] : Number(it?.dueAmount ?? 0);
+      const canPay = Number(currentDue ?? 0) > 0;
       function handleEdit() {
         const phoneDigits = String(it?.phone ?? '')
           .replace(/\D/g, '')
@@ -69,7 +80,13 @@ export default function CustomerListScreen() {
       }
       function handlePayment() {
         if (!canPay) return;
-        navigation.navigate('Customer', { customerId: it.id });
+        setPaymentCustomer({
+          id: it.id,
+          name: it.name,
+          phone: it.mobile,
+          cardNumber: it.card,
+        });
+        setPaymentOpen(true);
       }
       return (
         <TouchableOpacity
@@ -92,7 +109,7 @@ export default function CustomerListScreen() {
               </View>
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Last Due</Text>
-                <Text style={styles.metaValue}>{it.dueDisplay}</Text>
+                <Text style={styles.metaValue}>{`₹${currentDue}`}</Text>
               </View>
               <View style={styles.actionsRow}>
                 <TouchableOpacity
@@ -105,7 +122,7 @@ export default function CustomerListScreen() {
                   <Feather name="edit-3" size={18} color="#0d101b" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.actionBtn, !canPay && styles.actionBtnDisabled]}
+                  style={[styles.actionBtn]}
                   activeOpacity={0.8}
                   onPress={handlePayment}
                   disabled={!canPay}
@@ -156,6 +173,22 @@ export default function CustomerListScreen() {
       >
         <Text style={styles.fabText}>＋</Text>
       </TouchableOpacity>
+      <PaymentModal
+        visible={paymentOpen}
+        customer={paymentCustomer}
+        onClose={(paid) => {
+          setPaymentOpen(false);
+          if (paymentCustomer && typeof paid === 'number' && paid > 0) {
+            const prev =
+              typeof dueOverrides[paymentCustomer.id] === 'number'
+                ? dueOverrides[paymentCustomer.id]
+                : (filtered.find((f) => f.id === paymentCustomer.id)?.dueAmount ?? 0);
+            const next = Math.max(0, Number(prev) - Number(paid));
+            setDueOverrides((m) => ({ ...m, [paymentCustomer.id]: next }));
+          }
+          setPaymentCustomer(null);
+        }}
+      />
     </View>
   );
 }
