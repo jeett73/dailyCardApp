@@ -2,13 +2,34 @@ import { useCustomerList } from '@/components/CustomerListComponent';
 import HeroHeader, { AvatarInitials } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import React, { useMemo } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import Feather from '@expo/vector-icons/Feather';
+import { useNavigation } from '@react-navigation/native';
+import React, { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CustomerListScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const { items, loading, error, onAddPress } = useCustomerList();
+  const [query, setQuery] = useState('');
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((it) => {
+      const name = String(it.name || '').toLowerCase();
+      const card = String(it.card || '');
+      const mobile = String(it.mobile || '');
+      return name.includes(q) || card.includes(q) || mobile.includes(q);
+    });
+  }, [items, query]);
 
   const content = useMemo(() => {
     if (loading) {
@@ -24,7 +45,32 @@ export default function CustomerListScreen() {
     if (!items || items.length === 0) {
       return <Text style={styles.emptyText}>No customers found</Text>;
     }
-    return items.map((it) => {
+    if (query && filtered.length === 0) {
+      return <Text style={styles.emptyText}>No customers found</Text>;
+    }
+    return filtered.map((it) => {
+      const canPay = Number(it?.dueAmount ?? 0) > 0;
+      function handleEdit() {
+        const phoneDigits = String(it?.phone ?? '')
+          .replace(/\D/g, '')
+          .slice(-10);
+        const cardDigits = String(it?.cardNumber ?? '')
+          .replace(/\s+/g, '')
+          .replace(/[^A-Za-z0-9-]/g, '');
+        navigation.navigate('CreateCustomer', {
+          mode: 'edit',
+          initial: {
+            id: it.id,
+            name: it.name,
+            phone: phoneDigits,
+            cardNumber: cardDigits,
+          },
+        });
+      }
+      function handlePayment() {
+        if (!canPay) return;
+        navigation.navigate('Customer', { customerId: it.id });
+      }
       return (
         <TouchableOpacity
           key={it.id}
@@ -48,25 +94,59 @@ export default function CustomerListScreen() {
                 <Text style={styles.metaLabel}>Last Due</Text>
                 <Text style={styles.metaValue}>{it.dueDisplay}</Text>
               </View>
+              <View style={styles.actionsRow}>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  activeOpacity={0.8}
+                  onPress={handleEdit}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit customer"
+                >
+                  <Feather name="edit-3" size={18} color="#0d101b" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionBtn, !canPay && styles.actionBtnDisabled]}
+                  activeOpacity={0.8}
+                  onPress={handlePayment}
+                  disabled={!canPay}
+                  accessibilityRole="button"
+                  accessibilityLabel="Pay due"
+                >
+                  <Text style={styles.actionIcon}>₹</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </TouchableOpacity>
       );
     });
-  }, [items, loading, error]);
+  }, [items, loading, error, filtered, query]);
 
   return (
     <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title="Customers" />
-      <ScrollView
-        contentContainerStyle={[
-          styles.listContainer,
-          { paddingTop: insets.top + 90 },
-          { paddingBottom: Math.max(insets.bottom, 24) },
-        ]}
-      >
-        {content}
-      </ScrollView>
+      <View style={{ paddingTop: insets.top + 90, flex: 1 }}>
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search customers..."
+            placeholderTextColor="#aaa"
+            value={query}
+            onChangeText={setQuery}
+          />
+          <View style={styles.searchIconWrap}>
+            <Text style={styles.searchIcon}>🔍</Text>
+          </View>
+        </View>
+        <ScrollView
+          contentContainerStyle={[
+            styles.listContainer,
+            { paddingBottom: Math.max(insets.bottom, 24) },
+          ]}
+        >
+          {content}
+        </ScrollView>
+      </View>
       <TouchableOpacity
         style={[styles.fab, { bottom: Math.max(insets.bottom, 24) + 12 }, { right: 16 }]}
         activeOpacity={0.9}
@@ -83,6 +163,42 @@ export default function CustomerListScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.light.background },
   listContainer: { paddingVertical: 12, paddingHorizontal: 16 },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: 10,
+    height: 55,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.08)',
+    paddingLeft: 16,
+    paddingRight: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    width: '90%',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  searchIconWrap: {
+    marginLeft: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchIcon: {
+    fontSize: 16,
+    color: '#0d101b',
+  },
   customerCard: {
     borderRadius: 16,
     padding: 12,
@@ -104,6 +220,32 @@ const styles = StyleSheet.create({
   metaValue: { fontSize: 12, color: Colors.light.text, fontWeight: '700' },
   emptyText: { textAlign: 'center', color: '#666', fontSize: 14, paddingVertical: 12 },
   error: { fontSize: 14, color: '#e53935' },
+  actionsRow: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fff',
+  },
+  actionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  actionBtnDisabled: { opacity: 0.5 },
+  actionIcon: { fontSize: 18, color: '#0d101b' },
   fab: {
     position: 'absolute',
     width: 56,
