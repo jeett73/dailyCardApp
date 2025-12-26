@@ -1,3 +1,6 @@
+import { getRequest } from '@/api/apiMethods';
+import apiEndpoint from '@/constants/apiEndpoint';
+import { getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
 import { DimensionValue, useWindowDimensions } from 'react-native';
@@ -20,35 +23,7 @@ const MONTHS_FULL = [
   'December',
 ];
 
-const catalog = [
-  { item: 'Amul Gold', price: 60 },
-  { item: 'Shaktii', price: 45 },
-  { item: 'Butter Milk', price: 20 },
-  { item: 'Cow Milk', price: 20 },
-  { item: 'Heritage Toned Milk 1L', price: 50 },
-  { item: 'Amul Fresh Cream 250ml', price: 70 },
-  { item: 'Britannia Rusk 300g', price: 35 },
-  { item: 'Gowardhan Butter 100g', price: 48 },
-  { item: 'Nandini Curd 500g', price: 30 },
-  { item: 'Sanchi Ghee 200ml', price: 95 },
-];
-
-function generateMonthlyTxns(year: number, month: number): Txn[] {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const txns: Txn[] = [];
-  for (let day = 1; day <= daysInMonth; day++) {
-    const itemsCount = Math.floor(Math.random() * 5);
-    for (let i = 0; i < itemsCount; i++) {
-      const ci = catalog[Math.floor(Math.random() * catalog.length)];
-      const qty = 1 + Math.floor(Math.random() * 5);
-      const amount = qty * ci.price;
-      const id = `m-${year}-${month + 1}-${day}-${i}`;
-      const date = new Date(year, month, day).toISOString().split('T')[0];
-      txns.push({ id, date, item: ci.item, qty, amount });
-    }
-  }
-  return txns;
-}
+const SHOP_ID = '692f04d99800aaaa111ccd9b';
 
 export function useMonthWiseReport() {
   const navigation = useNavigation<any>();
@@ -62,33 +37,48 @@ export function useMonthWiseReport() {
   const cardWidth: DimensionValue = isWide ? '48%' : '100%';
 
   useEffect(() => {
-    try {
-      const now = new Date();
-      const year = now.getFullYear();
-      const data: MonthSummary[] = Array.from({ length: 12 }, (_, m) => {
-        const txns = generateMonthlyTxns(year, m);
-        const total = txns.reduce((s, t) => s + t.amount, 0);
-        return { year, month: m, label: `${MONTHS_FULL[m]} ${year}`, total };
-      });
-      setMonths(data);
-      setLoading(false);
-    } catch {
-      setError('Failed to load monthly report');
-      setLoading(false);
-    }
+    (async () => {
+      try {
+        const token = await getItem('token');
+        const userId = await getItem('userId');
+        const customerId = userId; // Assuming logged in user is customer
+
+        if (!customerId) {
+          setError('User not identified');
+          setLoading(false);
+          return;
+        }
+
+        const res = await getRequest(apiEndpoint.cards.summary(customerId, SHOP_ID), {
+          headers: { authorization: token ? `Bearer ${token}` : '' },
+        });
+
+        const data = (res?.data ?? []) as any[];
+
+        // Expected data: [{ "month": 12, "year": 2025, "totalBill": 5777 }]
+        const mapped: MonthSummary[] = data.map((item: any) => {
+          const m = (item.month || 1) - 1; // 1-based to 0-based
+          const y = item.year || new Date().getFullYear();
+          const label = (MONTHS_FULL[m] || 'Unknown') + ' ' + y;
+          return {
+            year: y,
+            month: m,
+            label: label,
+            total: Number(item.totalBill || 0),
+          };
+        });
+
+        setMonths(mapped);
+        setLoading(false);
+      } catch (e) {
+        setError('Failed to load monthly report');
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const handleNavigate = (m: MonthSummary) => {
-    navigation.navigate('Statements');
-    // if (navLoading) return;
-    // setNavLoading(true);
-    // try {
-    //   const params = { year: m.year, month: m.month };
-    //   navigation.navigate('Statements', params);
-    // } catch {
-    //   setNavLoading(false);
-    //   setError('Failed to navigate to Monthly Statement');
-    // }
+    navigation.navigate('Statements', { year: m.year, month: m.month });
   };
 
   return {

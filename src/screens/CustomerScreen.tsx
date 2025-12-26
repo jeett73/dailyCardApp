@@ -43,7 +43,7 @@ export default function CustomerScreen() {
         style={[
           styles.container,
           {
-            paddingTop: Platform.OS === 'ios' ? 90 : insets.top + 90,
+            paddingTop: Platform.OS === 'ios' ? 120 : insets.top + 90,
           },
         ]}
       >

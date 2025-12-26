@@ -1,6 +1,7 @@
 import { useOwner } from '@/component/OwnerComponent';
 import HeroHeader, { AvatarInitials, toTitleCase } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
+import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
@@ -216,7 +217,9 @@ export default function OwnerScreen() {
                           <View key={id + i} style={styles.productItem}>
                             <View style={styles.thumbWrap}>
                               <Image
-                                source={{ uri: p.icon }}
+                                source={{
+                                  uri: apiEndpoint.uploads(p.icon),
+                                }}
                                 style={styles.productThumb}
                                 resizeMode="cover"
                                 accessibilityRole="image"
@@ -523,7 +526,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 10,
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#ffffffff',
   },
   qtyChipImage: {
     position: 'absolute',

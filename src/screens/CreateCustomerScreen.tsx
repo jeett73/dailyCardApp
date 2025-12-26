@@ -29,7 +29,7 @@ export default function CreateCustomerScreen() {
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={[
             styles.listContainer,
-            { paddingTop: insets.top + 90 },
+            { paddingTop: Platform.OS === 'ios' ? 80 : insets.top + 90 },
             { paddingBottom: Math.max(insets.bottom, 24) + keyboardPadding },
           ]}
         >

@@ -4,7 +4,7 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 
 type MenuLabel = 'Past Statements' | 'Logout' | 'Customers' | 'Products';
 
@@ -42,7 +42,9 @@ export default function ProfileScreen() {
         title="Hiren Dabhi"
       />
 
-      <View style={[styles.container, { paddingTop: insets.top + 90 }]}>
+      <View
+        style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 125 : insets.top + 90 }]}
+      >
         {entityType === 'customer' && (
           <View
             style={styles.summaryCard}
