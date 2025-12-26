@@ -148,7 +148,7 @@ export function useOwner() {
         productId: String(p?.productId || ''),
         price: Number(p?.price ?? 0),
         productName: String(p?.productName || ''),
-        icon: String(p?.icon ?? '../../assets/images/bg.png'),
+        icon: String(p?.icon || ''),
       }));
       setProducts(list);
     } catch (e) {

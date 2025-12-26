@@ -37,6 +37,8 @@ const apiEndpoint = {
     order: url('/cards/order'),
     monthlyStatement: (customerId: string, shopId: string) =>
       url(`/cards?customerId=${customerId}&shopId=${shopId}`),
+    summary: (customerId: string, shopId: string) =>
+      url(`/cards/summary?customerId=${customerId}&shopId=${shopId}`),
   },
   shopProducts: {
     listShopProducts: url('/shop-products'),
@@ -45,6 +47,7 @@ const apiEndpoint = {
   products: {
     list: url('/products'),
   },
+  uploads: (icon: string) => url(`/uploads/${icon}`),
 } as const;
 
 export default apiEndpoint;
