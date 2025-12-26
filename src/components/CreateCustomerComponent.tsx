@@ -70,16 +70,6 @@ export function useCreateCustomer() {
   function validate(): string[] {
     const messages: string[] = [];
     if (!form.name.trim()) messages.push('Name is required');
-    if (!form.street1.trim()) messages.push('Street 1 is required');
-    if (!form.city.trim()) messages.push('City is required');
-    if (!form.state.trim()) messages.push('State is required');
-    if (!form.postalCode.trim()) {
-      messages.push('Postal Code is required');
-    } else if (
-      !(isNumeric(form.postalCode) && form.postalCode.length >= 6 && form.postalCode.length <= 10)
-    ) {
-      messages.push('Enter a valid postal code');
-    }
     if (!form.phone.trim()) {
       messages.push('Phone is required');
     } else if (!(isNumeric(form.phone) && form.phone.length === 10)) {
@@ -91,6 +81,16 @@ export function useCreateCustomer() {
     } else if (!/^[0-9]+(\\.[0-9]+)?$/.test(form.depositeAmount)) {
       messages.push('Deposit must be numeric');
     }
+    if (!form.street1.trim()) messages.push('Street 1 is required');
+    if (!form.city.trim()) messages.push('City is required');
+    // if (!form.state.trim()) messages.push('State is required');
+    // if (!form.postalCode.trim()) {
+    //   messages.push('Postal Code is required');
+    // } else if (
+    //   !(isNumeric(form.postalCode) && form.postalCode.length >= 6 && form.postalCode.length <= 10)
+    // ) {
+    //   messages.push('Enter a valid postal code');
+    // }
     return messages;
   }
 
@@ -112,9 +112,10 @@ export function useCreateCustomer() {
   async function handleSave() {
     const errs = validate();
     if (errs.length > 0) {
-      Alert.alert('Validation Errors', errs.join('\\n'));
+      Alert.alert('Validation Errors', errs.join('\n'));
       return;
     }
+
     try {
       setLoading(true);
       const token = await getItem('token');
@@ -123,10 +124,10 @@ export function useCreateCustomer() {
         name: form.name.trim(),
         address: {
           street1: form.street1.trim(),
-          street2: form.street2.trim(),
+          // street2: form.street2.trim(),
           city: form.city.trim(),
-          state: form.state.trim(),
-          postalCode: form.postalCode.trim(),
+          // state: form.state.trim(),
+          // postalCode: form.postalCode.trim(),
         },
         phone: form.phone.trim(),
         cardNumber: form.cardNumber.trim(),

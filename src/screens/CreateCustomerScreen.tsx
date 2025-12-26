@@ -74,19 +74,22 @@ export default function CreateCustomerScreen() {
 
             <Text style={styles.label}>Street 1</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, styles.textArea]}
               placeholder="12 Baker Street"
               value={form.street1}
               onChangeText={(t) => setField('street1', t)}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
             />
 
-            <Text style={styles.label}>Street 2</Text>
+            {/* <Text style={styles.label}>Street 2</Text>
             <TextInput
               style={styles.input}
               placeholder="Apt 4B"
               value={form.street2}
               onChangeText={(t) => setField('street2', t)}
-            />
+            /> */}
 
             <Text style={styles.label}>City</Text>
             <TextInput
@@ -96,22 +99,22 @@ export default function CreateCustomerScreen() {
               onChangeText={(t) => setField('city', t)}
             />
 
-            <Text style={styles.label}>State</Text>
+            {/* <Text style={styles.label}>State</Text>
             <TextInput
               style={styles.input}
               placeholder="Gujarat"
               value={form.state}
               onChangeText={(t) => setField('state', t)}
-            />
+            /> */}
 
-            <Text style={styles.label}>Postal Code</Text>
+            {/* <Text style={styles.label}>Postal Code</Text>
             <TextInput
               style={styles.input}
               placeholder="380015"
               keyboardType="number-pad"
               value={form.postalCode}
               onChangeText={(t) => setField('postalCode', t)}
-            />
+            /> */}
 
             <TouchableOpacity
               style={[styles.saveButton, loading && styles.saveButtonDisabled]}
@@ -160,6 +163,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     fontSize: 14,
     color: Colors.light.text,
+  },
+  textArea: {
+    height: 80,
   },
   saveButton: {
     marginTop: 16,
