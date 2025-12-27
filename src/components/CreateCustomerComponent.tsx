@@ -33,6 +33,8 @@ export function useCreateCustomer(params?: {
   const [selectedProducts, setSelectedProducts] = useState<Record<string, number>>({});
   const isEdit = params?.mode === 'edit';
   const customerIdRef = useRef<string | undefined>(params?.initial?.id);
+  const [prefillLoading, setPrefillLoading] = useState(false);
+  const [prefillError, setPrefillError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
     name: String(params?.initial?.name ?? ''),
     phone: String(params?.initial?.phone ?? ''),
@@ -98,6 +100,48 @@ export function useCreateCustomer(params?: {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!isEdit || !customerIdRef.current) return;
+      try {
+        setPrefillLoading(true);
+        setPrefillError(null);
+        const res = await getRequest(apiEndpoint.customers.customerById(customerIdRef.current));
+        const raw = (res?.data ?? {}) as any;
+        const data = raw?.customer ?? raw;
+        const rp = Array.isArray(data?.regularProduct) ? data?.regularProduct : [];
+        const nextSelected: Record<string, number> = {};
+        for (const it of rp) {
+          const pid = String(it?.productId ?? '');
+          const qty = Number(it?.qty ?? it?.quantity ?? 0);
+          if (pid && qty > 0) nextSelected[pid] = qty;
+        }
+        if (!cancelled) {
+          setSelectedProducts(nextSelected);
+          setForm({
+            name: String(data?.name ?? ''),
+            phone: String(data?.phone ?? ''),
+            cardNumber: String(data?.cardNumber ?? ''),
+            depositeAmount: String(data?.depositeAmount ?? ''),
+            street1: String(data?.address?.street1 ?? ''),
+            street2: String(data?.address?.street2 ?? ''),
+            city: String(data?.address?.city ?? ''),
+            state: String(data?.address?.state ?? 'Gujarat'),
+            postalCode: String(data?.address?.postalCode ?? ''),
+          });
+        }
+      } catch (e) {
+        if (!cancelled) setPrefillError('Failed to load customer');
+      } finally {
+        if (!cancelled) setPrefillLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isEdit]);
 
   function setField<K extends keyof FormState>(k: K, v: string) {
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -185,21 +229,19 @@ export function useCreateCustomer(params?: {
         name: form.name.trim(),
         address: {
           street1: form.street1.trim(),
-          street2: form?.street2?.trim() ?? '',
-          city: form?.city?.trim() ?? '',
-          state: form?.state?.trim() ?? '',
-          postalCode: form?.postalCode?.trim() ?? '',
+          // street2: form?.street2?.trim() ?? '',
+          // city: form?.city?.trim() ?? '',
+          // state: form?.state?.trim() ?? '',
+          // postalCode: form?.postalCode?.trim() ?? '',
         },
-        phone: form.phone.trim(),
+        // phone: form.phone.trim(),
         cardNumber: form.cardNumber.trim(),
         regularProduct,
-        depositeAmount: Number(form.depositeAmount),
-        shopId: shopId,
+        // depositeAmount: Number(form.depositeAmount),
+        // shopId: shopId,
       };
       if (isEdit && customerIdRef.current) {
-        await putRequest(apiEndpoint.customers.update(customerIdRef.current), payload, {
-          headers: { authorization: token ? `Bearer ${token}` : '' },
-        });
+        await putRequest(apiEndpoint.customers.update(customerIdRef.current), payload);
         Alert.alert('Success', 'Customer updated successfully');
       } else {
         await postRequest(apiEndpoint.customers.add, payload, {
@@ -241,5 +283,7 @@ export function useCreateCustomer(params?: {
     toggleProduct,
     setProductQty,
     isEdit,
+    prefillLoading,
+    prefillError,
   };
 }

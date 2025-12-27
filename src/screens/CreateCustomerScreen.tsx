@@ -33,11 +33,17 @@ export default function CreateCustomerScreen() {
     toggleProduct,
     setProductQty,
     isEdit,
+    prefillLoading,
+    prefillError,
   } = useCreateCustomer(route?.params);
 
   return (
     <View style={[styles.container]}>
-      <HeroHeader color={Colors.light.brandPurple} title="Create Customer" />
+      <HeroHeader
+        color={Colors.light.brandPurple}
+        title={isEdit ? 'Update Customer' : 'Create Customer'}
+      />
+
       <View style={styles.flex}>
         <ScrollView
           ref={scrollRef}
@@ -51,6 +57,12 @@ export default function CreateCustomerScreen() {
           ]}
         >
           <View style={styles.card}>
+            {prefillLoading ? (
+              <View style={{ paddingVertical: 8, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color={Colors.light.tint} />
+              </View>
+            ) : null}
+            {prefillError ? <Text style={styles.error}>{prefillError}</Text> : null}
             <Text style={styles.label}>Name</Text>
             <TextInput
               style={styles.input}
@@ -67,6 +79,7 @@ export default function CreateCustomerScreen() {
               value={form.phone}
               onChangeText={(t) => setField('phone', t)}
               {...getHandlers('phone')}
+              editable={!isEdit}
             />
 
             <Text style={styles.label}>Card Number</Text>
@@ -87,6 +100,7 @@ export default function CreateCustomerScreen() {
               value={form.depositeAmount}
               onChangeText={(t) => setField('depositeAmount', t)}
               {...getHandlers('depositeAmount')}
+              editable={!isEdit}
             />
 
             <Text style={styles.label}>Street 1</Text>
