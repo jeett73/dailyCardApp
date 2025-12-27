@@ -29,7 +29,7 @@ export function useCreateCustomer(params?: {
   const [loading, setLoading] = useState(false);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
-  const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
+  const [products, setProducts] = useState<{ id: string; name: string; price: number }[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Record<string, number>>({});
   const isEdit = params?.mode === 'edit';
   const customerIdRef = useRef<string | undefined>(params?.initial?.id);
@@ -85,8 +85,9 @@ export function useCreateCustomer(params?: {
         const arr = Array.isArray(data?.shopProducts) ? data?.shopProducts : [];
         const list = arr
           .map((p: any) => ({
-            id: String(p?._id ?? p?.productId ?? ''),
-            name: String(p?.productName || p?.productId || ''),
+            id: String(p?._id),
+            name: String(p?.productName),
+            price: Number(p?.price || 0),
           }))
           .filter((p: { id: string; name: string }) => !!p.id && !!p.name.trim());
         setProducts(list);
@@ -184,10 +185,10 @@ export function useCreateCustomer(params?: {
         name: form.name.trim(),
         address: {
           street1: form.street1.trim(),
-          // street2: form.street2.trim(),
-          city: form.city.trim(),
-          // state: form.state.trim(),
-          // postalCode: form.postalCode.trim(),
+          street2: form?.street2?.trim() ?? '',
+          city: form?.city?.trim() ?? '',
+          state: form?.state?.trim() ?? '',
+          postalCode: form?.postalCode?.trim() ?? '',
         },
         phone: form.phone.trim(),
         cardNumber: form.cardNumber.trim(),
@@ -207,8 +208,17 @@ export function useCreateCustomer(params?: {
         Alert.alert('Success', 'Customer created successfully');
       }
       navigation.navigate('CustomerList');
-    } catch {
-      Alert.alert('Failed', isEdit ? 'Unable to update customer' : 'Unable to create customer');
+    } catch (err) {
+      Alert.alert(
+        'Failed',
+        isEdit
+          ? err instanceof Error
+            ? err.message
+            : String(err ?? 'Unable to update customer')
+          : err instanceof Error
+            ? err.message
+            : String(err ?? 'Unable to create customer'),
+      );
     } finally {
       setLoading(false);
     }

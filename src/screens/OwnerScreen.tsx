@@ -1,4 +1,4 @@
-import { useOwner } from '@/component/OwnerComponent';
+import { Customer, useOwner } from '@/component/OwnerComponent';
 import HeroHeader, { AvatarInitials, toTitleCase } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import apiEndpoint from '@/constants/apiEndpoint';
@@ -84,7 +84,7 @@ export default function OwnerScreen() {
                 activeOpacity={0.85}
                 onPress={() => {
                   setIsFocused(false);
-                  openSheet(c.name || '');
+                  openSheet(c || ({} as Customer));
                 }}
                 accessibilityLabel={`${name || 'Unknown'} • Card ${cardFormatted} • Mobile ${mobileFormatted}`}
               >

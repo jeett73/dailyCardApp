@@ -2,7 +2,8 @@ import { useCreateCustomer } from '@/components/CreateCustomerComponent';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import React, { useState } from 'react';
+import { useRoute } from '@react-navigation/native';
+import React from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -13,7 +14,6 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRoute } from '@react-navigation/native';
 
 export default function CreateCustomerScreen() {
   const insets = useSafeAreaInsets();
@@ -34,7 +34,6 @@ export default function CreateCustomerScreen() {
     setProductQty,
     isEdit,
   } = useCreateCustomer(route?.params);
-  const [productsOpen, setProductsOpen] = useState(false);
 
   return (
     <View style={[styles.container]}>
@@ -134,13 +133,10 @@ export default function CreateCustomerScreen() {
               onChangeText={(t) => setField('postalCode', t)}
             /> */}
 
-            <TouchableOpacity
-              style={[styles.dropdownHeader]}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity style={[styles.dropdownHeader]} activeOpacity={0.8}>
               <Text style={styles.label}>Regular Products</Text>
             </TouchableOpacity>
-            
+
             <View style={styles.dropdownBody}>
               {productsLoading ? (
                 <View style={{ paddingVertical: 12, alignItems: 'center' }}>
@@ -151,30 +147,32 @@ export default function CreateCustomerScreen() {
               ) : products.length === 0 ? (
                 <Text style={styles.emptyText}>No products found</Text>
               ) : (
-                products.map((p) => {
-                  const qty = selectedProducts[p.id] ?? 0;
-                  const selected = qty > 0;
-                  return (
-                    <View key={p.id} style={styles.productRow}>
-                      <TouchableOpacity
-                        style={[styles.checkbox, selected && styles.checkboxChecked]}
-                        onPress={() => toggleProduct(p.id)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.checkboxIcon}>{selected ? '✓' : ''}</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.productName}>{p.name}</Text>
-                      <TextInput
-                        style={styles.qtyInput}
-                        placeholder="Qty"
-                        placeholderTextColor="#999"
-                        keyboardType="number-pad"
-                        value={qty ? String(qty) : ''}
-                        onChangeText={(t) => setProductQty(p.id, t)}
-                      />
-                    </View>
-                  );
-                })
+                products
+                  ?.filter((p) => p.price)
+                  .map((p) => {
+                    const qty = selectedProducts[p.id] ?? 0;
+                    const selected = qty > 0;
+                    return (
+                      <View key={p.id} style={styles.productRow}>
+                        <TouchableOpacity
+                          style={[styles.checkbox, selected && styles.checkboxChecked]}
+                          onPress={() => toggleProduct(p.id)}
+                          activeOpacity={0.8}
+                        >
+                          <Text style={styles.checkboxIcon}>{selected ? '✓' : ''}</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.productName}>{p.name}</Text>
+                        <TextInput
+                          style={styles.qtyInput}
+                          placeholder="Qty"
+                          placeholderTextColor="#999"
+                          keyboardType="number-pad"
+                          value={qty ? String(qty) : ''}
+                          onChangeText={(t) => setProductQty(p.id, t)}
+                        />
+                      </View>
+                    );
+                  })
               )}
             </View>
 
@@ -253,6 +251,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 6,
+    backgroundColor: '#fff',
   },
   checkbox: {
     width: 22,

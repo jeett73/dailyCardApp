@@ -4,7 +4,12 @@ import { getItem } from '@/services/storage';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, useWindowDimensions } from 'react-native';
 
-export type Customer = { _id?: any; name?: string; cardNumber?: string | number };
+export type Customer = {
+  _id?: any;
+  name?: string;
+  cardNumber?: string | number;
+  regularProduct?: any[];
+};
 export type ShopProduct = {
   _id?: any;
   productId: string;
@@ -18,6 +23,7 @@ export function useOwner() {
   const [query, setQuery] = useState('');
   const [input, setInput] = useState('');
   const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
   const sheetY = useMemo(() => new Animated.Value(0), []);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -56,6 +62,7 @@ export function useOwner() {
               _id: item?._id,
               name: item?.name,
               cardNumber: item?.cardNumber,
+              regularProduct: item?.regularProduct,
             } as Customer;
           })
           .filter((c: Customer) => !!(c.name && String(c.name).trim()));
@@ -101,18 +108,21 @@ export function useOwner() {
     return `+91 ${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)}`;
   }
 
-  function openSheet(name: string) {
-    setSelectedName(name);
+  function openSheet(customer: Customer) {
+    setSelectedName(customer?.name ?? '');
+    setCustomerId(customer?._id);
     setSheetVisible(true);
+    setQuantities({});
     sheetY.setValue(500);
     Animated.timing(sheetY, { toValue: 0, duration: 220, useNativeDriver: true }).start();
-    loadProducts();
+    loadProducts(String(customer?._id || ''));
   }
 
   function closeSheet() {
     Animated.timing(sheetY, { toValue: 500, duration: 180, useNativeDriver: true }).start(() => {
       setSheetVisible(false);
       setSelectedName(null);
+      setCustomerId(null);
     });
   }
 
@@ -132,7 +142,7 @@ export function useOwner() {
     ]).start();
   }
 
-  async function loadProducts() {
+  async function loadProducts(selectedCustomerId?: string) {
     try {
       const token = await getItem('token');
       const storedShopId = await getItem('userId');
@@ -144,13 +154,39 @@ export function useOwner() {
       const data = (res?.data ?? {}) as any;
       const arr = Array.isArray(data?.shopProducts) ? data?.shopProducts : [];
       const list: ShopProduct[] = arr.map((p: any) => ({
-        _id: p?._id,
+        _id: String(p?._id || ''),
         productId: String(p?.productId || ''),
         price: Number(p?.price ?? 0),
         productName: String(p?.productName || ''),
         icon: String(p?.icon || ''),
       }));
       setProducts(list);
+      const cust =
+        customers.find(
+          (c) => String(c._id || '') === String(selectedCustomerId || customerId || ''),
+        ) ||
+        customers.find((c) => (c.name || '') === (selectedName || '')) ||
+        ({} as Customer);
+      const regular: { productId: string; qty: number }[] = Array.isArray(cust?.regularProduct)
+        ? cust.regularProduct
+        : [];
+      const regMap: Record<string, number> = {};
+      for (const r of regular) {
+        if (r && r.productId) {
+          const qtyNum = Number((r as any)?.qty ?? 0);
+          if (Number.isFinite(qtyNum) && qtyNum > 0) {
+            regMap[String(r.productId)] = qtyNum;
+          }
+        }
+      }
+      const nextQuantities: Record<string, number> = {};
+      for (const p of list) {
+        const q = regMap[String(p._id)];
+        if (typeof q === 'number' && q > 0) {
+          nextQuantities[p._id] = q;
+        }
+      }
+      setQuantities(nextQuantities);
     } catch (e) {
       setProducts([]);
     }
@@ -161,7 +197,10 @@ export function useOwner() {
       const token = await getItem('token');
       const storedShopId = await getItem('userId');
       const shopId = storedShopId ? String(storedShopId) : '';
-      const customer = customers.find((c) => (c.name || '') === (selectedName || '')) || null;
+      const customer =
+        customers.find((c) => String(c._id || '') === String(customerId || '')) ||
+        customers.find((c) => (c.name || '') === (selectedName || '')) ||
+        null;
       const items: { productId: string; time: number; qty: number; price: number }[] = [];
       for (const p of products) {
         const qty = quantities[p._id] ?? 0;

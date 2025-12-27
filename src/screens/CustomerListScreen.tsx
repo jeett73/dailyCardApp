@@ -61,23 +61,14 @@ export default function CustomerListScreen() {
       const currentDue =
         typeof dueOverrides[it.id] === 'number' ? dueOverrides[it.id] : Number(it?.dueAmount ?? 0);
       const canPay = Number(currentDue ?? 0) > 0;
+
       function handleEdit() {
-        const phoneDigits = String(it?.phone ?? '')
-          .replace(/\D/g, '')
-          .slice(-10);
-        const cardDigits = String(it?.cardNumber ?? '')
-          .replace(/\s+/g, '')
-          .replace(/[^A-Za-z0-9-]/g, '');
         navigation.navigate('CreateCustomer', {
           mode: 'edit',
-          initial: {
-            id: it.id,
-            name: it.name,
-            phone: phoneDigits,
-            cardNumber: cardDigits,
-          },
+          initial: it,
         });
       }
+
       function handlePayment() {
         if (!canPay) return;
         setPaymentCustomer({
