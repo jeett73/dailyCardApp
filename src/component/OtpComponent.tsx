@@ -85,6 +85,8 @@ export function useOtp() {
           refreshToken && setItem('refreshToken', refreshToken),
           userId && setItem('userId', userId),
           entityType && setItem('entityType', entityType),
+          userDetails?.name && setItem('name', userDetails.name),
+          userDetails?.cardNumber && setItem('cardNumber', userDetails.cardNumber),
         ].filter(Boolean),
       );
       setSuccess(true);

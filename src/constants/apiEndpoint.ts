@@ -9,7 +9,6 @@ const apiEndpoint = {
   url,
   auth: {
     login: url('/auth/login'),
-    otpVerify: url('/auth/otp/verify'),
     verifyOtp: url('/auth/verify-otp'),
     logout: url('/auth/logout'),
     logoutUser: (id: Id) => url(`/auth/logout/${id}`),
@@ -24,7 +23,8 @@ const apiEndpoint = {
     list: url('/customers'),
     add: url('/customers/add'),
     update: (id: Id) => url(`/customers/${id}`),
-    dues: (customerId: Id, shopId: Id) => url(`/customers/dues?customerId=${customerId}&shopId=${shopId}`),
+    dues: (customerId: Id, shopId: Id) =>
+      url(`/customers/dues?customerId=${customerId}&shopId=${shopId}`),
     pay: url('/customers/pay'),
   },
   entries: {

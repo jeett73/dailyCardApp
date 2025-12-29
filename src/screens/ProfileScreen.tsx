@@ -33,14 +33,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container]}>
-      <HeroHeader
-        color={Colors.light.brandPurple}
-        showProfile={true}
-        profileName="Hiren Dabhi"
-        profileSubtitle="Card #007"
-        avatarSize={55}
-        title="Hiren Dabhi"
-      />
+      <HeroHeader color={Colors.light.brandPurple} showProfile={true} avatarSize={55} />
 
       <View
         style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 125 : insets.top + 90 }]}

@@ -17,6 +17,13 @@ export default function MonthWiseReportScreen() {
     if (error) {
       return <Text style={styles.error}>{error}</Text>;
     }
+    if (months.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <Text style={styles.noDataText}>No past month statements found</Text>
+        </View>
+      );
+    }
     return months.map((m) => (
       <Pressable
         key={`${m.year}-${m.month}`}
@@ -44,7 +51,7 @@ export default function MonthWiseReportScreen() {
 
   return (
     <View style={[styles.container]}>
-      <HeroHeader color={Colors.light.brandPurple} title={`Past Monthly Statement`} />
+      <HeroHeader color={Colors.light.brandPurple} title={`Past Statements`} />
       <ScrollView
         contentContainerStyle={[
           styles.listContainer,
@@ -95,6 +102,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 6,
     backgroundColor: '#a69af7',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 250,
+    width: '100%',
+  },
+  noDataText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.light.text,
+    textAlign: 'center',
   },
   itemName: { fontSize: 18, color: '#fff', fontWeight: '600' },
   itemQty: { fontSize: 18, color: '#fff', fontWeight: '600' },

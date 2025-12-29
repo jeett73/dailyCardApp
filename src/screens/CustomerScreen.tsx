@@ -31,14 +31,7 @@ export default function CustomerScreen() {
 
   return (
     <View style={styles.screen}>
-      <HeroHeader
-        color={Colors.light.brandPurple}
-        showProfile={true}
-        profileName="Hiren Dabhi"
-        profileSubtitle="Card #007"
-        avatarSize={55}
-        title="Hiren Dabhi"
-      />
+      <HeroHeader color={Colors.light.brandPurple} showProfile={true} avatarSize={55} />
       <View
         style={[
           styles.container,

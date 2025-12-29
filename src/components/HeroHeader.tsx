@@ -1,7 +1,8 @@
 import Colors from '@/constants/Colors';
+import { getItem } from '@/services/storage';
 import Feather from '@expo/vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 /**
@@ -41,8 +42,23 @@ export default function HeroHeader({
   showHomeIcon = false,
 }: Props) {
   const navigation = useNavigation<any>();
-  const name = typeof profileName === 'string' ? profileName : undefined;
+  const [storedName, setStoredName] = useState<string | null>(null);
+  const [storedCardNumber, setStoredCardNumber] = useState<string | null>(null);
+  const [storedEntityType, setStoredEntityType] = useState<string | null>(null);
+
+  useEffect(() => {
+    getItem('name').then(setStoredName);
+    getItem('cardNumber').then(setStoredCardNumber);
+    getItem('entityType').then(setStoredEntityType);
+  }, []);
+
+  const name = title ? title : storedName;
   const displayName = name ? toTitleCase(name) : undefined;
+  let subtitle = profileSubtitle;
+  if (!subtitle && storedEntityType === 'customer' && storedCardNumber) {
+    subtitle = storedCardNumber;
+  }
+
   return (
     <View
       style={[
@@ -65,14 +81,18 @@ export default function HeroHeader({
           <AvatarInitials title={displayName} />
           <View style={styles.nameBlock}>
             <Text style={styles.nameText}>{displayName}</Text>
-            {!!profileSubtitle && <Text style={styles.subtitleText}>{profileSubtitle}</Text>}
+            {!!subtitle && (
+              <Text
+                style={styles.subtitleText}
+              >{`Card #${String(subtitle).padStart(3, '0')}`}</Text>
+            )}
           </View>
         </View>
       )}
-      {!showProfile && !!title && (
+      {!showProfile && !!displayName && (
         <View style={styles.titleRow}>
           <Text style={[styles.heroTitle, { color: titleColor, textAlign: 'center' }, titleStyle]}>
-            {title}
+            {displayName}
           </Text>
           {showHomeIcon && (
             <TouchableOpacity
