@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, TextInput } from 'react-native';
 import { postRequest } from '../api/apiMethods';
 import apiEndpoint from '../constants/apiEndpoint';
+import { registerForPushNotificationsAsync } from '../services/notificationService';
 import { setItem } from '../services/storage';
 
 export function useOtp() {
@@ -10,6 +11,7 @@ export function useOtp() {
   const route = useRoute<any>();
   const phone: string | undefined = route?.params?.phone;
   const initialOtp = (route?.params?.otp ?? '').replace(/\D/g, '').slice(0, 4);
+  const [fcmToken, setFcmToken] = useState<string | undefined>(undefined);
   const [digits, setDigits] = useState<string[]>([
     initialOtp[0] ?? '',
     initialOtp[1] ?? '',
@@ -53,6 +55,12 @@ export function useOtp() {
   }
 
   useEffect(() => {
+    registerForPushNotificationsAsync().then((token) => {
+      console.log(token);
+      if (token) {
+        setFcmToken(token);
+      }
+    });
     startTimer();
     const idx = digits.findIndex((d) => !d);
     const focusIdx = idx === -1 ? 3 : idx;
@@ -66,6 +74,47 @@ export function useOtp() {
     };
   }, []);
 
+  // async function handleVerify() {
+  //   const cleaned = otp.replace(/\D/g, '').slice(0, 4);
+  //   if (cleaned.length !== 4) {
+  //     setHasError(true);
+  //     return;
+  //   }
+  //   setHasError(false);
+  //   Keyboard.dismiss();
+  //   try {
+  //     setLoading(true);
+  //     const res = await postRequest(apiEndpoint.auth.verifyOtp, { phone, otp: cleaned, fcmToken });
+  //     const { token, refreshToken, userId, entityType, isMpinAlreadySet } =
+  //       (res?.data as any) ?? {};
+  //     await Promise.all(
+  //       [
+  //         token && setItem('token', token),
+  //         refreshToken && setItem('refreshToken', refreshToken),
+  //         userId && setItem('userId', userId),
+  //         entityType && setItem('entityType', entityType),
+  //       ].filter(Boolean),
+  //     );
+  //     setSuccess(true);
+  //     if (isMpinAlreadySet === null || isMpinAlreadySet === '') {
+  //       navigation.navigate('SetMpin', { phone });
+  //     } else {
+  //       if (entityType === 'shop') {
+  //         navigation.reset({ index: 0, routes: [{ name: 'Owner' }] });
+  //       } else {
+  //         navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+  //       }
+  //     }
+  //   } catch (e) {
+  //     const msg =
+  //       (e as any)?.response?.data?.message ||
+  //       (e as any)?.message ||
+  //       'OTP verification failed. Please try again.';
+  //     Alert.alert('Failed to verify OTP', String(msg));
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
   async function handleVerify() {
     const cleaned = otp.replace(/\D/g, '').slice(0, 4);
     if (cleaned.length !== 4) {
@@ -76,9 +125,27 @@ export function useOtp() {
     Keyboard.dismiss();
     try {
       setLoading(true);
-      const res = await postRequest(apiEndpoint.auth.verifyOtp, { phone, otp: cleaned });
-      const { token, refreshToken, userId, entityType, isMpinAlreadySet } =
-        (res?.data as any) ?? {};
+
+      let tokenToSend = fcmToken;
+
+      // ✅ Ensure token exists before API call
+      if (!tokenToSend) {
+        tokenToSend = await registerForPushNotificationsAsync();
+        setFcmToken(tokenToSend);
+      }
+
+      const payload = {
+        phone,
+        otp: cleaned,
+        fcmToken: tokenToSend,
+      };
+
+      console.log('VERIFY OTP PAYLOAD 👉', payload);
+
+      const res = await postRequest(apiEndpoint.auth.verifyOtp, payload);
+
+      const { token, refreshToken, userId, entityType, isMpinAlreadySet, userDetails, shopId } =
+        res?.data ?? {};
       await Promise.all(
         [
           token && setItem('token', token),
@@ -87,23 +154,22 @@ export function useOtp() {
           entityType && setItem('entityType', entityType),
           userDetails?.name && setItem('name', userDetails.name),
           userDetails?.cardNumber && setItem('cardNumber', userDetails.cardNumber),
+          shopId && setItem('shopId', shopId),
         ].filter(Boolean),
       );
       setSuccess(true);
-      if (isMpinAlreadySet === null || isMpinAlreadySet === '') {
+
+      if (!isMpinAlreadySet) {
         navigation.navigate('SetMpin', { phone });
       } else {
-        if (entityType === 'shop') {
-          navigation.reset({ index: 0, routes: [{ name: 'Owner' }] });
-        } else {
-          navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
-        }
+        navigation.reset({
+          index: 0,
+          routes: [{ name: entityType === 'shop' ? 'Owner' : 'MainTabs' }],
+        });
       }
     } catch (e) {
       const msg =
-        (e as any)?.response?.data?.message ||
-        (e as any)?.message ||
-        'OTP verification failed. Please try again.';
+        (e as any)?.response?.data?.message || (e as any)?.message || 'OTP verification failed';
       Alert.alert('Failed to verify OTP', String(msg));
     } finally {
       setLoading(false);
