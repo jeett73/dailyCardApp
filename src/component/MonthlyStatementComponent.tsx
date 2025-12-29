@@ -1,5 +1,6 @@
 import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
+import { getItem } from '@/services/storage';
 import { useCallback, useMemo, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 
@@ -65,9 +66,6 @@ const MONTHS_FULL = [
   'December',
 ];
 
-const CUSTOMER_ID = '692f094fe67bb831e6496202';
-const SHOP_ID = '692f04d99800aaaa111ccd9b';
-
 export function useMonthlyStatement() {
   const { width } = useWindowDimensions();
   const scale = width >= 768 ? 1.1 : width <= 360 ? 0.95 : 1;
@@ -85,7 +83,9 @@ export function useMonthlyStatement() {
     try {
       setLoading(true);
       setError(null);
-      const url = apiEndpoint.cards.monthlyStatement(CUSTOMER_ID, SHOP_ID);
+      const customerId = await getItem('userId');
+      const shopId = await getItem('shopId');
+      const url = apiEndpoint.cards.monthlyStatement(customerId!, shopId!);
       const res = await getRequest(url);
       const data = res.data as MonthlyStatementResponse;
       setCardData(data.card);
