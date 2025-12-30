@@ -52,35 +52,35 @@ const StatementCard = memo(function StatementCard({
   );
 });
 
-const SummaryCard = memo(function SummaryCard({
-  totalTxns,
-  totalAmount,
-  avgAmount,
-  scale,
-}: {
-  totalTxns: number;
-  totalAmount: number;
-  avgAmount: number;
-  scale: number;
-}) {
-  return (
-    <View style={styles.summaryCard}>
-      <Text style={[styles.summaryTitle, { fontSize: Math.round(18 * scale) }]}>Summary</Text>
-      <View style={styles.summaryRow}>
-        <Text style={styles.summaryLabel}>Total transactions</Text>
-        <Text style={styles.summaryValue}>{totalTxns}</Text>
-      </View>
-      <View style={styles.summaryRow}>
-        <Text style={styles.summaryLabel}>Total amount</Text>
-        <Text style={styles.summaryValue}>₹{totalAmount}</Text>
-      </View>
-      <View style={styles.summaryRow}>
-        <Text style={styles.summaryLabel}>Average amount</Text>
-        <Text style={styles.summaryValue}>₹{avgAmount.toFixed(2)}</Text>
-      </View>
-    </View>
-  );
-});
+// const SummaryCard = memo(function SummaryCard({
+//   totalTxns,
+//   totalAmount,
+//   avgAmount,
+//   scale,
+// }: {
+//   totalTxns: number;
+//   totalAmount: number;
+//   avgAmount: number;
+//   scale: number;
+// }) {
+//   return (
+//     <View style={styles.summaryCard}>
+//       <Text style={[styles.summaryTitle, { fontSize: Math.round(18 * scale) }]}>Summary</Text>
+//       <View style={styles.summaryRow}>
+//         <Text style={styles.summaryLabel}>Total transactions</Text>
+//         <Text style={styles.summaryValue}>{totalTxns}</Text>
+//       </View>
+//       <View style={styles.summaryRow}>
+//         <Text style={styles.summaryLabel}>Total amount</Text>
+//         <Text style={styles.summaryValue}>₹{totalAmount}</Text>
+//       </View>
+//       <View style={styles.summaryRow}>
+//         <Text style={styles.summaryLabel}>Average amount</Text>
+//         <Text style={styles.summaryValue}>₹{avgAmount.toFixed(2)}</Text>
+//       </View>
+//     </View>
+//   );
+// });
 
 export default function MonthlyStatementScreen() {
   const insets = useSafeAreaInsets();
@@ -88,9 +88,9 @@ export default function MonthlyStatementScreen() {
   const {
     days,
     groupedByDay,
-    totalTxns,
-    totalAmount,
-    avgAmount,
+    // totalTxns,
+    // totalAmount,
+    // avgAmount,
     scale,
     error,
     fmtDay,

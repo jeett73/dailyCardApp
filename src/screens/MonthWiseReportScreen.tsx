@@ -3,7 +3,7 @@ import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React, { useMemo } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MonthWiseReportScreen() {
@@ -55,7 +55,7 @@ export default function MonthWiseReportScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.listContainer,
-          { paddingTop: insets.top + 90 },
+          { paddingTop: Platform.OS === 'ios' ? 110 : insets.top + 90 },
           { paddingBottom: Math.max(insets.bottom, 24) },
         ]}
       >
