@@ -1,4 +1,5 @@
 import { getRequest, postRequest } from '@/api/apiMethods';
+import { MONTHS_SHORT } from '@/component/MonthlyStatementComponent';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
 import { getItem } from '@/services/storage';
@@ -54,7 +55,7 @@ export default function PaymentModal({
         const token = await getItem('token');
         const shopId = await getItem('userId');
         const res = await getRequest(
-          apiEndpoint.customers.dues(customer.id, String(shopId ?? '')),
+          apiEndpoint.cards.dueCards(customer.id, String(shopId ?? '')),
           {
             headers: { authorization: token ? `Bearer ${token}` : '' },
           },
@@ -63,8 +64,8 @@ export default function PaymentModal({
         const arr = Array.isArray(data?.dues) ? data?.dues : Array.isArray(data) ? data : [];
         const list: DuesItem[] = arr
           .map((d: any) => ({
-            label: String(d?.label ?? d?.month ?? ''),
-            amount: Number(d?.amount ?? d?.due ?? 0),
+            label: String(MONTHS_SHORT[d?.month] + ' ' + d?.year ?? 'Month'),
+            amount: Number(d?.dueAmount ?? d?.due ?? 0),
           }))
           .filter((d: DuesItem) => !!d.label);
         setItems(list);
@@ -85,16 +86,13 @@ export default function PaymentModal({
     try {
       setLoading(true);
       setError(null);
-      const token = await getItem('token');
       const shopId = await getItem('userId');
       const payload = {
         customerId: customer.id,
         shopId: String(shopId ?? ''),
-        amount,
+        paymentAmount: amount,
       };
-      await postRequest(apiEndpoint.customers.pay, payload, {
-        headers: { authorization: token ? `Bearer ${token}` : '' },
-      });
+      await postRequest(apiEndpoint.customers.payment, payload);
       onClose(amount);
     } catch {
       setError('Payment failed');
@@ -203,7 +201,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 6,
   },
-  duesLabel: { fontSize: 14, color: '#666' },
+  duesLabel: { fontSize: 14, color: Colors.light.text, fontWeight: '700' },
   duesAmount: { fontSize: 14, color: Colors.light.text, fontWeight: '700' },
   totalRow: {
     flexDirection: 'row',

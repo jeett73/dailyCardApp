@@ -78,7 +78,7 @@ export default function HeroHeader({
           accessibilityRole="summary"
           accessibilityLabel="Profile header"
         >
-          <AvatarInitials title={displayName} />
+          <AvatarInitials title={displayName} isHeader={true} />
           <View style={styles.nameBlock}>
             <Text style={styles.nameText}>{displayName}</Text>
             {!!subtitle && (
@@ -132,12 +132,12 @@ export function toTitleCase(name: string) {
 /**
  * Circular profile avatar displaying initials computed from a full name.
  */
-export function AvatarInitials({ title }: { title: string }) {
+export function AvatarInitials({ title, isHeader }: { title: string; isHeader?: boolean }) {
   const safeTitle = typeof title === 'string' ? title : '';
   const initials = getInitials(safeTitle) || '?';
   return (
     <View
-      style={styles.initialsCircle}
+      style={[styles.initialsCircle, isHeader && styles.initialsCircleWhite]}
       accessibilityRole="image"
       accessibilityLabel={safeTitle ? `Avatar for ${safeTitle}` : 'Avatar'}
     >
@@ -179,7 +179,10 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E6E8EC',
+    backgroundColor: Colors.dark.brandPurple,
+  },
+  initialsCircleWhite: {
+    backgroundColor: Colors.light.background,
   },
   initialsText: { fontSize: 18, fontWeight: '700', color: '#111' },
   titleRow: { width: '100%', position: 'relative', alignItems: 'center', justifyContent: 'center' },

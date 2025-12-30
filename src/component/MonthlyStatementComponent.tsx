@@ -36,7 +36,7 @@ interface MonthlyStatementResponse {
   card: CardData;
 }
 
-const MONTHS_SHORT = [
+export const MONTHS_SHORT = [
   'Jan',
   'Feb',
   'Mar',

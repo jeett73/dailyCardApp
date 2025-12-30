@@ -1,16 +1,10 @@
 import { useProductList } from '@/component/ProductListComponent';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
+import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
 import React, { useMemo } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-} from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProductListScreen() {
@@ -44,21 +38,15 @@ export default function ProductListScreen() {
         >
           <View style={styles.productRow}>
             <Image
-              source={require('../../assets/images/bg.png')}
+              source={{ uri: apiEndpoint.uploads(it.icon) }}
               style={styles.productThumb}
               resizeMode="cover"
             />
+
             <View style={styles.productInfo}>
               <Text style={styles.productTitle}>{it.name}</Text>
               <Text style={styles.productPrice}>{it.priceDisplay}</Text>
             </View>
-            <Switch
-              value={it.enabled}
-              onValueChange={(v) => onToggle(it.id, v)}
-              trackColor={{ false: '#e0e0e0', true: '#a0c6ff' }}
-              thumbColor={it.enabled ? Colors.light.tint : '#f4f3f4'}
-              style={styles.productSwitch}
-            />
           </View>
         </View>
       );

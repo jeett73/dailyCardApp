@@ -29,7 +29,7 @@ function MenuOption({ label, onPress }: MenuOptionProps) {
 }
 
 export default function ProfileScreen() {
-  const { insets, handleCall, menuItems, entityType } = useProfile();
+  const { insets, handleCall, menuItems, entityType, shopDetails } = useProfile();
 
   return (
     <View style={[styles.container]}>
@@ -67,6 +67,46 @@ export default function ProfileScreen() {
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Address</Text>
               <Text style={styles.summaryValue}>Gujarat</Text>
+            </View>
+          </View>
+        )}
+        {entityType === 'shop' && (
+          <View
+            style={styles.summaryCard}
+            accessibilityRole="summary"
+            accessibilityLabel="Shop summary"
+          >
+            <Text style={styles.summaryTitle}>Shop Summary</Text>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Shop Name</Text>
+              <Text style={styles.summaryValue}>
+                {shopDetails?.name || 'Patel Dairy and Sweet Store'}
+              </Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Owner Name</Text>
+              <Text style={styles.summaryValue}>{shopDetails?.ownerName || 'Owner'}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Mobile Number</Text>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Call shop mobile number"
+                onPress={handleCall}
+                style={({ pressed }) => [styles.callRow, pressed && styles.callRowPressed]}
+              >
+                <Text style={[styles.summaryValue, styles.infoLink]}>
+                  {shopDetails?.phone || '7600924242'}
+                </Text>
+              </Pressable>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Address</Text>
+              <Text style={styles.summaryValue}>{shopDetails?.address || 'Gujarat'}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Shop ID</Text>
+              <Text style={styles.summaryValue}>{shopDetails?.shopId || '—'}</Text>
             </View>
           </View>
         )}

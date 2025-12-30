@@ -76,7 +76,7 @@ export default function OwnerScreen() {
           {filtered.map((c) => {
             const name = toTitleCase(String(c.name || '').trim());
             const cardFormatted = formatCardNumber(c.cardNumber);
-            const mobileFormatted = formatMobile((c as any)?.mobile);
+            const mobileFormatted = formatMobile(c.phone);
             return (
               <TouchableOpacity
                 key={String(c._id ?? `${c.name}-${c.cardNumber ?? ''}`)}
@@ -98,7 +98,7 @@ export default function OwnerScreen() {
                     </View>
                     <View style={styles.metaRow}>
                       <Text style={styles.metaLabel}>Mobile</Text>
-                      <Text style={styles.metaValue}>{7600924242}</Text>
+                      <Text style={styles.metaValue}>{mobileFormatted}</Text>
                     </View>
                   </View>
                 </View>
@@ -112,7 +112,7 @@ export default function OwnerScreen() {
             styles.keypadWrapper,
             {
               bottom: 0,
-              paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 12) : 0,
+              paddingBottom: Math.max(insets.bottom, 12),
             },
           ]}
         >

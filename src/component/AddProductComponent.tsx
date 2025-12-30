@@ -4,7 +4,7 @@ import { getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
 
-type CatalogProduct = { _id: string; name: string };
+type CatalogProduct = { _id: string; name: string; icon: string };
 type SelectedProduct = { productId: string; price: number };
 
 export function useAddProduct() {
@@ -41,6 +41,7 @@ export function useAddProduct() {
           .map((p: any) => ({
             _id: String(p?._id ?? p?.id ?? ''),
             name: String(p?.Name ?? p?.name ?? p?.productName ?? p?.title ?? ''),
+            icon: String(p?.icon ?? ''),
           }))
           .filter((p: CatalogProduct) => !!p._id && !!p.name.trim());
 
@@ -83,7 +84,7 @@ export function useAddProduct() {
         const id = p._id;
         const selected = !!selectedProducts[id];
         const priceText = enteredPrices[id] ?? '';
-        return { id, name: p.name, selected, priceText };
+        return { id, name: p.name, selected, priceText, icon: p.icon };
       }),
     [products, selectedProducts, enteredPrices],
   );

@@ -13,6 +13,13 @@ export function useProfile() {
 
   const avatarSize = width >= 768 ? 64 : 56;
   const [entityType, setEntityType] = useState<string | null>(null);
+  const [shopDetails, setShopDetails] = useState<{
+    name: string;
+    ownerName: string;
+    phone: string;
+    address: string;
+    shopId: string;
+  } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -48,28 +55,46 @@ export function useProfile() {
   }
 
   function handleCall() {
-    Linking.openURL('tel:7600924242').catch(() => {
+    const num = (entityType === 'shop' ? shopDetails?.phone : null) || '7600924242';
+    Linking.openURL(`tel:${num}`).catch(() => {
       Alert.alert('Call failed', 'Unable to initiate call');
     });
   }
 
   const baseMenuItems = [
-    { label: 'Past Statements', onPress: gotoStatements },
-    { label: 'Customers', onPress: gotoCustomers },
-    { label: 'Products', onPress: gotoProducts },
-    { label: 'Logout', onPress: handleLogout },
+    { label: 'Past Statements', onPress: gotoStatements, isFor: 'customer' },
+    { label: 'Recent Order', onPress: gotoRecentOrder, isFor: 'shop' },
+    { label: 'Customers', onPress: gotoCustomers, isFor: 'shop' },
+    { label: 'Products', onPress: gotoProducts, isFor: 'shop' },
+    { label: 'Logout', onPress: handleLogout, isFor: 'both' },
   ] as const;
-  const menuItems = useMemo(() => {
-    if (entityType === 'shop') {
-      return baseMenuItems.filter((item) => item.label !== 'Past Statements');
-    }
-    if (entityType === 'customer') {
-      return baseMenuItems.filter(
-        (item) => item.label !== 'Products' && item.label !== 'Customers',
-      );
-    }
-    return baseMenuItems;
-  }, [entityType, baseMenuItems]);
 
-  return { insets, width, avatarSize, menuItems, handleCall, entityType };
+  const menuItems = useMemo(() => {
+    return baseMenuItems.filter((item) => item.isFor === 'both' || item.isFor === entityType);
+  }, [entityType]);
+
+  function gotoRecentOrder() {
+    navigation.navigate('RecentOrder');
+  }
+
+  useEffect(() => {
+    (async () => {
+      const [name, shopId, ownerName, phone, address] = await Promise.all([
+        getItem('name'),
+        getItem('shopId'),
+        getItem('ownerName'),
+        getItem('phone'),
+        getItem('address'),
+      ]);
+      setShopDetails({
+        name: String(name || ''),
+        ownerName: String(ownerName || ''),
+        phone: String(phone || ''),
+        address: String(address || ''),
+        shopId: String(shopId || ''),
+      });
+    })();
+  }, []);
+
+  return { insets, width, avatarSize, menuItems, handleCall, entityType, shopDetails };
 }

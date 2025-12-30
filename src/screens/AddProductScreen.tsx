@@ -1,6 +1,7 @@
 import { useAddProduct } from '@/component/AddProductComponent';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
+import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
 import React, { useEffect, useMemo } from 'react';
@@ -51,7 +52,7 @@ export default function AddProductScreen() {
         >
           <View style={[styles.productRow, it.selected && styles.productRowSelected]}>
             <Image
-              source={require('../../assets/images/bg.png')}
+              source={{ uri: apiEndpoint.uploads(it.icon) }}
               style={styles.productThumb}
               resizeMode="cover"
             />

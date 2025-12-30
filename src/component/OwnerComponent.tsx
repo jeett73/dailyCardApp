@@ -9,6 +9,7 @@ export type Customer = {
   name?: string;
   cardNumber?: string | number;
   regularProduct?: any[];
+  phone: string | number;
 };
 export type ShopProduct = {
   _id?: any;
@@ -58,12 +59,7 @@ export function useOwner() {
             if (typeof item === 'string') {
               return { name: item } as Customer;
             }
-            return {
-              _id: item?._id,
-              name: item?.name,
-              cardNumber: item?.cardNumber,
-              regularProduct: item?.regularProduct,
-            } as Customer;
+            return item as Customer;
           })
           .filter((c: Customer) => !!(c.name && String(c.name).trim()));
         if (!cancelled) setCustomers(list);

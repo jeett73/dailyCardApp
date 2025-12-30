@@ -26,8 +26,8 @@ export default function CustomerListScreen() {
     name: string;
     phone: string;
     cardNumber: string;
+    previousMonthDue: number;
   } | null>(null);
-  const [dueOverrides, setDueOverrides] = useState<Record<string, number>>({});
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -58,9 +58,8 @@ export default function CustomerListScreen() {
       return <Text style={styles.emptyText}>No customers found</Text>;
     }
     return filtered.map((it) => {
-      const currentDue =
-        typeof dueOverrides[it.id] === 'number' ? dueOverrides[it.id] : Number(it?.dueAmount ?? 0);
-      const canPay = Number(currentDue ?? 0) > 0;
+      const currentDue = Number(it?.previousMonthDue ?? 0);
+      const canPay = currentDue > 0;
 
       function handleEdit() {
         navigation.navigate('CreateCustomer', {

@@ -9,7 +9,7 @@ type Customer = {
   name?: string;
   cardNumber?: string | number;
   phone?: string | number;
-  dueAmount?: number;
+  previousMonthDue?: number;
 };
 
 function formatCardNumber(card?: string | number) {
@@ -56,7 +56,7 @@ export function useCustomerList() {
             name: item?.name,
             cardNumber: item?.cardNumber,
             phone: item?.phone,
-            dueAmount: Number(item?.lastDueAmount ?? item?.dueAmount ?? 0),
+            previousMonthDue: Number(item?.previousMonthDue ?? 0),
           }))
           .filter((c: Customer) => !!(c.name && String(c.name).trim()));
         setCustomers(list);
@@ -75,8 +75,8 @@ export function useCustomerList() {
         name: toTitleCaseLocal(String(c.name || '').trim()),
         card: `#${formatCardNumber(c.cardNumber)}`,
         mobile: formatMobile(c.phone),
-        dueDisplay: `₹${Number(c?.dueAmount ?? 0)}`,
-        dueAmount: Number(c?.dueAmount ?? 0),
+        dueDisplay: `₹${Number(c?.previousMonthDue ?? 0)}`,
+        previousMonthDue: Number(c?.previousMonthDue ?? 0),
         phone: String(c?.phone ?? ''),
         cardNumber: String(c?.cardNumber ?? ''),
       })),

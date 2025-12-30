@@ -9,7 +9,7 @@ type ShopProduct = {
   productId: string;
   price: number;
   productName?: string;
-  enabled?: boolean;
+  icon: string;
 };
 
 export function useProductList() {
@@ -35,13 +35,9 @@ export function useProductList() {
           productId: String(p?.productId || ''),
           price: Number(p?.price ?? 0),
           productName: String(p?.productName || ''),
-          enabled: typeof p?.enabled === 'boolean' ? Boolean(p?.enabled) : true,
+          icon: String(p?.icon || ''),
         }));
         const map: Record<string, boolean> = {};
-        for (const p of list) {
-          const id = String(p._id ?? p.productId);
-          map[id] = Boolean(p.enabled);
-        }
         setProducts(list);
         setEnabledMap(map);
         setLoading(false);
@@ -59,9 +55,9 @@ export function useProductList() {
         name: String(p.productName || p.productId),
         price: Number(p.price ?? 0),
         priceDisplay: `₹${Number(p.price ?? 0)}`,
-        enabled: enabledMap[String(p._id ?? p.productId)] ?? true,
+        icon: p.icon,
       })),
-    [products, enabledMap],
+    [products],
   );
 
   function onToggle(id: string, value: boolean) {
