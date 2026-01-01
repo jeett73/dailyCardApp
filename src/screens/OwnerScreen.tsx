@@ -77,10 +77,11 @@ export default function OwnerScreen() {
             const name = toTitleCase(String(c.name || '').trim());
             const cardFormatted = formatCardNumber(c.cardNumber);
             const mobileFormatted = formatMobile(c.phone);
+            const dueAmount = Number(c.previousMonthDue || 0);
             return (
               <TouchableOpacity
                 key={String(c._id ?? `${c.name}-${c.cardNumber ?? ''}`)}
-                style={styles.customerCard}
+                style={[styles.customerCard, dueAmount > 0 && styles.dueCard]}
                 activeOpacity={0.85}
                 onPress={() => {
                   setIsFocused(false);
@@ -88,17 +89,19 @@ export default function OwnerScreen() {
                 }}
                 accessibilityLabel={`${name || 'Unknown'} • Card ${cardFormatted} • Mobile ${mobileFormatted}`}
               >
-                <View style={styles.customerRow}>
+                <View style={[styles.customerRow, dueAmount > 0 && styles.customerRowDue]}>
                   <AvatarInitials title={name || 'Unknown'} />
-                  <View style={styles.customerInfo}>
-                    <Text style={styles.customerTitle}>{name || 'Hiren Dabhi'}</Text>
-                    <View style={styles.metaRow}>
-                      <Text style={styles.metaLabel}>Card</Text>
-                      <Text style={styles.metaValue}>#{cardFormatted}</Text>
-                    </View>
-                    <View style={styles.metaRow}>
+                  <View style={[styles.customerInfo, dueAmount > 0 && styles.customerInfoDue]}>
+                    <Text style={styles.customerTitle}>
+                      #{cardFormatted} {name || 'Hiren Dabhi'}
+                    </Text>
+                    <View style={[styles.metaRow, dueAmount > 0 && styles.metaRowDue]}>
                       <Text style={styles.metaLabel}>Mobile</Text>
                       <Text style={styles.metaValue}>{mobileFormatted}</Text>
+                    </View>
+                    <View style={[styles.metaRow, dueAmount > 0 && styles.metaRowDue]}>
+                      <Text style={styles.metaLabel}>Due Amount</Text>
+                      <Text style={styles.metaValue}>₹ {dueAmount}</Text>
                     </View>
                   </View>
                 </View>
@@ -383,6 +386,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
+  dueCard: {
+    backgroundColor: '#fdecea',
+    borderColor: 'rgba(229,57,53,0.24)',
+  },
+
   customerName: {
     fontSize: 16,
     fontWeight: '700',
@@ -390,9 +398,22 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   customerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
+  customerRowDue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#fdecea',
+  },
   customerInfo: { flex: 1, backgroundColor: '#fff' },
+  customerInfoDue: { flex: 1, backgroundColor: '#fdecea' },
   customerTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, backgroundColor: '#fff' },
+  metaRowDue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    backgroundColor: '#fdecea',
+  },
   metaLabel: { fontSize: 12, color: '#666', marginRight: 8 },
   metaValue: { fontSize: 12, color: Colors.light.text, fontWeight: '700' },
   cardRow: {

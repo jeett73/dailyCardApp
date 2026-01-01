@@ -51,7 +51,7 @@ export const MONTHS_SHORT = [
   'Dec',
 ];
 
-const MONTHS_FULL = [
+export const MONTHS_FULL = [
   'January',
   'February',
   'March',

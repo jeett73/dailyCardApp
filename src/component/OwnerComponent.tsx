@@ -10,6 +10,7 @@ export type Customer = {
   cardNumber?: string | number;
   regularProduct?: any[];
   phone: string | number;
+  previousMonthDue?: number;
 };
 export type ShopProduct = {
   _id?: any;

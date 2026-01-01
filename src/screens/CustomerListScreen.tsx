@@ -28,6 +28,7 @@ export default function CustomerListScreen() {
     cardNumber: string;
     previousMonthDue: number;
   } | null>(null);
+  const [dueOverrides, setDueOverrides] = useState<Record<string, number>>({});
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -58,7 +59,9 @@ export default function CustomerListScreen() {
       return <Text style={styles.emptyText}>No customers found</Text>;
     }
     return filtered.map((it) => {
-      const currentDue = Number(it?.previousMonthDue ?? 0);
+      const override = dueOverrides[it.id];
+      const currentDue =
+        typeof override === 'number' ? override : Number(it?.previousMonthDue ?? 0);
       const canPay = currentDue > 0;
 
       function handleEdit() {
@@ -75,33 +78,34 @@ export default function CustomerListScreen() {
           name: it.name,
           phone: it.mobile,
           cardNumber: it.card,
+          previousMonthDue: Number(it?.previousMonthDue ?? 0),
         });
         setPaymentOpen(true);
       }
       return (
         <TouchableOpacity
           key={it.id}
-          style={styles.customerCard}
+          style={[styles.customerCard, currentDue > 0 && styles.customerCardDue]}
           activeOpacity={0.85}
           accessibilityLabel={`${it.name || 'Unknown'} • Card ${it.card} • Mobile ${it.mobile}`}
         >
-          <View style={styles.customerRow}>
+          <View style={[styles.customerRow, currentDue > 0 && styles.DueBg]}>
             <AvatarInitials title={it.name || 'Unknown'} />
-            <View style={styles.customerInfo}>
+            <View style={currentDue > 0 ? styles.customerInfoDue : styles.customerInfo}>
               <Text style={styles.customerTitle}>{it.name || 'Unknown'}</Text>
-              <View style={styles.metaRow}>
+              <View style={currentDue > 0 ? styles.metaRowDue : styles.metaRow}>
                 <Text style={styles.metaLabel}>Card</Text>
                 <Text style={styles.metaValue}>{it.card}</Text>
               </View>
-              <View style={styles.metaRow}>
+              <View style={currentDue > 0 ? styles.metaRowDue : styles.metaRow}>
                 <Text style={styles.metaLabel}>Mobile</Text>
                 <Text style={styles.metaValue}>{it.mobile}</Text>
               </View>
-              <View style={styles.metaRow}>
+              <View style={currentDue > 0 ? styles.metaRowDue : styles.metaRow}>
                 <Text style={styles.metaLabel}>Last Due</Text>
                 <Text style={styles.metaValue}>{`₹${currentDue}`}</Text>
               </View>
-              <View style={styles.actionsRow}>
+              <View style={currentDue > 0 ? styles.actionsRowDue : styles.actionsRow}>
                 <TouchableOpacity
                   style={styles.actionBtn}
                   activeOpacity={0.8}
@@ -127,7 +131,7 @@ export default function CustomerListScreen() {
         </TouchableOpacity>
       );
     });
-  }, [items, loading, error, filtered, query]);
+  }, [items, loading, error, filtered, query, dueOverrides]);
 
   return (
     <View style={[styles.container]}>
@@ -172,7 +176,7 @@ export default function CustomerListScreen() {
             const prev =
               typeof dueOverrides[paymentCustomer.id] === 'number'
                 ? dueOverrides[paymentCustomer.id]
-                : (filtered.find((f) => f.id === paymentCustomer.id)?.dueAmount ?? 0);
+                : (filtered.find((f) => f.id === paymentCustomer.id)?.previousMonthDue ?? 0);
             const next = Math.max(0, Number(prev) - Number(paid));
             setDueOverrides((m) => ({ ...m, [paymentCustomer.id]: next }));
           }
@@ -235,11 +239,27 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
+  customerCardDue: {
+    backgroundColor: '#fdecea',
+    borderColor: 'rgba(229,57,53,0.24)',
+  },
+  DueBg: {
+    backgroundColor: '#fdecea',
+  },
   customerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
   customerInfo: { flex: 1, backgroundColor: '#fff' },
+  customerInfoDue: { flex: 1, backgroundColor: '#fdecea' },
+
   customerTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, backgroundColor: '#fff' },
+  metaRowDue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    backgroundColor: '#fdecea',
+  },
   metaLabel: { fontSize: 12, color: '#666', marginRight: 8 },
+  metaLabelDue: { fontSize: 12, color: '#e53935', marginRight: 8 },
   metaValue: { fontSize: 12, color: Colors.light.text, fontWeight: '700' },
   emptyText: { textAlign: 'center', color: '#666', fontSize: 14, paddingVertical: 12 },
   error: { fontSize: 14, color: '#e53935' },
@@ -251,6 +271,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     backgroundColor: '#fff',
+  },
+
+  actionsRowDue: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fdecea',
   },
   actionBtn: {
     width: 32,

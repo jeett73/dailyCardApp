@@ -1,5 +1,6 @@
 import { getRequest, postRequest } from '@/api/apiMethods';
-import { MONTHS_SHORT } from '@/component/MonthlyStatementComponent';
+import { MONTHS_FULL } from '@/component/MonthlyStatementComponent';
+import { AvatarInitials } from '@/components/HeroHeader';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
 import { getItem } from '@/services/storage';
@@ -64,7 +65,7 @@ export default function PaymentModal({
         const arr = Array.isArray(data?.dues) ? data?.dues : Array.isArray(data) ? data : [];
         const list: DuesItem[] = arr
           .map((d: any) => ({
-            label: String(MONTHS_SHORT[d?.month] + ' ' + d?.year ?? 'Month'),
+            label: String(MONTHS_FULL[d?.month - 1] + ' ' + d?.year ?? 'Month'),
             amount: Number(d?.dueAmount ?? d?.due ?? 0),
           }))
           .filter((d: DuesItem) => !!d.label);
@@ -92,7 +93,7 @@ export default function PaymentModal({
         shopId: String(shopId ?? ''),
         paymentAmount: amount,
       };
-      await postRequest(apiEndpoint.customers.payment, payload);
+      await postRequest(apiEndpoint.cards.payment, payload);
       onClose(amount);
     } catch {
       setError('Payment failed');
@@ -108,9 +109,21 @@ export default function PaymentModal({
           <Text style={styles.title}>Payment</Text>
           {customer ? (
             <View style={styles.summary}>
-              <Text style={styles.summaryText}>{customer.name}</Text>
-              <Text style={styles.summaryText}>{customer.phone}</Text>
-              <Text style={styles.summaryText}>{customer.cardNumber}</Text>
+              <View style={styles.customerRow}>
+                <AvatarInitials title={customer.name || 'Unknown'} />
+                <View style={styles.customerInfo}>
+                  <Text style={styles.customerTitle}>{customer.name || 'Unknown'}</Text>
+                  <View style={styles.metaRow}>
+                    <Text style={styles.metaLabel}>Card</Text>
+                    <Text style={styles.metaValue}>{customer.cardNumber}</Text>
+                  </View>
+                  <View style={styles.metaRow}>
+                    <Text style={styles.metaLabel}>Mobile</Text>
+                    <Text style={styles.metaValue}>{customer.phone}</Text>
+                  </View>
+                </View>
+              </View>
+              {/* <View style={styles.hr} /> */}
             </View>
           ) : null}
           {loading ? (
@@ -125,40 +138,50 @@ export default function PaymentModal({
                 {items.length === 0 ? (
                   <Text style={styles.emptyText}>No pending bills</Text>
                 ) : (
-                  items.map((d, i) => (
-                    <View key={d.label + i} style={styles.duesRow}>
-                      <Text style={styles.duesLabel}>{d.label}</Text>
-                      <Text style={styles.duesAmount}>₹{d.amount}</Text>
+                  <>
+                    <View style={styles.duesHeader}>
+                      <Text style={styles.duesHeaderLabel}>Month</Text>
+                      <Text style={styles.duesHeaderAmount}>Amount</Text>
                     </View>
-                  ))
+                    {items.map((d, i) => (
+                      <View key={d.label + i} style={styles.duesRow}>
+                        <Text style={styles.duesLabel}>{d.label}</Text>
+                        <Text style={styles.duesAmount}>₹{d.amount}</Text>
+                      </View>
+                    ))}
+                  </>
                 )}
               </ScrollView>
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total Due</Text>
                 <Text style={styles.totalAmount}>₹{totalDue}</Text>
               </View>
-              <Text style={styles.inputLabel}>Amount</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                keyboardType="decimal-pad"
-                value={payText}
-                onChangeText={setPayText}
-              />
-              <View style={styles.actions}>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => onClose()}>
-                  <Text style={styles.cancelText}>Close</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.payBtn, (!canPay || loading) && styles.payBtnDisabled]}
-                  onPress={handlePay}
-                  disabled={!canPay || loading}
-                >
-                  <Text style={styles.payText}>Payment</Text>
-                </TouchableOpacity>
+              <View style={styles.amountRow}>
+                <Text style={styles.amountLabel50}>Amount</Text>
+                <TextInput
+                  style={styles.amountInput50}
+                  placeholder="0"
+                  keyboardType="decimal-pad"
+                  value={payText}
+                  onChangeText={setPayText}
+                />
               </View>
             </>
           )}
+          <View style={styles.actions}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => onClose()}>
+              <Text style={styles.cancelText}>Close</Text>
+            </TouchableOpacity>
+            {!error ? (
+              <TouchableOpacity
+                style={[styles.payBtn, (!canPay || loading) && styles.payBtnDisabled]}
+                onPress={handlePay}
+                disabled={!canPay || loading}
+              >
+                <Text style={styles.payText}>Payment</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
       </View>
     </Modal>
@@ -195,6 +218,16 @@ const styles = StyleSheet.create({
   error: { fontSize: 14, color: '#e53935', textAlign: 'center', paddingVertical: 8 },
   duesList: { maxHeight: 180, marginTop: 8 },
   duesContainer: { paddingVertical: 4 },
+  duesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(13,16,27,0.08)',
+  },
+  duesHeaderLabel: { fontSize: 14, color: '#666', fontWeight: '700' },
+  duesHeaderAmount: { fontSize: 14, color: '#666', fontWeight: '700' },
   duesRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -211,9 +244,21 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontSize: 14, color: '#666' },
   totalAmount: { fontSize: 14, color: Colors.light.text, fontWeight: '700' },
-  inputLabel: { marginTop: 12, fontSize: 14, color: Colors.light.text, fontWeight: '700' },
-  input: {
-    marginTop: 8,
+  amountRow: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  amountLabel50: {
+    width: '50%',
+    fontSize: 14,
+    color: Colors.light.text,
+    fontWeight: '700',
+    paddingRight: 8,
+  },
+  amountInput50: {
+    width: '50%',
     height: 48,
     borderRadius: 12,
     borderWidth: 1,
@@ -252,4 +297,15 @@ const styles = StyleSheet.create({
   payBtnDisabled: { opacity: 0.6 },
   payText: { fontSize: 14, color: '#fff', fontWeight: '700' },
   emptyText: { textAlign: 'center', color: '#666', fontSize: 14, paddingVertical: 12 },
+  customerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
+  customerInfo: { flex: 1, backgroundColor: '#fff' },
+  customerTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, backgroundColor: '#fff' },
+  metaLabel: { fontSize: 12, color: '#666', marginRight: 8 },
+  metaValue: { fontSize: 12, color: Colors.light.text, fontWeight: '700' },
+  hr: {
+    height: 1,
+    backgroundColor: 'rgba(13,16,27,0.12)',
+    marginVertical: 10,
+  },
 });
