@@ -131,7 +131,7 @@ export default function CustomerListScreen() {
         </TouchableOpacity>
       );
     });
-  }, [items, loading, error, filtered, query, dueOverrides]);
+  }, [items, loading, error, filtered, query]);
 
   return (
     <View style={[styles.container]}>

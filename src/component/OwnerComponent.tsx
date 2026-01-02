@@ -1,8 +1,10 @@
-import { getRequest, postRequest } from '@/api/apiMethods';
+import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, useWindowDimensions } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { useWindowDimensions } from 'react-native';
+import type { ShopProduct } from './OrderComponent';
+import { useOrder } from './OrderComponent';
 
 export type Customer = {
   _id?: any;
@@ -12,31 +14,16 @@ export type Customer = {
   phone: string | number;
   previousMonthDue?: number;
 };
-export type ShopProduct = {
-  _id?: any;
-  productId: string;
-  price: number;
-  productName?: string;
-  icon: string;
-};
+
+export { ShopProduct };
 
 export function useOwner() {
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const [query, setQuery] = useState('');
   const [input, setInput] = useState('');
-  const [selectedName, setSelectedName] = useState<string | null>(null);
-  const [customerId, setCustomerId] = useState<string | null>(null);
-  const [sheetVisible, setSheetVisible] = useState(false);
-  const sheetY = useMemo(() => new Animated.Value(0), []);
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<ShopProduct[]>([]);
-  const qtyScales = useRef<Record<string, Animated.Value>>({});
 
-  const totalAmount = useMemo(
-    () => products.reduce((sum, p) => sum + (quantities[p._id] ?? 0) * p.price, 0),
-    [products, quantities],
-  );
+  const orderLogic = useOrder();
 
   useEffect(() => {
     let cancelled = false;
@@ -105,149 +92,23 @@ export function useOwner() {
     return `+91 ${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)}`;
   }
 
-  function openSheet(customer: Customer) {
-    setSelectedName(customer?.name ?? '');
-    setCustomerId(customer?._id);
-    setSheetVisible(true);
-    setQuantities({});
-    sheetY.setValue(500);
-    Animated.timing(sheetY, { toValue: 0, duration: 220, useNativeDriver: true }).start();
-    loadProducts(String(customer?._id || ''));
-  }
-
-  function closeSheet() {
-    Animated.timing(sheetY, { toValue: 500, duration: 180, useNativeDriver: true }).start(() => {
-      setSheetVisible(false);
-      setSelectedName(null);
-      setCustomerId(null);
-    });
-  }
-
-  function inc(p: string) {
-    setQuantities((q) => ({ ...q, [p]: (q[p] ?? 0) + 1 }));
-  }
-
-  function dec(p: string) {
-    setQuantities((q) => ({ ...q, [p]: Math.max(0, (q[p] ?? 0) - 1) }));
-  }
-
-  function pulseQty(id: string) {
-    const v = qtyScales.current[id] ?? (qtyScales.current[id] = new Animated.Value(1));
-    Animated.sequence([
-      Animated.timing(v, { toValue: 1.1, duration: 100, useNativeDriver: true }),
-      Animated.spring(v, { toValue: 1, useNativeDriver: true }),
-    ]).start();
-  }
-
-  async function loadProducts(selectedCustomerId?: string) {
-    try {
-      const token = await getItem('token');
-      const storedShopId = await getItem('userId');
-      const shopId = storedShopId;
-      const res = await getRequest(apiEndpoint.shopProducts.listShopProducts, {
-        params: { shopId },
-        headers: { authorization: token ? `Bearer ${token}` : '' },
-      });
-      const data = (res?.data ?? {}) as any;
-      const arr = Array.isArray(data?.shopProducts) ? data?.shopProducts : [];
-      const list: ShopProduct[] = arr.map((p: any) => ({
-        _id: String(p?._id || ''),
-        productId: String(p?.productId || ''),
-        price: Number(p?.price ?? 0),
-        productName: String(p?.productName || ''),
-        icon: String(p?.icon || ''),
-      }));
-      setProducts(list);
-      const cust =
-        customers.find(
-          (c) => String(c._id || '') === String(selectedCustomerId || customerId || ''),
-        ) ||
-        customers.find((c) => (c.name || '') === (selectedName || '')) ||
-        ({} as Customer);
-      const regular: { productId: string; qty: number }[] = Array.isArray(cust?.regularProduct)
-        ? cust.regularProduct
-        : [];
-      const regMap: Record<string, number> = {};
-      for (const r of regular) {
-        if (r && r.productId) {
-          const qtyNum = Number((r as any)?.qty ?? 0);
-          if (Number.isFinite(qtyNum) && qtyNum > 0) {
-            regMap[String(r.productId)] = qtyNum;
-          }
-        }
-      }
-      const nextQuantities: Record<string, number> = {};
-      for (const p of list) {
-        const q = regMap[String(p._id)];
-        if (typeof q === 'number' && q > 0) {
-          nextQuantities[p._id] = q;
-        }
-      }
-      setQuantities(nextQuantities);
-    } catch (e) {
-      setProducts([]);
-    }
-  }
-
-  async function save() {
-    try {
-      const token = await getItem('token');
-      const storedShopId = await getItem('userId');
-      const shopId = storedShopId ? String(storedShopId) : '';
-      const customer =
-        customers.find((c) => String(c._id || '') === String(customerId || '')) ||
-        customers.find((c) => (c.name || '') === (selectedName || '')) ||
-        null;
-      const items: { productId: string; time: number; qty: number; price: number }[] = [];
-      for (const p of products) {
-        const qty = quantities[p._id] ?? 0;
-        if (qty > 0) {
-          items.push({ productId: p._id, time: Date.now(), qty, price: p.price });
-        }
-      }
-      if (items.length === 0) {
-        closeSheet();
-        return;
-      }
-      const payload = {
-        customerId: customer?._id ? String(customer._id) : '',
-        shopId,
-        products: [{ day: new Date().getDate(), product: items }],
-      };
-      await postRequest(apiEndpoint.cards.order, payload, {
-        headers: { authorization: token ? `Bearer ${token}` : '' },
-      });
-      closeSheet();
-      setQuantities({});
-    } catch (e) {
-      closeSheet();
-    }
-  }
+  // Derive selectedName from orderLogic for backward compatibility
+  const selectedName = orderLogic.currentCustomer?.name ?? null;
 
   return {
     width,
-    height,
+    // height comes from orderLogic or useWindowDimensions.
+    // orderLogic exports height.
     query,
     input,
     selectedName,
-    sheetVisible,
-    sheetY,
-    quantities,
     customers,
-    products,
-    qtyScales,
-    totalAmount,
     filtered,
     onDigit,
     onBackspace,
     onClear,
     formatCardNumber,
     formatMobile,
-    openSheet,
-    closeSheet,
-    inc,
-    dec,
-    pulseQty,
-    save,
+    ...orderLogic,
   };
 }
