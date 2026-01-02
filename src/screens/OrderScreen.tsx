@@ -31,6 +31,7 @@ interface OrderScreenProps {
   dec: (id: string) => void;
   pulseQty: (id: string) => void;
   save: () => void;
+  saveLabel?: string;
 }
 
 export default function OrderScreen({
@@ -41,13 +42,15 @@ export default function OrderScreen({
   products,
   quantities,
   qtyScales,
+  otherPurchased,
+  setOtherPurchased,
   closeSheet,
   inc,
   dec,
   pulseQty,
   save,
+  saveLabel = 'Order',
 }: OrderScreenProps) {
-  const [otherPurchased, setOtherPurchased] = useState<string>('');
   const [isFocused, setIsFocused] = useState(false);
 
   // Reset local state when sheet closes or opens?

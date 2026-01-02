@@ -3,8 +3,9 @@ import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
-import React from 'react';
-import { Platform, Pressable, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { BackHandler, Platform, Pressable, StyleSheet } from 'react-native';
 
 type MenuLabel = 'Past Statements' | 'Logout' | 'Customers' | 'Products';
 

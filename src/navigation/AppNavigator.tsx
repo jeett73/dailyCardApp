@@ -11,6 +11,7 @@ import OtpScreen from '@/screens/OtpScreen';
 import OwnerScreen from '@/screens/OwnerScreen';
 import ProductListScreen from '@/screens/ProductListScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
+import RecentOrderScreen from '@/screens/RecentOrderScreen';
 import SetMpinScreen from '@/screens/SetMpinScreen';
 import { getItem } from '@/services/storage';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -48,6 +49,7 @@ export default function AppNavigator() {
       <Stack.Screen name="CustomerList" component={CustomerListScreen} />
       <Stack.Screen name="ProductList" component={ProductListScreen} />
       <Stack.Screen name="AddProduct" component={AddProductScreen} />
+      <Stack.Screen name="RecentOrder" component={RecentOrderScreen} />
       <Stack.Screen name="CreateCustomer" component={CreateCustomerScreen} />
       <Stack.Screen name="Owner" component={OwnerScreen} options={{ gestureEnabled: false }} />
       <Stack.Screen name="Profile" component={ProfileScreen} />

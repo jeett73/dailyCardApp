@@ -25,12 +25,6 @@ const apiEndpoint = {
     add: url('/customers/add'),
     update: (id: Id) => url(`/customers/${id}`),
   },
-  entries: {
-    list: url('/entries'),
-    create: url('/entries'),
-    detail: (id: Id) => url(`/entries/${id}`),
-    delete: (id: Id) => url(`/entries/${id}`),
-  },
   cards: {
     order: url('/cards/order'),
     monthlyStatement: (customerId: string, shopId: string) =>
@@ -40,6 +34,8 @@ const apiEndpoint = {
     dueCards: (customerId: string, shopId: string) =>
       url(`/cards/due-cards?customerId=${customerId}&shopId=${shopId}`),
     payment: url('/cards/payment-done'),
+    recentOrder: url('/cards/recent-order'),
+    updateOrder: (id: Id) => url(`/cards/recent-order/${id}`),
   },
   shopProducts: {
     listShopProducts: url('/shop-products'),

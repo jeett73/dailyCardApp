@@ -1,4 +1,4 @@
-import { getRequest, postRequest } from '@/api/apiMethods';
+import { getRequest, postRequest, putRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { useMemo, useRef, useState } from 'react';
@@ -22,6 +22,8 @@ export function useOrder() {
   const qtyScales = useRef<Record<string, Animated.Value>>({});
   const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
   const [otherPurchased, setOtherPurchased] = useState<string>('');
+  const [editMode, setEditMode] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
 
   const totalAmount = useMemo(
     () =>
@@ -30,20 +32,32 @@ export function useOrder() {
     [products, quantities, otherPurchased],
   );
 
-  function openSheet(customer: Customer) {
+  function openSheet(customer: Customer, orderToEdit?: any) {
     setCurrentCustomer(customer);
     setSheetVisible(true);
-    setQuantities({});
-    setOtherPurchased('');
     sheetY.setValue(500);
     Animated.timing(sheetY, { toValue: 0, duration: 220, useNativeDriver: true }).start();
-    loadProducts(customer);
+
+    if (orderToEdit) {
+      setEditMode(true);
+      setEditingOrderId(orderToEdit._id);
+      setOtherPurchased(''); // Assuming no other purchased field in orderToEdit for now
+      loadProducts(customer, orderToEdit);
+    } else {
+      setEditMode(false);
+      setEditingOrderId(null);
+      setQuantities({});
+      setOtherPurchased('');
+      loadProducts(customer);
+    }
   }
 
   function closeSheet() {
     Animated.timing(sheetY, { toValue: 500, duration: 180, useNativeDriver: true }).start(() => {
       setSheetVisible(false);
       setCurrentCustomer(null);
+      setEditMode(false);
+      setEditingOrderId(null);
     });
   }
 
@@ -63,7 +77,7 @@ export function useOrder() {
     ]).start();
   }
 
-  async function loadProducts(customer: Customer) {
+  async function loadProducts(customer: Customer, orderToEdit?: any) {
     try {
       const token = await getItem('token');
       const storedShopId = await getItem('userId');
@@ -83,23 +97,37 @@ export function useOrder() {
       }));
       setProducts(list);
 
-      const regular: { productId: string; qty: number }[] = Array.isArray(customer?.regularProduct)
-        ? customer.regularProduct
-        : [];
-      const regMap: Record<string, number> = {};
-      for (const r of regular) {
-        if (r && r.productId) {
-          const qtyNum = Number((r as any)?.qty ?? 0);
-          if (Number.isFinite(qtyNum) && qtyNum > 0) {
-            regMap[String(r.productId)] = qtyNum;
+      const nextQuantities: Record<string, number> = {};
+
+      if (orderToEdit) {
+        // Pre-fill from order
+        const orderProducts = Array.isArray(orderToEdit.products) ? orderToEdit.products : [];
+        for (const p of orderProducts) {
+          if (p.productId) {
+            nextQuantities[String(p.productId)] = Number(p.qty ?? 0);
           }
         }
-      }
-      const nextQuantities: Record<string, number> = {};
-      for (const p of list) {
-        const q = regMap[String(p._id)];
-        if (typeof q === 'number' && q > 0) {
-          nextQuantities[p._id] = q;
+      } else {
+        // Pre-fill from regular
+        const regular: { productId: string; qty: number }[] = Array.isArray(
+          customer?.regularProduct,
+        )
+          ? customer.regularProduct
+          : [];
+        const regMap: Record<string, number> = {};
+        for (const r of regular) {
+          if (r && r.productId) {
+            const qtyNum = Number((r as any)?.qty ?? 0);
+            if (Number.isFinite(qtyNum) && qtyNum > 0) {
+              regMap[String(r.productId)] = qtyNum;
+            }
+          }
+        }
+        for (const p of list) {
+          const q = regMap[String(p._id)];
+          if (typeof q === 'number' && q > 0) {
+            nextQuantities[p._id] = q;
+          }
         }
       }
       setQuantities(nextQuantities);
@@ -108,7 +136,7 @@ export function useOrder() {
     }
   }
 
-  async function save() {
+  async function save(onSuccess?: () => void) {
     try {
       const token = await getItem('token');
       const storedShopId = await getItem('userId');
@@ -122,20 +150,38 @@ export function useOrder() {
         }
       }
       if (items.length === 0) {
-        closeSheet();
-        return;
+        // If edit mode and items are empty, it might mean deleting the order or just clearing products?
+        // For now, let's assume at least one product is required or just close.
+        if (editMode && editingOrderId) {
+          // If deleting all products is allowed, we might send empty list.
+          // But let's stick to returning if empty for now unless user explicitly wants to delete.
+          // return;
+        } else {
+          closeSheet();
+          return;
+        }
       }
-      const payload = {
-        customerId: currentCustomer?._id ? String(currentCustomer._id) : '',
-        shopId,
-        products: [{ day: new Date().getDate(), product: items }],
-      };
-      await postRequest(apiEndpoint.cards.order, payload, {
-        headers: { authorization: token ? `Bearer ${token}` : '' },
-      });
+
+      if (editMode && editingOrderId) {
+        const payload = {
+          products: items.map((i) => ({ productId: i.productId, qty: i.qty, price: i.price })),
+        };
+        await putRequest(apiEndpoint.cards.updateOrder(editingOrderId), payload);
+      } else {
+        const payload = {
+          customerId: currentCustomer?._id ? String(currentCustomer._id) : '',
+          shopId,
+          products: [{ day: new Date().getDate(), product: items }],
+        };
+        await postRequest(apiEndpoint.cards.order, payload, {
+          headers: { authorization: token ? `Bearer ${token}` : '' },
+        });
+      }
+
       closeSheet();
       setQuantities({});
       setOtherPurchased('');
+      if (onSuccess) onSuccess();
     } catch (e) {
       closeSheet();
     }
@@ -158,5 +204,6 @@ export function useOrder() {
     dec,
     pulseQty,
     save,
+    editMode,
   };
 }
