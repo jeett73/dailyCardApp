@@ -87,6 +87,7 @@ export default function CustomerListScreen() {
           key={it.id}
           style={[styles.customerCard, currentDue > 0 && styles.customerCardDue]}
           activeOpacity={0.85}
+          onPress={() => navigation.navigate('CustomerDetail', { customerId: it.id })}
           accessibilityLabel={`${it.name || 'Unknown'} • Card ${it.card} • Mobile ${it.mobile}`}
         >
           <View style={[styles.customerRow, currentDue > 0 && styles.DueBg]}>

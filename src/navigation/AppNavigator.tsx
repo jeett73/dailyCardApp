@@ -1,6 +1,7 @@
 import MainTabs from '@/navigation/MainTabs';
 import AddProductScreen from '@/screens/AddProductScreen';
 import CreateCustomerScreen from '@/screens/CreateCustomerScreen';
+import CustomerDetailScreen from '@/screens/CustomerDetailScreen';
 import CustomerListScreen from '@/screens/CustomerListScreen';
 import CustomerScreen from '@/screens/CustomerScreen';
 import LoginScreen from '@/screens/LoginScreen';
@@ -47,6 +48,7 @@ export default function AppNavigator() {
         options={{ gestureEnabled: false }}
       />
       <Stack.Screen name="CustomerList" component={CustomerListScreen} />
+      <Stack.Screen name="CustomerDetail" component={CustomerDetailScreen} />
       <Stack.Screen name="ProductList" component={ProductListScreen} />
       <Stack.Screen name="AddProduct" component={AddProductScreen} />
       <Stack.Screen name="RecentOrder" component={RecentOrderScreen} />
