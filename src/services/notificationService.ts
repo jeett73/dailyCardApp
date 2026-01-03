@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -40,11 +41,18 @@ export async function registerForPushNotificationsAsync() {
     // If you need the native FCM token, use getDevicePushTokenAsync
     // If you use Expo's push service, use getExpoPushTokenAsync
     try {
-      const tokenData = await Notifications.getDevicePushTokenAsync();
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+      if (!projectId) {
+        throw new Error('Project ID not found');
+      }
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId,
+      });
       token = tokenData.data;
-      console.log('Device Push Token:', token);
+      console.log('Expo Push Token:', token);
     } catch (e) {
-      console.log('Error getting device push token', e);
+      console.log('Error getting expo push token', e);
       // Fallback or retry logic could go here
     }
   } else {
