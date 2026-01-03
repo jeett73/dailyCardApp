@@ -60,6 +60,8 @@ export function useCreateCustomer(params?: {
     depositeAmount: 0,
   });
   const [keyboardPadding, setKeyboardPadding] = useState(0);
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', (e: any) => {
@@ -144,34 +146,45 @@ export function useCreateCustomer(params?: {
   }, [isEdit]);
 
   function setField<K extends keyof FormState>(k: K, v: string) {
-    setForm((prev) => ({ ...prev, [k]: v }));
+    const nextForm = { ...form, [k]: v };
+    setForm(nextForm);
+
+    if (hasSubmitted) {
+      setErrors(validate(nextForm));
+    } else if (errors[k]) {
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[k];
+        return copy;
+      });
+    }
   }
 
-  function validate(): string[] {
-    const messages: string[] = [];
-    if (!form.name.trim()) messages.push('Name is required');
-    if (!form.phone.trim()) {
-      messages.push('Phone is required');
-    } else if (!(isNumeric(form.phone) && form.phone.length === 10)) {
-      messages.push('Enter a valid 10 digit phone');
+  function validate(values: FormState = form): Partial<Record<keyof FormState, string>> {
+    const newErrors: Partial<Record<keyof FormState, string>> = {};
+    if (!values.name.trim()) newErrors.name = 'Name is required';
+    if (!values.phone.trim()) {
+      newErrors.phone = 'Phone is required';
+    } else if (!(isNumeric(values.phone) && values.phone.length === 10)) {
+      newErrors.phone = 'Enter a valid 10 digit phone';
     }
-    if (!form.cardNumber.trim()) messages.push('Card Number is required');
-    if (!form.depositeAmount.trim()) {
-      messages.push('Deposit Amount is required');
-    } else if (!/^[0-9]+(\\.[0-9]+)?$/.test(form.depositeAmount)) {
-      messages.push('Deposit must be numeric');
+    if (!values.cardNumber.trim()) newErrors.cardNumber = 'Card Number is required';
+    if (!values.depositeAmount.trim()) {
+      newErrors.depositeAmount = 'Deposit Amount is required';
+    } else if (!/^[0-9]+(\.[0-9]+)?$/.test(values.depositeAmount)) {
+      newErrors.depositeAmount = 'Deposit must be numeric';
     }
-    if (!form.street1.trim()) messages.push('Street 1 is required');
-    if (!form.city.trim()) messages.push('City is required');
-    // if (!form.state.trim()) messages.push('State is required');
-    // if (!form.postalCode.trim()) {
-    //   messages.push('Postal Code is required');
+    if (!values.street1.trim()) newErrors.street1 = 'Street 1 is required';
+    if (!values.city.trim()) newErrors.city = 'City is required';
+    // if (!values.state.trim()) newErrors.state = 'State is required';
+    // if (!values.postalCode.trim()) {
+    //   newErrors.postalCode = 'Postal Code is required';
     // } else if (
-    //   !(isNumeric(form.postalCode) && form.postalCode.length >= 6 && form.postalCode.length <= 10)
+    //   !(isNumeric(values.postalCode) && values.postalCode.length >= 6 && values.postalCode.length <= 10)
     // ) {
-    //   messages.push('Enter a valid postal code');
+    //   newErrors.postalCode = 'Enter a valid postal code';
     // }
-    return messages;
+    return newErrors;
   }
 
   function scrollToField(field: keyof FormState) {
@@ -212,9 +225,12 @@ export function useCreateCustomer(params?: {
   }
 
   async function handleSave() {
+    setHasSubmitted(true);
     const errs = validate();
-    if (errs.length > 0) {
-      Alert.alert('Validation Errors', errs.join('\n'));
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      const firstField = Object.keys(errs)[0] as keyof FormState;
+      if (firstField) scrollToField(firstField);
       return;
     }
 
@@ -285,5 +301,6 @@ export function useCreateCustomer(params?: {
     isEdit,
     prefillLoading,
     prefillError,
+    errors,
   };
 }

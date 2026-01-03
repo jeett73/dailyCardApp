@@ -35,6 +35,7 @@ export default function CreateCustomerScreen() {
     isEdit,
     prefillLoading,
     prefillError,
+    errors,
   } = useCreateCustomer(route?.params);
 
   return (
@@ -65,36 +66,49 @@ export default function CreateCustomerScreen() {
             {prefillError ? <Text style={styles.error}>{prefillError}</Text> : null}
             <Text style={styles.label}>Name</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, errors.name && styles.inputError]}
               placeholder="John Doe"
               value={form.name}
               onChangeText={(t) => setField('name', t)}
+              {...getHandlers('name')}
             />
+            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
             <Text style={styles.label}>Phone</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                isEdit && styles.inputDisabled,
+                errors.phone && styles.inputError,
+              ]}
               placeholder="9876543210"
-              keyboardType="phone-pad"
+              keyboardType="number-pad"
+              maxLength={10}
               value={form.phone}
-              onChangeText={(t) => setField('phone', t)}
+              onChangeText={(t) => setField('phone', t.replace(/[^0-9]/g, ''))}
               {...getHandlers('phone')}
               editable={!isEdit}
             />
+            {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
 
             <Text style={styles.label}>Card Number</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, errors.cardNumber && styles.inputError]}
               placeholder="CARD-000123"
               autoCapitalize="characters"
               value={form.cardNumber}
               onChangeText={(t) => setField('cardNumber', t)}
               {...getHandlers('cardNumber')}
             />
+            {errors.cardNumber && <Text style={styles.errorText}>{errors.cardNumber}</Text>}
 
             <Text style={styles.label}>Deposit Amount</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                isEdit && styles.inputDisabled,
+                errors.depositeAmount && styles.inputError,
+              ]}
               placeholder="100"
               keyboardType="decimal-pad"
               value={form.depositeAmount}
@@ -102,17 +116,20 @@ export default function CreateCustomerScreen() {
               {...getHandlers('depositeAmount')}
               editable={!isEdit}
             />
+            {errors.depositeAmount && <Text style={styles.errorText}>{errors.depositeAmount}</Text>}
 
             <Text style={styles.label}>Street 1</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, errors.street1 && styles.inputError]}
               placeholder="12 Baker Street"
               value={form.street1}
               onChangeText={(t) => setField('street1', t)}
               multiline
               numberOfLines={4}
               textAlignVertical="top"
+              {...getHandlers('street1')}
             />
+            {errors.street1 && <Text style={styles.errorText}>{errors.street1}</Text>}
 
             {/* <Text style={styles.label}>Street 2</Text>
             <TextInput
@@ -124,11 +141,13 @@ export default function CreateCustomerScreen() {
 
             <Text style={styles.label}>City</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, errors.city && styles.inputError]}
               placeholder="Ahmedabad"
               value={form.city}
               onChangeText={(t) => setField('city', t)}
+              {...getHandlers('city')}
             />
+            {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
 
             {/* <Text style={styles.label}>State</Text>
             <TextInput
@@ -239,6 +258,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     fontSize: 14,
     color: Colors.light.text,
+  },
+  inputDisabled: {
+    backgroundColor: '#f5f5f5',
+    borderColor: 'rgba(13,16,27,0.06)',
+    color: '#9e9e9e',
+  },
+  inputError: {
+    borderColor: '#e53935',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#e53935',
+    marginTop: 4,
+    marginLeft: 4,
   },
   emptyText: { textAlign: 'center', color: '#666', fontSize: 14, paddingVertical: 12 },
   error: { fontSize: 14, color: '#e53935' },

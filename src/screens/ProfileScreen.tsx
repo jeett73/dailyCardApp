@@ -3,9 +3,8 @@ import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
-import React, { useEffect } from 'react';
-import { BackHandler, Platform, Pressable, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React from 'react';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 
 type MenuLabel = 'Past Statements' | 'Logout' | 'Customers' | 'Products';
 
@@ -31,31 +30,6 @@ function MenuOption({ label, onPress }: MenuOptionProps) {
 
 export default function ProfileScreen() {
   const { insets, handleCall, menuItems, entityType, shopDetails } = useProfile();
-  const navigation = useNavigation<any>();
-
-  useEffect(() => {
-    if (entityType !== 'shop') return;
-
-    const onBackPress = () => {
-      navigation.navigate('Owner');
-      return true;
-    };
-
-    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
-    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
-      // Prevent default behavior of leaving the screen
-      if (e.data.action.type === 'GO_BACK' || e.data.action.type === 'POP') {
-        e.preventDefault();
-        navigation.navigate('Owner');
-      }
-    });
-
-    return () => {
-      sub.remove();
-      unsubscribe();
-    };
-  }, [entityType, navigation]);
 
   return (
     <View style={[styles.container]}>

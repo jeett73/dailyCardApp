@@ -73,16 +73,21 @@ export default function OwnerScreen() {
                   <AvatarInitials title={name || 'Unknown'} />
                   <View style={[styles.customerInfo, dueAmount > 0 && styles.customerInfoDue]}>
                     <Text style={styles.customerTitle}>
-                      #{cardFormatted} {name || 'Hiren Dabhi'}
+                      <Text style={{ fontStyle: 'italic' }}>#{cardFormatted}</Text>{' '}
+                      {name || 'Hiren Dabhi'}
                     </Text>
                     <View style={[styles.metaRow, dueAmount > 0 && styles.metaRowDue]}>
                       <Text style={styles.metaLabel}>Mobile</Text>
                       <Text style={styles.metaValue}>{mobileFormatted}</Text>
                     </View>
-                    <View style={[styles.metaRow, dueAmount > 0 && styles.metaRowDue]}>
-                      <Text style={styles.metaLabel}>Due Amount</Text>
-                      <Text style={styles.metaValue}>₹ {dueAmount}</Text>
-                    </View>
+                    {dueAmount > 0 ? (
+                      <View style={[styles.metaRow, dueAmount > 0 && styles.metaRowDue]}>
+                        <Text style={styles.metaLabel}>Due Amount</Text>
+                        <Text style={styles.metaValue}>₹ {dueAmount}</Text>
+                      </View>
+                    ) : (
+                      <></>
+                    )}
                   </View>
                 </View>
               </TouchableOpacity>

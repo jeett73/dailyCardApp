@@ -92,11 +92,9 @@ export default function CustomerListScreen() {
           <View style={[styles.customerRow, currentDue > 0 && styles.DueBg]}>
             <AvatarInitials title={it.name || 'Unknown'} />
             <View style={currentDue > 0 ? styles.customerInfoDue : styles.customerInfo}>
-              <Text style={styles.customerTitle}>{it.name || 'Unknown'}</Text>
-              <View style={currentDue > 0 ? styles.metaRowDue : styles.metaRow}>
-                <Text style={styles.metaLabel}>Card</Text>
-                <Text style={styles.metaValue}>{it.card}</Text>
-              </View>
+              <Text style={styles.customerTitle}>
+                <Text style={{ fontStyle: 'italic' }}>{it.card}</Text> {it.name || 'Hiren Dabhi'}
+              </Text>
               <View style={currentDue > 0 ? styles.metaRowDue : styles.metaRow}>
                 <Text style={styles.metaLabel}>Mobile</Text>
                 <Text style={styles.metaValue}>{it.mobile}</Text>
@@ -131,7 +129,7 @@ export default function CustomerListScreen() {
         </TouchableOpacity>
       );
     });
-  }, [items, loading, error, filtered, query]);
+  }, [items, loading, error, filtered, query, dueOverrides]);
 
   return (
     <View style={[styles.container]}>
@@ -173,11 +171,11 @@ export default function CustomerListScreen() {
         onClose={(paid) => {
           setPaymentOpen(false);
           if (paymentCustomer && typeof paid === 'number' && paid > 0) {
-            const prev =
+            const currentDue =
               typeof dueOverrides[paymentCustomer.id] === 'number'
                 ? dueOverrides[paymentCustomer.id]
-                : (filtered.find((f) => f.id === paymentCustomer.id)?.previousMonthDue ?? 0);
-            const next = Math.max(0, Number(prev) - Number(paid));
+                : paymentCustomer.previousMonthDue;
+            const next = Math.max(0, currentDue - paid);
             setDueOverrides((m) => ({ ...m, [paymentCustomer.id]: next }));
           }
           setPaymentCustomer(null);
