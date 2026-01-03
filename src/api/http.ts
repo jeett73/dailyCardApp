@@ -1,3 +1,4 @@
+import { getDeviceId } from '@/services/deviceService';
 import storage from '@/services/storage';
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
@@ -99,7 +100,8 @@ async function doTokenRefresh(): Promise<string | null> {
 
   const refreshClient = axios.create({ baseURL: API_BASE_URL, timeout: 15000 });
   try {
-    const res = await refreshClient.post('/auth/refresh', { refreshToken: tokenToUse });
+    const deviceId = await getDeviceId();
+    const res = await refreshClient.post('/auth/refresh', { refreshToken: tokenToUse, deviceId });
     const data = res?.data || {};
     const newAccess: string | null = data.accessToken || data.token || null;
     const newRefresh: string | undefined = data.refreshToken;
@@ -161,3 +163,4 @@ http.interceptors.response.use(
 );
 
 export { http };
+

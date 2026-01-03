@@ -1,5 +1,6 @@
 import { postRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
+import { getDeviceId } from '@/services/deviceService';
 import { clear, getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
@@ -44,7 +45,8 @@ export function useProfile() {
     try {
       const userId = await getItem('userId');
       if (userId) {
-        await postRequest(apiEndpoint.auth.logoutUser(userId), {});
+        const deviceId = await getDeviceId();
+        await postRequest(apiEndpoint.auth.logoutUser(userId), { deviceId });
       }
     } catch (e) {
       // noop: proceed to clear storage and navigate regardless

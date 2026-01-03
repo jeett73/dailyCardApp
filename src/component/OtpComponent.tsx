@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, TextInput } from 'react-native';
 import { postRequest } from '../api/apiMethods';
 import apiEndpoint from '../constants/apiEndpoint';
+import { getDeviceId } from '../services/deviceService';
 import { registerForPushNotificationsAsync } from '../services/notificationService';
 import { setItem } from '../services/storage';
 
@@ -134,10 +135,13 @@ export function useOtp() {
         setFcmToken(tokenToSend);
       }
 
+      const deviceId = await getDeviceId();
+
       const payload = {
         phone,
         otp: cleaned,
         fcmToken: tokenToSend,
+        deviceId,
       };
 
       console.log('VERIFY OTP PAYLOAD 👉', payload);

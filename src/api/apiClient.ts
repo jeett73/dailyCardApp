@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import apiEndpoint from '../constants/apiEndpoint';
+import { getDeviceId } from '../services/deviceService';
 import { log, error as logError } from '../services/logger';
 import { getItem, removeItem, setItem } from '../services/storage';
 
@@ -40,7 +41,8 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
       try {
-        const res = await axios.post(apiEndpoint.auth.refresh, { refreshToken: rt });
+        const deviceId = await getDeviceId();
+        const res = await axios.post(apiEndpoint.auth.refresh, { refreshToken: rt, deviceId });
         const newToken: string | undefined = (res.data as any)?.token;
         const newRefresh: string | undefined = (res.data as any)?.refreshToken;
         if (newToken) {
