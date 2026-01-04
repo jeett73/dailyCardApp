@@ -141,15 +141,19 @@ export function useOrder() {
       const token = await getItem('token');
       const storedShopId = await getItem('userId');
       const shopId = storedShopId ? String(storedShopId) : '';
+      const time = Date.now();
 
       const items: { productId: string; time: number; qty: number; price: number }[] = [];
       for (const p of products) {
         const qty = quantities[p._id] ?? 0;
         if (qty > 0) {
-          items.push({ productId: p._id, time: Date.now(), qty, price: p.price });
+          items.push({ productId: p._id, time: time, qty, price: p.price });
         }
       }
-      if (items.length === 0) {
+
+      const otherAmount = Number(otherPurchased);
+
+      if (items.length === 0 && otherAmount <= 0) {
         // If edit mode and items are empty, it might mean deleting the order or just clearing products?
         // For now, let's assume at least one product is required or just close.
         if (editMode && editingOrderId) {
@@ -161,17 +165,27 @@ export function useOrder() {
           return;
         }
       }
+      const others =
+        otherAmount > 0
+          ? [
+              {
+                time: time,
+                price: otherAmount,
+              },
+            ]
+          : [];
 
       if (editMode && editingOrderId) {
         const payload = {
           products: items.map((i) => ({ productId: i.productId, qty: i.qty, price: i.price })),
+          others: others, // Assuming update also needs others, if not requested, remove this line or adjust backend
         };
         await putRequest(apiEndpoint.cards.updateOrder(editingOrderId), payload);
       } else {
         const payload = {
           customerId: currentCustomer?._id ? String(currentCustomer._id) : '',
           shopId,
-          products: [{ day: new Date().getDate(), product: items }],
+          products: [{ day: new Date().getDate(), product: items, others: others }],
         };
         await postRequest(apiEndpoint.cards.order, payload, {
           headers: { authorization: token ? `Bearer ${token}` : '' },

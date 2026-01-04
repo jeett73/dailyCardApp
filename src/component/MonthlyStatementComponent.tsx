@@ -4,7 +4,14 @@ import { getItem } from '@/services/storage';
 import { useCallback, useMemo, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 
-export type Txn = { id: string; date: string; item: string; qty: number; amount: number };
+export type Txn = {
+  id: string;
+  date: string;
+  item: string;
+  qty: number;
+  amount: number;
+  time: number;
+};
 export type DayEntry = { orders: Txn[]; total: number };
 
 // API Response Types
@@ -17,9 +24,15 @@ interface ProductItem {
   icon: string;
 }
 
+interface OtherItem {
+  time: number;
+  price: number;
+}
+
 interface DailyProduct {
   day: number;
   product: ProductItem[];
+  others?: OtherItem[];
 }
 
 interface CardData {
@@ -111,8 +124,33 @@ export function useMonthlyStatement() {
           item: prod.productName,
           qty: prod.qty,
           amount: prod.qty * prod.price,
+          time: prod.time,
         });
       });
+
+      if (daily.others && daily.others.length > 0) {
+        // We aggregate all "others" for a single day into one entry or list them individually?
+        // Requirement: "Others And total of price from others array"
+        // If the UI shows a list of transactions per day, we can add each 'other' item or sum them up.
+        // "We will show like this Others And total of price from others array"
+        // It sounds like we should show individual entries but labeled "Others" or maybe aggregated.
+        // Let's list them individually but with item name "Others".
+        // Actually, if there are multiple "others" entries in one day, showing "Others" multiple times might be fine.
+        // Or we can sum them up if they have exact same time?
+        // Let's add them as individual transactions for now, as that fits the current Txn structure.
+
+        daily.others.forEach((other, idx) => {
+          const date = new Date(other.time).toISOString().split('T')[0];
+          allTxns.push({
+            id: `other-${other.time}-${idx}`,
+            date: date,
+            item: 'Others',
+            qty: 1,
+            amount: other.price,
+            time: other.time,
+          });
+        });
+      }
     });
 
     return allTxns;

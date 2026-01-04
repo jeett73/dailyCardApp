@@ -3,9 +3,11 @@ import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
-import React, { memo, useCallback, useEffect } from 'react';
+import React, { memo, useCallback, useEffect, useMemo } from 'react';
 import { ActivityIndicator, Platform, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+type TimeGroup = { time: number; orders: Txn[] };
 
 const StatementCard = memo(function StatementCard({
   dayLabel,
@@ -18,29 +20,76 @@ const StatementCard = memo(function StatementCard({
   total: number;
   scale: number;
 }) {
-  const hasOrders = orders.length > 0;
+  const hasOrders = orders && orders.length > 0;
+
+  function formatTime(timestamp: number) {
+    if (!timestamp) return '';
+    const d = new Date(timestamp);
+    let hours = d.getHours();
+    const minutes = d.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const strMin = minutes < 10 ? '0' + minutes : minutes;
+    const strHours = hours < 10 ? '0' + hours : hours;
+    return `${strHours}:${strMin} ${ampm}`;
+  }
+
+  // Group orders by time locally
+  const timeGroups = useMemo(() => {
+    if (!orders) return [];
+    const groups: TimeGroup[] = [];
+    orders.forEach((ord) => {
+      let group = groups.find((g) => g.time === ord.time);
+      if (!group) {
+        group = { time: ord.time, orders: [] };
+        groups.push(group);
+      }
+      group.orders.push(ord);
+    });
+    // Sort by time descending
+    groups.sort((a, b) => a.time - b.time);
+    return groups;
+  }, [orders]);
+
   return (
     <View style={styles.statementCard} accessibilityRole="summary">
       <Text style={[styles.statementTitle, { fontSize: Math.round(20 * scale) }]}>{dayLabel}</Text>
       <View style={styles.statementDivider} />
       {hasOrders ? (
         <>
-          {orders.map((ord) => (
-            <View key={ord.id} style={styles.statementRow}>
-              <Text style={[styles.itemName, { fontSize: Math.round(18 * scale) }]}>
-                {ord.item} ({ord.qty} × ₹{(ord.amount / ord.qty).toFixed(0)})
+          {timeGroups.map((group, groupIdx) => (
+            <View
+              key={`group-${groupIdx}`}
+              style={{ marginBottom: 12, backgroundColor: 'transparent' }}
+            >
+              <Text style={[styles.timeHeader, { fontSize: styles.timeHeader.fontSize }]}>
+                [ {formatTime(group.time)} ]
               </Text>
-              <Text style={[styles.itemQty, { fontSize: Math.round(18 * scale) }]}>
-                ₹{ord.amount}
-              </Text>
+              {group.orders.map((ord) => (
+                <View key={ord.id} style={styles.statementRow}>
+                  {ord.item === 'Others' ? (
+                    <Text style={[styles.itemName, { fontSize: Math.round(18 * scale) }]}>
+                      Others
+                    </Text>
+                  ) : (
+                    <Text style={[styles.itemName, { fontSize: Math.round(18 * scale) }]}>
+                      {ord.item} ×{ord.qty}
+                    </Text>
+                  )}
+                  <Text style={[styles.itemQty, { fontSize: Math.round(18 * scale) }]}>
+                    ₹{ord.amount}
+                  </Text>
+                </View>
+              ))}
             </View>
           ))}
           <View style={styles.statementDivider} />
           <View style={styles.statementRow}>
-            <Text style={[styles.itemName, { fontSize: Math.round(18 * scale) }]}>
+            <Text style={[styles.totalAmount, { fontSize: Math.round(18 * scale) }]}>
               Total Amount
             </Text>
-            <Text style={[styles.itemQty, { fontSize: Math.round(18 * scale) }]}>₹{total}</Text>
+            <Text style={[styles.totalAmount, { fontSize: Math.round(18 * scale) }]}>₹{total}</Text>
           </View>
         </>
       ) : (
@@ -176,6 +225,7 @@ const styles = StyleSheet.create({
   },
 
   statementTitle: { fontSize: 20, fontWeight: '800', color: '#000' },
+  timeHeader: { fontSize: 16, color: '#000', fontWeight: '800', marginBottom: 4, marginTop: 8 },
   statementDivider: {
     height: StyleSheet.hairlineWidth,
     marginVertical: 12,
@@ -189,8 +239,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.orange,
   },
 
-  itemName: { fontSize: 18, color: '#000', fontWeight: '600' },
-  itemQty: { fontSize: 18, color: '#000', fontWeight: '600' },
+  itemName: { fontSize: 18, color: '#000', fontWeight: '300' },
+  itemTime: { fontSize: 11, color: '#888', fontWeight: '300', marginLeft: 8 },
+  itemQty: { fontSize: 18, color: '#000', fontWeight: '300' },
+  totalAmount: { fontSize: 18, color: '#000', fontWeight: '800' },
 
   summaryCard: {
     marginTop: 16,
