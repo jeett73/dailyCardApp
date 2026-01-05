@@ -5,78 +5,53 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
-import React, { useMemo } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import React from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import OrderScreen from './OrderScreen';
 
 export default function RecentOrderScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { items, loading, error, refresh } = useRecentOrder();
-  
+  const { items, loading, loadingMore, refreshing, error, refresh, loadMore, hasMore } =
+    useRecentOrder();
+
   // Initialize order logic
   const orderLogic = useOrder();
   const { openSheet, editMode, save } = orderLogic;
 
-  const content = useMemo(() => {
-    if (loading) {
-      return (
-        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-          <ActivityIndicator size="small" color={Colors.light.tint} />
-        </View>
-      );
-    }
-    if (error) {
-      return <Text style={styles.error}>{error}</Text>;
-    }
-    if (!items || items.length === 0) {
-      return <Text style={styles.emptyText}>No recent orders found</Text>;
-    }
-
-    return items.map((it) => {
+  const renderItem = React.useCallback(
+    ({ item }: { item: any }) => {
       function handleEdit() {
         // Construct a customer object for display
         const customer = {
-            name: it.name,
-            // Add other fields if necessary for OrderScreen display or logic
+          name: item.name,
+          // Add other fields if necessary for OrderScreen display or logic
         };
         // Open sheet in edit mode
-        openSheet(customer, it.raw);
+        openSheet(customer, item.raw);
       }
 
       return (
         <View
-          key={it.id}
           style={styles.customerCard}
-          accessibilityLabel={`${it.name} • Order Amount ${it.amountDisplay}`}
+          accessibilityLabel={`${item.name} • Order Amount ${item.amountDisplay}`}
         >
           <View style={styles.customerRow}>
-            <AvatarInitials title={it.name} />
+            <AvatarInitials title={item.name} />
             <View style={styles.customerInfo}>
-              <Text style={styles.customerTitle}>{it.name}</Text>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Card</Text>
-                <Text style={styles.metaValue}>{it.card}</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Mobile</Text>
-                <Text style={styles.metaValue}>{it.mobile}</Text>
-              </View>
-               <View style={styles.metaRow}>
+              <Text style={styles.customerTitle}>
+                <Text style={{ fontStyle: 'italic' }}>{item.card}</Text>{' '}
+                {item.name || 'Hiren Dabhi'}
+              </Text>
+              {/* <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Date</Text>
-                <Text style={styles.metaValue}>{it.dateDisplay}</Text>
-              </View>
+                <Text style={styles.metaValue}>{item.dateDisplay.toUpperCase()}</Text>
+              </View> */}
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Amount</Text>
-                <Text style={styles.metaValue}>{it.amountDisplay}</Text>
+                <Text style={styles.metaValue}>{item.amountDisplay}</Text>
               </View>
-              
               <View style={styles.actionsRow}>
                 <TouchableOpacity
                   style={styles.actionBtn}
@@ -92,34 +67,70 @@ export default function RecentOrderScreen() {
           </View>
         </View>
       );
-    });
-  }, [items, loading, error, openSheet]);
+    },
+    [openSheet],
+  );
+
+  const ListEmptyComponent = React.useCallback(() => {
+    if (loading && !refreshing) {
+      return (
+        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={Colors.light.tint} />
+        </View>
+      );
+    }
+    if (error) {
+      return <Text style={styles.error}>{error}</Text>;
+    }
+    if (!loading && items.length === 0) {
+      return <Text style={styles.emptyText}>No recent orders found</Text>;
+    }
+    return null;
+  }, [loading, refreshing, error, items.length]);
+
+  const ListFooterComponent = React.useCallback(() => {
+    if (loadingMore) {
+      return (
+        <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={Colors.light.tint} />
+        </View>
+      );
+    }
+    return <View style={{ height: insets.bottom + 16 }} />;
+  }, [loadingMore, insets.bottom]);
 
   return (
     <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title="Recent Orders" />
       <View style={{ paddingTop: insets.top + 90, flex: 1 }}>
-        <ScrollView
-          contentContainerStyle={[
-            styles.listContainer,
-            { paddingBottom: Math.max(insets.bottom, 24) },
-          ]}
-        >
-          {content}
-        </ScrollView>
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 16 }}
+          ListEmptyComponent={ListEmptyComponent}
+          ListFooterComponent={ListFooterComponent}
+          onRefresh={refresh}
+          refreshing={refreshing}
+          onEndReached={() => {
+            if (hasMore && !loadingMore && !loading) {
+              loadMore();
+            }
+          }}
+          onEndReachedThreshold={0.5}
+        />
       </View>
-
       <OrderScreen
         {...orderLogic}
         saveLabel={editMode ? 'Update Order' : 'Order'}
-        save={() => save(refresh)} // Pass refresh callback to update list after save
+        save={() => save(refresh)}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
+  container: { flex: 1, backgroundColor: '#fff' },
   listContainer: { paddingVertical: 12, paddingHorizontal: 16 },
   error: { color: 'red', textAlign: 'center', marginTop: 20 },
   emptyText: { textAlign: 'center', marginTop: 20, color: '#666' },
@@ -138,11 +149,13 @@ const styles = StyleSheet.create({
   },
   customerRow: {
     flexDirection: 'row',
+    backgroundColor: '#fff',
   },
   customerInfo: {
     flex: 1,
     marginLeft: 16,
     justifyContent: 'center',
+    backgroundColor: '#fff',
   },
   customerTitle: {
     fontSize: 17,
@@ -150,11 +163,14 @@ const styles = StyleSheet.create({
     color: '#0d101b',
     marginBottom: 6,
     letterSpacing: -0.3,
+    paddingRight: 40, // Avoid overlap with edit button
+    backgroundColor: '#fff',
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+    backgroundColor: '#fff',
   },
   metaLabel: {
     fontSize: 13,
@@ -169,17 +185,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionsRow: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
     flexDirection: 'row',
-    marginTop: 8,
-    justifyContent: 'flex-end',
+    alignItems: 'center',
     gap: 8,
+    backgroundColor: '#fff',
   },
   actionBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f2f4f8',
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  productsContainer: {
+    marginTop: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#eee',
+    marginVertical: 8,
+  },
+  productRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  productName: {
+    fontSize: 13,
+    color: '#444',
+    fontWeight: '500',
+  },
+  productDetails: {
+    fontSize: 13,
+    color: '#666',
   },
 });

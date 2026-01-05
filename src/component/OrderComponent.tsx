@@ -1,5 +1,6 @@
-import { getRequest, postRequest, putRequest } from '@/api/apiMethods';
+import { getRequest, postRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
+import { log } from '@/services/logger';
 import { getItem } from '@/services/storage';
 import { useMemo, useRef, useState } from 'react';
 import { Animated, useWindowDimensions } from 'react-native';
@@ -13,6 +14,19 @@ export type ShopProduct = {
   icon: string;
 };
 
+export type GroupedItem = {
+  time: number;
+  products: {
+    productId: string;
+    qty: number;
+    price: number;
+  }[];
+  others: {
+    time: number;
+    price: number;
+  }[];
+};
+
 export function useOrder() {
   const { height } = useWindowDimensions();
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -24,6 +38,11 @@ export function useOrder() {
   const [otherPurchased, setOtherPurchased] = useState<string>('');
   const [editMode, setEditMode] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editingOrderDetails, setEditingOrderDetails] = useState<{
+    cardId: string;
+    day: number;
+  } | null>(null);
+  const [groupedItems, setGroupedItems] = useState<GroupedItem[]>([]);
 
   const totalAmount = useMemo(
     () =>
@@ -37,17 +56,20 @@ export function useOrder() {
     setSheetVisible(true);
     sheetY.setValue(500);
     Animated.timing(sheetY, { toValue: 0, duration: 220, useNativeDriver: true }).start();
-
+    log(orderToEdit, '?????????????????????????????????????????????????????????????');
     if (orderToEdit) {
       setEditMode(true);
       setEditingOrderId(orderToEdit._id);
-      setOtherPurchased(''); // Assuming no other purchased field in orderToEdit for now
+      setEditingOrderDetails({ cardId: orderToEdit.cardId, day: orderToEdit.day });
+      setOtherPurchased('');
       loadProducts(customer, orderToEdit);
     } else {
       setEditMode(false);
       setEditingOrderId(null);
+      setEditingOrderDetails(null);
       setQuantities({});
       setOtherPurchased('');
+      setGroupedItems([]);
       loadProducts(customer);
     }
   }
@@ -100,13 +122,65 @@ export function useOrder() {
       const nextQuantities: Record<string, number> = {};
 
       if (orderToEdit) {
-        // Pre-fill from order
-        const orderProducts = Array.isArray(orderToEdit.products) ? orderToEdit.products : [];
-        for (const p of orderProducts) {
-          if (p.productId) {
-            nextQuantities[String(p.productId)] = Number(p.qty ?? 0);
+        // Grouping logic
+        const groups: Record<number, GroupedItem> = {};
+
+        // Check if it is RecentOrder structure (flat products array)
+        // RecentOrder has cardId and flattened products array
+        if (
+          orderToEdit.cardId ||
+          (Array.isArray(orderToEdit.products) &&
+            orderToEdit.products.length > 0 &&
+            orderToEdit.products[0].productId)
+        ) {
+          const prods = Array.isArray(orderToEdit.products) ? orderToEdit.products : [];
+          const others = Array.isArray(orderToEdit.others) ? orderToEdit.others : [];
+
+          for (const p of prods) {
+            const t = p.time;
+            if (!groups[t]) groups[t] = { time: t, products: [], others: [] };
+            groups[t].products.push(p);
+
+            if (p.productId) {
+              const key = `${p.productId}_${p.time}`;
+              nextQuantities[key] = Number(p.qty ?? 0);
+            }
+          }
+
+          for (const o of others) {
+            const t = o.time;
+            if (!groups[t]) groups[t] = { time: t, products: [], others: [] };
+            groups[t].others.push(o);
+          }
+        } else {
+          // Existing logic for Card structure (nested day entries)
+          const dayEntries = Array.isArray(orderToEdit.products) ? orderToEdit.products : [];
+          for (const dayEntry of dayEntries) {
+            const prods = Array.isArray(dayEntry.product) ? dayEntry.product : [];
+            const others = Array.isArray(dayEntry.others) ? dayEntry.others : [];
+
+            for (const p of prods) {
+              const t = p.time;
+              if (!groups[t]) groups[t] = { time: t, products: [], others: [] };
+              groups[t].products.push(p);
+
+              if (p.productId) {
+                // Use composite key to support same product at different times
+                const key = `${p.productId}_${p.time}`;
+                nextQuantities[key] = Number(p.qty ?? 0);
+              }
+            }
+
+            for (const o of others) {
+              const t = o.time;
+              if (!groups[t]) groups[t] = { time: t, products: [], others: [] };
+              groups[t].others.push(o);
+            }
           }
         }
+
+        const sortedGroups = Object.values(groups).sort((a, b) => b.time - a.time);
+        setGroupedItems(sortedGroups);
       } else {
         // Pre-fill from regular
         const regular: { productId: string; qty: number }[] = Array.isArray(
@@ -143,45 +217,86 @@ export function useOrder() {
       const shopId = storedShopId ? String(storedShopId) : '';
       const time = Date.now();
 
-      const items: { productId: string; time: number; qty: number; price: number }[] = [];
-      for (const p of products) {
-        const qty = quantities[p._id] ?? 0;
-        if (qty > 0) {
-          items.push({ productId: p._id, time: time, qty, price: p.price });
-        }
-      }
-
-      const otherAmount = Number(otherPurchased);
-
-      if (items.length === 0 && otherAmount <= 0) {
-        // If edit mode and items are empty, it might mean deleting the order or just clearing products?
-        // For now, let's assume at least one product is required or just close.
-        if (editMode && editingOrderId) {
-          // If deleting all products is allowed, we might send empty list.
-          // But let's stick to returning if empty for now unless user explicitly wants to delete.
-          // return;
-        } else {
-          closeSheet();
-          return;
-        }
-      }
-      const others =
-        otherAmount > 0
-          ? [
-              {
-                time: time,
-                price: otherAmount,
-              },
-            ]
-          : [];
-
       if (editMode && editingOrderId) {
+        const items: { productId: string; time: number; qty: number; price: number }[] = [];
+
+        Object.entries(quantities).forEach(([key, qty]) => {
+          if (qty > 0) {
+            const parts = key.split('_');
+            if (parts.length === 2) {
+              const [pid, tStr] = parts;
+              const t = Number(tStr);
+
+              let price = 0;
+              const group = groupedItems.find((g) => g.time === t);
+              const item = group?.products.find((p) => p.productId === pid);
+
+              if (item) {
+                price = item.price;
+              } else {
+                const prod = products.find((p) => p._id === pid || p.productId === pid);
+                price = prod?.price ?? 0;
+              }
+
+              items.push({ productId: pid, time: t, qty, price });
+            }
+          }
+        });
+
+        let others: { time: number; price: number }[] = [];
+        groupedItems.forEach((g) => {
+          others = others.concat(g.others);
+        });
+
+        const otherAmount = Number(otherPurchased);
+        if (otherAmount > 0) {
+          others.push({ time, price: otherAmount });
+        }
+
         const payload = {
-          products: items.map((i) => ({ productId: i.productId, qty: i.qty, price: i.price })),
-          others: others, // Assuming update also needs others, if not requested, remove this line or adjust backend
+          cardId: editingOrderDetails?.cardId,
+          day: editingOrderDetails?.day,
+          products: items.map((i) => ({
+            productId: i.productId,
+            time: i.time,
+            qty: i.qty,
+            price: i.price,
+          })),
+          others: others,
         };
-        await putRequest(apiEndpoint.cards.updateOrder(editingOrderId), payload);
+        console.log('Update Order Payload:', JSON.stringify(payload, null, 2));
+        await postRequest(apiEndpoint.cards.updateOrderPost, payload, {
+          headers: { authorization: token ? `Bearer ${token}` : '' },
+        });
       } else {
+        const items: { productId: string; time: number; qty: number; price: number }[] = [];
+        for (const p of products) {
+          const qty = quantities[p._id] ?? 0;
+          if (qty > 0) {
+            items.push({ productId: p._id, time: time, qty, price: p.price });
+          }
+        }
+
+        const otherAmount = Number(otherPurchased);
+
+        if (items.length === 0 && otherAmount <= 0) {
+          if (editMode && editingOrderId) {
+            // Should not reach here due to if check above
+          } else {
+            closeSheet();
+            return;
+          }
+        }
+        const others =
+          otherAmount > 0
+            ? [
+                {
+                  time: time,
+                  price: otherAmount,
+                },
+              ]
+            : [];
+
         const payload = {
           customerId: currentCustomer?._id ? String(currentCustomer._id) : '',
           shopId,
@@ -219,5 +334,6 @@ export function useOrder() {
     pulseQty,
     save,
     editMode,
+    groupedItems,
   };
 }

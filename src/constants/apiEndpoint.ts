@@ -1,6 +1,6 @@
 type Id = string | number;
-const API_BASE_URL = 'http://172.20.10.2:3000';
-// const API_BASE_URL = 'http://10.210.52.6:3000';
+// const API_BASE_URL = 'http://172.20.10.2:3000';
+const API_BASE_URL = 'http://10.151.78.6:3000';
 
 const url = (path: string) => `${API_BASE_URL}${path}`;
 
@@ -34,8 +34,9 @@ const apiEndpoint = {
     dueCards: (customerId: string, shopId: string) =>
       url(`/cards/due-cards?customerId=${customerId}&shopId=${shopId}`),
     payment: url('/cards/payment-done'),
-    recentOrder: url('/cards/recent-order'),
-    updateOrder: (id: Id) => url(`/cards/recent-order/${id}`),
+    recentOrder: (shopId: string, page: number, limit: number) =>
+      url(`/cards/recent-orders?shopId=${shopId}&page=${page}&limit=${limit}`),
+    updateOrderPost: url('/cards/update-order'),
   },
   shopProducts: {
     listShopProducts: url('/shop-products'),
