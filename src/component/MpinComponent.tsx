@@ -9,7 +9,20 @@ export function useMpin() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const phone: string | undefined = route?.params?.phone;
-  const name: string | undefined = route?.params?.name;
+  // Initialize name from route params if available
+  const [name, setName] = useState<string | undefined>(route?.params?.name);
+
+  // Effect to load name from storage if not provided in params
+  useEffect(() => {
+    if (!name) {
+      getItem('name').then((storedName) => {
+        if (storedName) {
+          setName(storedName);
+        }
+      });
+    }
+  }, [name]);
+
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
   const otp = useMemo(() => digits.join(''), [digits]);
   const isValid = useMemo(() => otp.length === 4, [otp]);
