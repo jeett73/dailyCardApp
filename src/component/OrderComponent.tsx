@@ -1,6 +1,5 @@
 import { getRequest, postRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
-import { log } from '@/services/logger';
 import { getItem } from '@/services/storage';
 import { useMemo, useRef, useState } from 'react';
 import { Animated, useWindowDimensions } from 'react-native';
@@ -37,11 +36,8 @@ export function useOrder() {
   const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
   const [otherPurchased, setOtherPurchased] = useState<string>('');
   const [editMode, setEditMode] = useState(false);
-  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
-  const [editingOrderDetails, setEditingOrderDetails] = useState<{
-    cardId: string;
-    day: number;
-  } | null>(null);
+  const [cardId, setCardId] = useState<string | null>(null);
+  const [day, setDay] = useState<number | null>(null);
   const [groupedItems, setGroupedItems] = useState<GroupedItem[]>([]);
 
   const totalAmount = useMemo(
@@ -56,17 +52,17 @@ export function useOrder() {
     setSheetVisible(true);
     sheetY.setValue(500);
     Animated.timing(sheetY, { toValue: 0, duration: 220, useNativeDriver: true }).start();
-    log(orderToEdit, '?????????????????????????????????????????????????????????????');
     if (orderToEdit) {
+      const { _id, day } = orderToEdit || {};
+      setCardId(_id);
+      setDay(day);
       setEditMode(true);
-      setEditingOrderId(orderToEdit._id);
-      setEditingOrderDetails({ cardId: orderToEdit.cardId, day: orderToEdit.day });
+
       setOtherPurchased('');
       loadProducts(customer, orderToEdit);
     } else {
       setEditMode(false);
-      setEditingOrderId(null);
-      setEditingOrderDetails(null);
+
       setQuantities({});
       setOtherPurchased('');
       setGroupedItems([]);
@@ -79,7 +75,8 @@ export function useOrder() {
       setSheetVisible(false);
       setCurrentCustomer(null);
       setEditMode(false);
-      setEditingOrderId(null);
+      setCardId(null);
+      setDay(null);
     });
   }
 
@@ -217,7 +214,7 @@ export function useOrder() {
       const shopId = storedShopId ? String(storedShopId) : '';
       const time = Date.now();
 
-      if (editMode && editingOrderId) {
+      if (editMode && cardId && day) {
         const items: { productId: string; time: number; qty: number; price: number }[] = [];
 
         Object.entries(quantities).forEach(([key, qty]) => {
@@ -254,8 +251,8 @@ export function useOrder() {
         }
 
         const payload = {
-          cardId: editingOrderDetails?.cardId,
-          day: editingOrderDetails?.day,
+          cardId: cardId,
+          day: day,
           products: items.map((i) => ({
             productId: i.productId,
             time: i.time,
