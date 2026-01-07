@@ -3,6 +3,7 @@ import GreetingCard from '@/components/GreetingCard';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { getKolkataCurrentDate } from '@/utils/dateUtils';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet } from 'react-native';
@@ -23,7 +24,7 @@ export default function CustomerScreen() {
   );
 
   const todayData = useMemo(() => {
-    const today = new Date().getDate();
+    const today = getKolkataCurrentDate().day;
     return groupedByDay[today] ?? { orders: [], total: 0 };
   }, [groupedByDay]);
 

@@ -1,6 +1,7 @@
 import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
+import { getKolkataCurrentDate } from '@/utils/dateUtils';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
 import { DimensionValue, useWindowDimensions } from 'react-native';
@@ -58,7 +59,7 @@ export function useMonthWiseReport() {
         // Expected data: [{ "month": 12, "year": 2025, "totalBill": 5777 }]
         const mapped: MonthSummary[] = data.map((item: any) => {
           const m = (item.month || 1) - 1; // 1-based to 0-based
-          const y = item.year || new Date().getFullYear();
+          const y = item.year || getKolkataCurrentDate().year;
           const label = (MONTHS_FULL[m] || 'Unknown') + ' ' + y;
           return {
             year: y,

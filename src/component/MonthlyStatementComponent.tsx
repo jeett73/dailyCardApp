@@ -1,6 +1,7 @@
 import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
+import { formatToKolkataDateString, getKolkataCurrentDate } from '@/utils/dateUtils';
 import { useCallback, useMemo, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 
@@ -83,10 +84,7 @@ export function useMonthlyStatement() {
   const { width } = useWindowDimensions();
   const scale = width >= 768 ? 1.1 : width <= 360 ? 0.95 : 1;
 
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth();
-  const upto = today.getDate();
+  const { year: currentYear, month: currentMonth, day: upto } = getKolkataCurrentDate();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +115,7 @@ export function useMonthlyStatement() {
 
     cardData.products.forEach((daily) => {
       daily.product.forEach((prod) => {
-        const date = new Date(prod.time).toISOString().split('T')[0];
+        const date = formatToKolkataDateString(prod.time);
         allTxns.push({
           id: `${prod.productId}-${prod.time}`,
           date: date,
@@ -140,7 +138,7 @@ export function useMonthlyStatement() {
         // Let's add them as individual transactions for now, as that fits the current Txn structure.
 
         daily.others.forEach((other, idx) => {
-          const date = new Date(other.time).toISOString().split('T')[0];
+          const date = formatToKolkataDateString(other.time);
           allTxns.push({
             id: `other-${other.time}-${idx}`,
             date: date,
@@ -160,17 +158,18 @@ export function useMonthlyStatement() {
 
   const filtered = useMemo(() => {
     return txns.filter((t) => {
-      const d = new Date(t.date);
-      return (
-        d.getFullYear() === currentYear && d.getMonth() === currentMonth && d.getDate() <= upto
-      );
+      const [yStr, mStr, dStr] = t.date.split('-');
+      const tYear = parseInt(yStr, 10);
+      const tMonth = parseInt(mStr, 10) - 1;
+      const tDay = parseInt(dStr, 10);
+      return tYear === currentYear && tMonth === currentMonth && tDay <= upto;
     });
   }, [txns, currentYear, currentMonth, upto]);
 
   const groupedByDay = useMemo(() => {
     const res: Record<number, DayEntry> = {};
     for (const t of filtered) {
-      const day = new Date(t.date).getDate();
+      const day = parseInt(t.date.split('-')[2], 10);
       const entry = res[day] ?? { orders: [], total: 0 };
       entry.orders.push(t);
       entry.total += t.amount;

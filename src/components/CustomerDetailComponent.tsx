@@ -2,6 +2,7 @@ import { getRequest } from '@/api/apiMethods';
 import { MONTHS_FULL, MONTHS_SHORT } from '@/component/MonthlyStatementComponent';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
+import { formatToKolkataDateString } from '@/utils/dateUtils';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -67,8 +68,8 @@ export function useCustomerDetail() {
         const dueArr = Array.isArray(dueData?.dues)
           ? dueData?.dues
           : Array.isArray(dueData)
-          ? dueData
-          : [];
+            ? dueData
+            : [];
         const mappedDues: DueMonth[] = dueArr
           .map((d: any) => {
             const m = Number(d?.month ?? 0);
@@ -107,17 +108,12 @@ export function useCustomerDetail() {
         setOrdersLoading(true);
         const shopId = await getItem('userId');
         const token = await getItem('token');
-        
+
         // Fetch Orders for selected month
         // Note: apiEndpoint.cards.monthlyStatement updated to accept month/year
-        const url = apiEndpoint.cards.monthlyStatement(
-          customerIdParam,
-          String(shopId ?? ''),
-          selected.month,
-          selected.year,
-        );
+        const url = apiEndpoint.cards.monthlyStatement(customerIdParam, String(shopId ?? ''));
         const res = await getRequest(url, {
-            headers: { authorization: token ? `Bearer ${token}` : '' },
+          headers: { authorization: token ? `Bearer ${token}` : '' },
         });
         const data = (res?.data ?? {}) as any;
         const cardData = data?.card; // Assuming response structure { card: { products: ... } }
@@ -127,7 +123,7 @@ export function useCustomerDetail() {
           cardData.products.forEach((daily: any) => {
             if (Array.isArray(daily.product)) {
               daily.product.forEach((prod: any) => {
-                const date = new Date(prod.time).toISOString().split('T')[0];
+                const date = formatToKolkataDateString(prod.time);
                 allTxns.push({
                   id: `${prod.productId}-${prod.time}`,
                   date: date,
@@ -140,7 +136,7 @@ export function useCustomerDetail() {
           });
           setOrders(allTxns);
         } else {
-            setOrders([]);
+          setOrders([]);
         }
       } catch (e) {
         // console.error(e);
@@ -154,7 +150,7 @@ export function useCustomerDetail() {
   const groupedByDay = useMemo(() => {
     const res: Record<number, DayEntry> = {};
     for (const t of orders) {
-      const day = new Date(t.date).getDate();
+      const day = parseInt(t.date.split('-')[2], 10);
       const entry = res[day] ?? { orders: [], total: 0 };
       entry.orders.push(t);
       entry.total += t.amount;
@@ -164,9 +160,11 @@ export function useCustomerDetail() {
   }, [orders]);
 
   const days = useMemo(() => {
-     // Sort days descending
-     const d = Object.keys(groupedByDay).map(Number).sort((a, b) => b - a);
-     return d;
+    // Sort days descending
+    const d = Object.keys(groupedByDay)
+      .map(Number)
+      .sort((a, b) => b - a);
+    return d;
   }, [groupedByDay]);
 
   function fmtDay(day: number) {

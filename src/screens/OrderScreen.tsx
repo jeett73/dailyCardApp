@@ -2,6 +2,7 @@ import { GroupedItem, ShopProduct } from '@/component/OrderComponent';
 import { Text, View } from '@/components/Themed';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
+import { formatToKolkataTime } from '@/utils/dateUtils';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
@@ -170,10 +171,7 @@ export default function OrderScreen({
               showsVerticalScrollIndicator={false}
             >
               {groupedItems.map((group, groupIdx) => {
-                const timeLabel = new Date(group.time).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                });
+                const timeLabel = formatToKolkataTime(group.time);
                 return (
                   <View key={group.time} style={styles.groupContainer}>
                     <Text style={styles.groupHeader}>{timeLabel}</Text>

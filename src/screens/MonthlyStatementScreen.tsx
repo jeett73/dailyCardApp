@@ -2,6 +2,7 @@ import { Txn, useMonthlyStatement } from '@/component/MonthlyStatementComponent'
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { formatToKolkataTime } from '@/utils/dateUtils';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import React, { memo, useCallback, useEffect, useMemo } from 'react';
 import { ActivityIndicator, Platform, ScrollView, StyleSheet } from 'react-native';
@@ -24,15 +25,7 @@ const StatementCard = memo(function StatementCard({
 
   function formatTime(timestamp: number) {
     if (!timestamp) return '';
-    const d = new Date(timestamp);
-    let hours = d.getHours();
-    const minutes = d.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const strMin = minutes < 10 ? '0' + minutes : minutes;
-    const strHours = hours < 10 ? '0' + hours : hours;
-    return `${strHours}:${strMin} ${ampm}`;
+    return formatToKolkataTime(timestamp);
   }
 
   // Group orders by time locally

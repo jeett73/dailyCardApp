@@ -1,6 +1,7 @@
 import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
+import { formatToKolkataDateString } from '@/utils/dateUtils';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -74,7 +75,7 @@ export function useRecentOrder() {
     try {
       const shopId = await getItem('userId');
       const currentPage = reset ? 1 : page;
-      const res = await getRequest(apiEndpoint.cards.recentOrder(shopId, currentPage, LIMIT));
+      const res = await getRequest(apiEndpoint.cards.recentOrder(shopId!, currentPage, LIMIT));
 
       const data = (res?.data ?? []) as any;
       const arr = Array.isArray(data?.orders) ? data?.orders : Array.isArray(data) ? data : [];
@@ -89,8 +90,8 @@ export function useRecentOrder() {
           item?.createdAt ||
           item?.date ||
           (item?.month && item?.year
-            ? new Date(item.year, item.month - 1).toISOString()
-            : new Date().toISOString()),
+            ? `${item.year}-${String(item.month).padStart(2, '0')}-01`
+            : formatToKolkataDateString(new Date())),
         products: Array.isArray(item?.products) ? item.products : [],
         others: Array.isArray(item?.others) ? item.others : [],
         cardId: item?.cardId || item?.card?._id || item?.card,
