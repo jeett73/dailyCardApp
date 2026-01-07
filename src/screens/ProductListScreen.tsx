@@ -4,7 +4,14 @@ import { Text, View } from '@/components/Themed';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
 import React, { useMemo } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProductListScreen() {
@@ -59,7 +66,7 @@ export default function ProductListScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.listContainer,
-          { paddingTop: insets.top + 90 },
+          { paddingTop: Platform.OS === 'ios' ? 135 : insets.top + 90 },
           { paddingBottom: Math.max(insets.bottom, 24) },
         ]}
       >

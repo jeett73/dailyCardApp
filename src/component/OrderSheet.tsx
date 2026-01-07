@@ -19,7 +19,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-interface OrderScreenProps {
+interface OrderSheetProps {
   sheetVisible: boolean;
   sheetY: Animated.Value;
   height: number;
@@ -39,9 +39,10 @@ interface OrderScreenProps {
   editMode: boolean;
   groupedItems: GroupedItem[];
   updateOther?: (groupIdx: number, otherIdx: number, newPrice: string) => void;
+  saving?: boolean;
 }
 
-export default function OrderScreen({
+export default function OrderSheet({
   sheetVisible,
   sheetY,
   height,
@@ -60,7 +61,8 @@ export default function OrderScreen({
   editMode,
   groupedItems,
   updateOther,
-}: OrderScreenProps) {
+  saving,
+}: OrderSheetProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -166,6 +168,93 @@ export default function OrderScreen({
     );
   };
 
+  const renderContent = () => (
+    <>
+      {editMode ? (
+        <ScrollView
+          style={{ maxHeight: isKeyboardVisible ? height * 0.5 : height * 0.8 }}
+          contentContainerStyle={styles.productsList}
+          showsVerticalScrollIndicator={false}
+        >
+          {groupedItems.map((group, groupIdx) => {
+            const timeLabel = formatToKolkataTime(group.time);
+            return (
+              <View key={group.time} style={styles.groupContainer}>
+                <Text style={styles.groupHeader}>{timeLabel}</Text>
+                {group.products.map((item, idx) => {
+                  const shopProduct = products.find(
+                    (sp) => sp._id === item.productId || sp.productId === item.productId,
+                  );
+                  if (!shopProduct) return null;
+                  const qtyKey = `${item.productId}_${group.time}`;
+                  return renderProductItem(shopProduct, idx, `group-${groupIdx}-`, qtyKey);
+                })}
+                {group.others.map((other, idx) => (
+                  <View key={`other-${groupIdx}-${idx}`} style={styles.otherItemRow}>
+                    <View style={styles.labelInputRow}>
+                      <Text style={styles.label50}>Other</Text>
+                      <TextInput
+                        style={styles.input50}
+                        value={String(other.price)}
+                        onChangeText={(t) =>
+                          updateOther && updateOther(groupIdx, idx, t.replace(/\D/g, ''))
+                        }
+                        keyboardType="numeric"
+                        placeholderTextColor="#666"
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
+                      />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            );
+          })}
+        </ScrollView>
+      ) : // Add Order Mode
+      products.length === 0 ? (
+        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={Colors.light.tint} />
+        </View>
+      ) : (
+        <>
+          <ScrollView
+            style={{ maxHeight: isKeyboardVisible ? 180 : height * 0.6 }}
+            contentContainerStyle={styles.productsList}
+            showsVerticalScrollIndicator={false}
+          >
+            {products?.filter((p) => p.price).map((p, i) => renderProductItem(p, i, 'list-'))}
+          </ScrollView>
+          <View style={styles.labelInputRow}>
+            <Text style={styles.label50}>Other</Text>
+            <TextInput
+              style={styles.input50}
+              value={otherPurchased}
+              onChangeText={(t) => setOtherPurchased(t.replace(/\D/g, ''))}
+              keyboardType="numeric"
+              placeholderTextColor="#666"
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+            />
+          </View>
+        </>
+      )}
+
+      <TouchableOpacity
+        style={[styles.saveButton, saving && { opacity: 0.7 }]}
+        activeOpacity={0.9}
+        onPress={save}
+        disabled={saving}
+      >
+        {saving ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.saveButtonText}>{saveLabel}</Text>
+        )}
+      </TouchableOpacity>
+    </>
+  );
+
   return (
     <>
       <Pressable
@@ -175,100 +264,56 @@ export default function OrderScreen({
           closeSheet();
         }}
       />
-      <Animated.View
-        style={[
-          styles.sheet,
-          {
-            transform: [{ translateY: sheetY }],
-            maxHeight: Math.round(height * 0.9),
-            minHeight: isKeyboardVisible ? 200 : Math.round(height * 0.6),
-            paddingBottom: 24,
-          },
-        ]}
-      >
-        <View style={styles.sheetHeader}>
-          <View style={styles.dragIndicator} />
-          <Text style={styles.sheetTitle}>{selectedName || ''}</Text>
-        </View>
+      {editMode ? (
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.sheetCard}
+          style={styles.keyboardAvoidingView}
+          pointerEvents="box-none"
         >
-          {editMode ? (
-            <ScrollView
-              style={{ maxHeight: isKeyboardVisible ? 180 : height * 0.65 }}
-              contentContainerStyle={styles.productsList}
-              showsVerticalScrollIndicator={false}
-            >
-              {groupedItems.map((group, groupIdx) => {
-                const timeLabel = formatToKolkataTime(group.time);
-                return (
-                  <View key={group.time} style={styles.groupContainer}>
-                    <Text style={styles.groupHeader}>{timeLabel}</Text>
-                    {group.products.map((item, idx) => {
-                      const shopProduct = products.find(
-                        (sp) => sp._id === item.productId || sp.productId === item.productId,
-                      );
-                      if (!shopProduct) return null;
-                      const qtyKey = `${item.productId}_${group.time}`;
-                      return renderProductItem(shopProduct, idx, `group-${groupIdx}-`, qtyKey);
-                    })}
-                    {group.others.map((other, idx) => (
-                      <View key={`other-${groupIdx}-${idx}`} style={styles.otherItemRow}>
-                        <View style={styles.labelInputRow}>
-                          <Text style={styles.label50}>Other</Text>
-                          <TextInput
-                            style={styles.input50}
-                            value={String(other.price)}
-                            onChangeText={(t) =>
-                              updateOther && updateOther(groupIdx, idx, t.replace(/\D/g, ''))
-                            }
-                            keyboardType="numeric"
-                            placeholderTextColor="#666"
-                            onFocus={() => setIsFocused(true)}
-                            onBlur={() => setIsFocused(false)}
-                          />
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                );
-              })}
-            </ScrollView>
-          ) : // Add Order Mode
-          products.length === 0 ? (
-            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-              <ActivityIndicator size="small" color={Colors.light.tint} />
+          <Animated.View
+            style={[
+              styles.sheet,
+              {
+                transform: [{ translateY: sheetY }],
+                maxHeight: Math.round(height * 0.6),
+                minHeight: isKeyboardVisible ? Math.round(height * 0.45) : Math.round(height * 0.6),
+                paddingBottom: 24,
+              },
+            ]}
+          >
+            <View style={styles.sheetHeader}>
+              <View style={styles.dragIndicator} />
+              <Text style={styles.sheetTitle}>{selectedName || ''}</Text>
             </View>
-          ) : (
-            <>
-              <ScrollView
-                style={{ maxHeight: isKeyboardVisible ? 180 : height * 0.6 }}
-                contentContainerStyle={styles.productsList}
-                showsVerticalScrollIndicator={false}
-              >
-                {products?.filter((p) => p.price).map((p, i) => renderProductItem(p, i, 'list-'))}
-              </ScrollView>
-              <View style={styles.labelInputRow}>
-                <Text style={styles.label50}>Other</Text>
-                <TextInput
-                  style={styles.input50}
-                  value={otherPurchased}
-                  onChangeText={(t) => setOtherPurchased(t.replace(/\D/g, ''))}
-                  keyboardType="numeric"
-                  placeholderTextColor="#666"
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                />
-              </View>
-            </>
-          )}
-
-          <TouchableOpacity style={styles.saveButton} activeOpacity={0.9} onPress={save}>
-            <Text style={styles.saveButtonText}>{saveLabel}</Text>
-          </TouchableOpacity>
+            <View style={styles.sheetCard}>{renderContent()}</View>
+          </Animated.View>
         </KeyboardAvoidingView>
-      </Animated.View>
+      ) : (
+        <Animated.View
+          style={[
+            styles.sheet,
+            {
+              transform: [{ translateY: sheetY }],
+              maxHeight: Math.round(height * 0.9),
+              minHeight: isKeyboardVisible ? 200 : Math.round(height * 0.6),
+              paddingBottom: 24,
+              position: 'absolute',
+              bottom: 0,
+            },
+          ]}
+        >
+          <View style={styles.sheetHeader}>
+            <View style={styles.dragIndicator} />
+            <Text style={styles.sheetTitle}>{selectedName || ''}</Text>
+          </View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.sheetCard}
+          >
+            {renderContent()}
+          </KeyboardAvoidingView>
+        </Animated.View>
+      )}
     </>
   );
 }
@@ -283,15 +328,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
   sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     backgroundColor: '#fff',
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
     paddingTop: 8,
     paddingHorizontal: 8,
+    width: '100%',
+  },
+  keyboardAvoidingView: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: 0,
+    justifyContent: 'flex-end',
+    zIndex: 10,
   },
   sheetHeader: {
     alignItems: 'center',

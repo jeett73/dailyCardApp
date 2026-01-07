@@ -1,18 +1,18 @@
+import OrderSheet from '@/component/OrderSheet';
 import { Customer, useOwner } from '@/component/OwnerComponent';
 import HeroHeader, { AvatarInitials, toTitleCase } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import OrderScreen from './OrderScreen';
 
 const brandPurple = '#b3a0ff';
 
@@ -160,7 +160,7 @@ export default function OwnerScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        <OrderScreen {...ownerData} />
+        <OrderSheet {...ownerData} />
       </View>
     </KeyboardAvoidingView>
   );

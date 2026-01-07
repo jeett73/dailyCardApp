@@ -39,6 +39,7 @@ export function useOrder() {
   const [cardId, setCardId] = useState<string | null>(null);
   const [day, setDay] = useState<number | null>(null);
   const [groupedItems, setGroupedItems] = useState<GroupedItem[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const totalAmount = useMemo(
     () =>
@@ -53,9 +54,17 @@ export function useOrder() {
     sheetY.setValue(500);
     Animated.timing(sheetY, { toValue: 0, duration: 220, useNativeDriver: true }).start();
     if (orderToEdit) {
-      const { _id, day } = orderToEdit || {};
-      setCardId(_id);
-      setDay(day);
+      const { _id, day, cardId: orderCardId } = orderToEdit || {};
+
+      let d = day;
+      // If day is missing, try to extract from products or others
+      if (!d) {
+        const pList = Array.isArray(orderToEdit.products) ? orderToEdit.products : [];
+        d = pList[0]?.day;
+      }
+
+      setCardId(orderCardId || _id);
+      setDay(d);
       setEditMode(true);
 
       setOtherPurchased('');
@@ -208,13 +217,21 @@ export function useOrder() {
   }
 
   async function save(onSuccess?: () => void) {
+    if (saving) return;
+    setSaving(true);
     try {
       const token = await getItem('token');
       const storedShopId = await getItem('userId');
       const shopId = storedShopId ? String(storedShopId) : '';
       const time = Date.now();
 
-      if (editMode && cardId && day) {
+      if (editMode) {
+        if (!cardId || !day) {
+          console.warn('Update skipped: Missing cardId or day', { cardId, day });
+          alert('Cannot update order: Missing details');
+          return;
+        }
+
         const items: { productId: string; time: number; qty: number; price: number }[] = [];
 
         Object.entries(quantities).forEach(([key, qty]) => {
@@ -277,7 +294,7 @@ export function useOrder() {
         const otherAmount = Number(otherPurchased);
 
         if (items.length === 0 && otherAmount <= 0) {
-          if (editMode && editingOrderId) {
+          if (editMode) {
             // Should not reach here due to if check above
           } else {
             closeSheet();
@@ -304,13 +321,31 @@ export function useOrder() {
         });
       }
 
-      closeSheet();
       setQuantities({});
       setOtherPurchased('');
-      if (onSuccess) onSuccess();
+      if (onSuccess && typeof onSuccess === 'function') onSuccess();
     } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
       closeSheet();
     }
+  }
+
+  function updateOther(groupIdx: number, otherIdx: number, newPrice: string) {
+    setGroupedItems((prev) => {
+      const copy = [...prev];
+      if (copy[groupIdx]) {
+        const g = { ...copy[groupIdx] };
+        if (g.others && g.others[otherIdx]) {
+          const others = [...g.others];
+          others[otherIdx] = { ...others[otherIdx], price: Number(newPrice) };
+          g.others = others;
+          copy[groupIdx] = g;
+        }
+      }
+      return copy;
+    });
   }
 
   return {
@@ -332,5 +367,7 @@ export function useOrder() {
     save,
     editMode,
     groupedItems,
+    updateOther,
+    saving,
   };
 }

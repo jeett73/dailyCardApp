@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -135,7 +136,7 @@ export default function CustomerListScreen() {
   return (
     <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title="Customers" />
-      <View style={{ paddingTop: insets.top + 90, flex: 1 }}>
+      <View style={{ paddingTop: Platform.OS === 'ios' ? 130 : insets.top + 90, flex: 1 }}>
         <View style={styles.searchBar}>
           <TextInput
             style={styles.searchInput}

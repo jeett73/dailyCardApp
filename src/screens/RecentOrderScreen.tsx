@@ -1,18 +1,16 @@
 import { useOrder } from '@/component/OrderComponent';
+import OrderSheet from '@/component/OrderSheet';
 import { useRecentOrder } from '@/component/RecentOrderComponent';
 import HeroHeader, { AvatarInitials } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
-import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import OrderScreen from './OrderScreen';
 
 export default function RecentOrderScreen() {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
   const { items, loading, loadingMore, refreshing, error, refresh, loadMore, hasMore } =
     useRecentOrder();
 
@@ -24,12 +22,8 @@ export default function RecentOrderScreen() {
     ({ item }: { item: any }) => {
       function handleEdit() {
         // Construct a customer object for display
-        const customer = {
-          name: item.name,
-          // Add other fields if necessary for OrderScreen display or logic
-        };
         // Open sheet in edit mode
-        openSheet(customer, item.raw);
+        openSheet({ ...item.raw.customer, name: item.name }, item.raw);
       }
 
       return (
@@ -102,7 +96,7 @@ export default function RecentOrderScreen() {
   return (
     <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title="Recent Orders" />
-      <View style={{ paddingTop: insets.top + 90, flex: 1 }}>
+      <View style={{ paddingTop: Platform.OS === 'ios' ? 130 : insets.top + 90, flex: 1 }}>
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
@@ -120,7 +114,7 @@ export default function RecentOrderScreen() {
           onEndReachedThreshold={0.5}
         />
       </View>
-      <OrderScreen
+      <OrderSheet
         {...orderLogic}
         saveLabel={editMode ? 'Update Order' : 'Order'}
         save={() => save(refresh)}
