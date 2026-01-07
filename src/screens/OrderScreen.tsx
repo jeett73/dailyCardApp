@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Animated,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -34,6 +36,7 @@ interface OrderScreenProps {
   saveLabel?: string;
   editMode: boolean;
   groupedItems: GroupedItem[];
+  updateOther?: (groupIdx: number, otherIdx: number, newPrice: string) => void;
 }
 
 export default function OrderScreen({
@@ -54,6 +57,7 @@ export default function OrderScreen({
   saveLabel = 'Order',
   editMode,
   groupedItems,
+  updateOther,
 }: OrderScreenProps) {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -154,6 +158,7 @@ export default function OrderScreen({
           {
             transform: [{ translateY: sheetY }],
             maxHeight: Math.round(height * 0.9),
+            minHeight: Math.round(height * 0.6),
             paddingBottom: 24,
           },
         ]}
@@ -162,7 +167,10 @@ export default function OrderScreen({
           <View style={styles.dragIndicator} />
           <Text style={styles.sheetTitle}>{selectedName || ''}</Text>
         </View>
-        <View style={styles.sheetCard}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.sheetCard}
+        >
           {editMode ? (
             <ScrollView
               style={{ maxHeight: height * 0.65 }}
@@ -192,7 +200,9 @@ export default function OrderScreen({
                           <TextInput
                             style={styles.input50}
                             value={String(other.price)}
-                            onChangeText={(t) => setOtherPurchased(t.replace(/\D/g, ''))}
+                            onChangeText={(t) =>
+                              updateOther && updateOther(groupIdx, idx, t.replace(/\D/g, ''))
+                            }
                             keyboardType="numeric"
                             placeholderTextColor="#666"
                             onFocus={() => setIsFocused(true)}
@@ -212,33 +222,30 @@ export default function OrderScreen({
             </View>
           ) : (
             <ScrollView
-              style={isFocused ? { maxHeight: 150 } : { maxHeight: height * 0.6 }}
+              style={{ maxHeight: height * 0.6 }}
               contentContainerStyle={styles.productsList}
               showsVerticalScrollIndicator={false}
             >
               {products?.filter((p) => p.price).map((p, i) => renderProductItem(p, i, 'list-'))}
+              <View style={styles.labelInputRow}>
+                <Text style={styles.label50}>Other</Text>
+                <TextInput
+                  style={styles.input50}
+                  value={otherPurchased}
+                  onChangeText={(t) => setOtherPurchased(t.replace(/\D/g, ''))}
+                  keyboardType="numeric"
+                  placeholderTextColor="#666"
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                />
+              </View>
             </ScrollView>
-          )}
-
-          {!editMode && (
-            <View style={styles.labelInputRow}>
-              <Text style={styles.label50}>Other</Text>
-              <TextInput
-                style={styles.input50}
-                value={otherPurchased}
-                onChangeText={(t) => setOtherPurchased(t.replace(/\D/g, ''))}
-                keyboardType="numeric"
-                placeholderTextColor="#666"
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-              />
-            </View>
           )}
 
           <TouchableOpacity style={styles.saveButton} activeOpacity={0.9} onPress={save}>
             <Text style={styles.saveButtonText}>{saveLabel}</Text>
           </TouchableOpacity>
-        </View>
+        </KeyboardAvoidingView>
       </Animated.View>
     </>
   );
