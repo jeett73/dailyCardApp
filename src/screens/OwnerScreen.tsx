@@ -43,7 +43,8 @@ export default function OwnerScreen() {
             placeholder="Enter card number..."
             placeholderTextColor="#aaa"
             value={input}
-            editable={false}
+            showSoftInputOnFocus={false}
+            inputView={<View />}
           />
           <View style={styles.searchIconWrap}>
             <Text style={styles.searchIcon}>🔍</Text>

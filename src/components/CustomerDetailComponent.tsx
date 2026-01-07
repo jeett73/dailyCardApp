@@ -6,7 +6,14 @@ import { formatToKolkataDateString } from '@/utils/dateUtils';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
 
-export type Txn = { id: string; date: string; item: string; qty: number; amount: number };
+export type Txn = {
+  id: string;
+  date: string;
+  item: string;
+  qty: number;
+  amount: number;
+  time: number;
+};
 export type DayEntry = { orders: Txn[]; total: number };
 
 export interface CustomerInfo {
@@ -130,6 +137,21 @@ export function useCustomerDetail() {
                   item: prod.productName,
                   qty: prod.qty,
                   amount: prod.qty * prod.price,
+                  time: prod.time,
+                });
+              });
+            }
+
+            if (daily.others && Array.isArray(daily.others)) {
+              daily.others.forEach((other: any, idx: number) => {
+                const date = formatToKolkataDateString(other.time);
+                allTxns.push({
+                  id: `other-${other.time}-${idx}`,
+                  date: date,
+                  item: 'Others',
+                  qty: 1,
+                  amount: other.price,
+                  time: other.time,
                 });
               });
             }
