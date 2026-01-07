@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Animated,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -61,6 +62,27 @@ export default function OrderScreen({
   updateOther,
 }: OrderScreenProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  React.useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   if (!sheetVisible) return null;
 
@@ -159,7 +181,7 @@ export default function OrderScreen({
           {
             transform: [{ translateY: sheetY }],
             maxHeight: Math.round(height * 0.9),
-            minHeight: Math.round(height * 0.6),
+            minHeight: isKeyboardVisible ? 200 : Math.round(height * 0.6),
             paddingBottom: 24,
           },
         ]}
@@ -174,7 +196,7 @@ export default function OrderScreen({
         >
           {editMode ? (
             <ScrollView
-              style={{ maxHeight: height * 0.65 }}
+              style={{ maxHeight: isKeyboardVisible ? 180 : height * 0.65 }}
               contentContainerStyle={styles.productsList}
               showsVerticalScrollIndicator={false}
             >
@@ -219,12 +241,14 @@ export default function OrderScreen({
               <ActivityIndicator size="small" color={Colors.light.tint} />
             </View>
           ) : (
-            <ScrollView
-              style={{ maxHeight: height * 0.6 }}
-              contentContainerStyle={styles.productsList}
-              showsVerticalScrollIndicator={false}
-            >
-              {products?.filter((p) => p.price).map((p, i) => renderProductItem(p, i, 'list-'))}
+            <>
+              <ScrollView
+                style={{ maxHeight: isKeyboardVisible ? 180 : height * 0.6 }}
+                contentContainerStyle={styles.productsList}
+                showsVerticalScrollIndicator={false}
+              >
+                {products?.filter((p) => p.price).map((p, i) => renderProductItem(p, i, 'list-'))}
+              </ScrollView>
               <View style={styles.labelInputRow}>
                 <Text style={styles.label50}>Other</Text>
                 <TextInput
@@ -237,7 +261,7 @@ export default function OrderScreen({
                   onBlur={() => setIsFocused(false)}
                 />
               </View>
-            </ScrollView>
+            </>
           )}
 
           <TouchableOpacity style={styles.saveButton} activeOpacity={0.9} onPress={save}>
