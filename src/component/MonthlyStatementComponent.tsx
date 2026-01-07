@@ -113,11 +113,11 @@ export function useMonthlyStatement() {
 
     const allTxns: Txn[] = [];
 
-    cardData.products.forEach((daily) => {
+    cardData.products.forEach((daily, dailyIdx) => {
       daily.product.forEach((prod) => {
         const date = formatToKolkataDateString(prod.time);
         allTxns.push({
-          id: `${prod.productId}-${prod.time}`,
+          id: `${dailyIdx}-${prod.productId}-${prod.time}`,
           date: date,
           item: prod.productName,
           qty: prod.qty,
@@ -140,7 +140,7 @@ export function useMonthlyStatement() {
         daily.others.forEach((other, idx) => {
           const date = formatToKolkataDateString(other.time);
           allTxns.push({
-            id: `other-${other.time}-${idx}`,
+            id: `other-${dailyIdx}-${other.time}-${idx}`,
             date: date,
             item: 'Others',
             qty: 1,
