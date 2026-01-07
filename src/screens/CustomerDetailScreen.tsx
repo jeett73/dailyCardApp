@@ -2,7 +2,8 @@ import { Txn, useCustomerDetail } from '@/components/CustomerDetailComponent';
 import HeroHeader, { AvatarInitials } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import React, { memo } from 'react';
+import { formatToKolkataTime } from '@/utils/dateUtils';
+import React, { memo, useMemo } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -12,39 +13,93 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+function formatMobile(phone?: string | number) {
+  const digits = String(phone ?? '').replace(/\D/g, '');
+  if (!digits) return 'N/A';
+  const n = digits.slice(-10);
+  return `+91 ${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)}`;
+}
+
+type TimeGroup = { time: number; orders: Txn[] };
+
 const StatementCard = memo(function StatementCard({
   dayLabel,
   orders,
   total,
+  scale,
 }: {
   dayLabel: string;
   orders: Txn[];
   total: number;
+  scale: number;
 }) {
-  const hasOrders = orders.length > 0;
+  const hasOrders = orders && orders.length > 0;
+
+  function formatTime(timestamp: number) {
+    if (!timestamp) return '';
+    return formatToKolkataTime(timestamp);
+  }
+
+  // Group orders by time locally
+  const timeGroups = useMemo(() => {
+    if (!orders) return [];
+    const groups: TimeGroup[] = [];
+    orders.forEach((ord) => {
+      let group = groups.find((g) => g.time === ord.time);
+      if (!group) {
+        group = { time: ord.time, orders: [] };
+        groups.push(group);
+      }
+      group.orders.push(ord);
+    });
+    // Sort by time descending
+    groups.sort((a, b) => a.time - b.time);
+    return groups;
+  }, [orders]);
+
   return (
-    <View style={styles.statementCard}>
-      <Text style={styles.statementTitle}>{dayLabel}</Text>
+    <View style={styles.statementCard} accessibilityRole="summary">
+      <Text style={[styles.statementTitle, { fontSize: Math.round(20 * scale) }]}>{dayLabel}</Text>
       <View style={styles.statementDivider} />
       {hasOrders ? (
         <>
-          {orders.map((ord) => (
-            <View key={ord.id} style={styles.statementRow}>
-              <Text style={styles.itemName}>
-                {ord.item} ({ord.qty} × ₹{(ord.amount / ord.qty).toFixed(0)})
+          {timeGroups.map((group, groupIdx) => (
+            <View
+              key={`group-${groupIdx}`}
+              style={{ marginBottom: 12, backgroundColor: 'transparent' }}
+            >
+              <Text style={[styles.timeHeader, { fontSize: styles.timeHeader.fontSize }]}>
+                [ {formatTime(group.time)} ]
               </Text>
-              <Text style={styles.itemQty}>₹{ord.amount}</Text>
+              {group.orders.map((ord) => (
+                <View key={ord.id} style={styles.statementRow}>
+                  {ord.item === 'Others' ? (
+                    <Text style={[styles.itemName, { fontSize: Math.round(18 * scale) }]}>
+                      Others
+                    </Text>
+                  ) : (
+                    <Text style={[styles.itemName, { fontSize: Math.round(18 * scale) }]}>
+                      {ord.item} ×{ord.qty}
+                    </Text>
+                  )}
+                  <Text style={[styles.itemQty, { fontSize: Math.round(18 * scale) }]}>
+                    ₹{ord.amount}
+                  </Text>
+                </View>
+              ))}
             </View>
           ))}
           <View style={styles.statementDivider} />
           <View style={styles.statementRow}>
-            <Text style={styles.itemName}>Total Amount</Text>
-            <Text style={styles.itemQty}>₹{total}</Text>
+            <Text style={[styles.totalAmount, { fontSize: Math.round(18 * scale) }]}>
+              Total Amount
+            </Text>
+            <Text style={[styles.totalAmount, { fontSize: Math.round(18 * scale) }]}>₹{total}</Text>
           </View>
         </>
       ) : (
         <View style={styles.statementRow}>
-          <Text style={styles.itemName}>No Orders</Text>
+          <Text style={[styles.itemName, { fontSize: Math.round(18 * scale) }]}>No Orders</Text>
         </View>
       )}
     </View>
@@ -102,7 +157,7 @@ export default function CustomerDetailScreen() {
               </Text>
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Mobile</Text>
-                <Text style={styles.metaValue}>{customer.phone}</Text>
+                <Text style={styles.metaValue}>{formatMobile(customer.phone)}</Text>
               </View>
             </View>
           </View>
@@ -112,7 +167,7 @@ export default function CustomerDetailScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Due Months</Text>
         </View>
-        <View style={{ height: 100 }}>
+        <View style={{ height: 100, backgroundColor: '#fff' }}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -154,7 +209,7 @@ export default function CustomerDetailScreen() {
         </View>
 
         {ordersLoading ? (
-          <ActivityIndicator size="small" color={Colors.light.tint} style={{ marginTop: 20 }} />
+          <ActivityIndicator size="small" color={Colors.light.tint} style={{ marginTop: 2 }} />
         ) : days.length === 0 ? (
           <Text style={styles.emptyText}>No orders for this month</Text>
         ) : (
@@ -166,6 +221,7 @@ export default function CustomerDetailScreen() {
                 dayLabel={fmtDay(day)}
                 orders={entry.orders}
                 total={entry.total}
+                scale={1}
               />
             );
           })
@@ -185,24 +241,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 24,
+    marginBottom: 5,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
   },
-  customerRow: { flexDirection: 'row', alignItems: 'center' },
-  customerInfo: { marginLeft: 16, flex: 1 },
+  customerRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff' },
+  customerInfo: { marginLeft: 16, flex: 1, backgroundColor: '#fff' },
   customerTitle: { fontSize: 18, fontWeight: '700', color: Colors.light.text },
-  metaRow: { flexDirection: 'row', marginTop: 4, alignItems: 'center' },
-  metaLabel: { fontSize: 14, color: '#666', width: 60 },
+  metaRow: { flexDirection: 'row', marginTop: 4, alignItems: 'center', backgroundColor: '#fff' },
+  metaLabel: { fontSize: 14, color: '#666', width: 50 },
   metaValue: { fontSize: 14, color: Colors.light.text, fontWeight: '600' },
 
-  sectionHeader: { marginBottom: 12, marginTop: 8 },
+  sectionHeader: { marginBottom: 5, marginTop: 5, backgroundColor: '#fff' },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.light.text },
 
-  dueScroll: { marginBottom: 24, flexDirection: 'row' },
+  dueScroll: { marginBottom: 5, flexDirection: 'row', backgroundColor: '#fff' },
   dueCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -226,30 +282,32 @@ const styles = StyleSheet.create({
 
   statementCard: {
     marginTop: 12,
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 20,
+    paddingVertical: 18,
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#eee',
+    backgroundColor: Colors.light.brandPurple,
     shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
+    minHeight: 120,
   },
-  statementTitle: { fontSize: 16, fontWeight: '700', color: Colors.light.text },
+  statementTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
   statementDivider: {
     height: StyleSheet.hairlineWidth,
-    marginVertical: 10,
-    backgroundColor: '#eee',
+    marginVertical: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   statementRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    paddingVertical: 6,
+    backgroundColor: 'transparent',
   },
-  itemName: { fontSize: 14, color: Colors.light.text },
-  itemQty: { fontSize: 14, color: Colors.light.text, fontWeight: '600' },
+  timeHeader: { fontSize: 16, color: '#fff', fontWeight: '800', marginBottom: 4, marginTop: 8 },
+  itemName: { fontSize: 18, color: '#fff', fontWeight: '300' },
+  itemQty: { fontSize: 18, color: '#fff', fontWeight: '300' },
+  totalAmount: { fontSize: 18, color: '#fff', fontWeight: '800' },
 });
