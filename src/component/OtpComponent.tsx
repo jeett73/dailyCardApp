@@ -75,47 +75,6 @@ export function useOtp() {
     };
   }, []);
 
-  // async function handleVerify() {
-  //   const cleaned = otp.replace(/\D/g, '').slice(0, 4);
-  //   if (cleaned.length !== 4) {
-  //     setHasError(true);
-  //     return;
-  //   }
-  //   setHasError(false);
-  //   Keyboard.dismiss();
-  //   try {
-  //     setLoading(true);
-  //     const res = await postRequest(apiEndpoint.auth.verifyOtp, { phone, otp: cleaned, fcmToken });
-  //     const { token, refreshToken, userId, entityType, isMpinAlreadySet } =
-  //       (res?.data as any) ?? {};
-  //     await Promise.all(
-  //       [
-  //         token && setItem('token', token),
-  //         refreshToken && setItem('refreshToken', refreshToken),
-  //         userId && setItem('userId', userId),
-  //         entityType && setItem('entityType', entityType),
-  //       ].filter(Boolean),
-  //     );
-  //     setSuccess(true);
-  //     if (isMpinAlreadySet === null || isMpinAlreadySet === '') {
-  //       navigation.navigate('SetMpin', { phone });
-  //     } else {
-  //       if (entityType === 'shop') {
-  //         navigation.reset({ index: 0, routes: [{ name: 'Owner' }] });
-  //       } else {
-  //         navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
-  //       }
-  //     }
-  //   } catch (e) {
-  //     const msg =
-  //       (e as any)?.response?.data?.message ||
-  //       (e as any)?.message ||
-  //       'OTP verification failed. Please try again.';
-  //     Alert.alert('Failed to verify OTP', String(msg));
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
   async function handleVerify() {
     const cleaned = otp.replace(/\D/g, '').slice(0, 4);
     if (cleaned.length !== 4) {
@@ -143,8 +102,6 @@ export function useOtp() {
         fcmToken: tokenToSend,
         deviceId,
       };
-
-      console.log('VERIFY OTP PAYLOAD 👉', payload);
 
       const res = await postRequest(apiEndpoint.auth.verifyOtp, payload);
 
