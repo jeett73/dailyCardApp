@@ -23,7 +23,7 @@ interface OrderSheetProps {
   sheetVisible: boolean;
   sheetY: Animated.Value;
   height: number;
-  currentCustomer: { name?: string } | null;
+  currentCustomer: { name?: string; cardNumber?: string | number } | null;
   products: ShopProduct[];
   quantities: Record<string, number>;
   qtyScales: React.MutableRefObject<Record<string, Animated.Value>>;
@@ -89,6 +89,7 @@ export default function OrderSheet({
   if (!sheetVisible) return null;
 
   const selectedName = currentCustomer?.name;
+  const cardNumber = currentCustomer?.cardNumber;
 
   const renderProductItem = (
     p: ShopProduct,
@@ -283,7 +284,10 @@ export default function OrderSheet({
           >
             <View style={styles.sheetHeader}>
               <View style={styles.dragIndicator} />
-              <Text style={styles.sheetTitle}>{selectedName || ''}</Text>
+              <Text style={styles.sheetTitle}>
+                {cardNumber ? <Text style={{ fontStyle: 'italic' }}>#{cardNumber} </Text> : null}
+                {selectedName || ''}
+              </Text>
             </View>
             <View style={styles.sheetCard}>{renderContent()}</View>
           </Animated.View>
@@ -304,7 +308,10 @@ export default function OrderSheet({
         >
           <View style={styles.sheetHeader}>
             <View style={styles.dragIndicator} />
-            <Text style={styles.sheetTitle}>{selectedName || ''}</Text>
+            <Text style={styles.sheetTitle}>
+              {cardNumber ? <Text style={{ fontStyle: 'italic' }}>#{cardNumber} </Text> : null}
+              {selectedName || ''}
+            </Text>
           </View>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
