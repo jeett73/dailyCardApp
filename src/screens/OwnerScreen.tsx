@@ -5,12 +5,12 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -43,6 +43,8 @@ export default function OwnerScreen() {
             placeholder="Enter card number..."
             placeholderTextColor="#aaa"
             value={input}
+            maxLength={10}
+            autoFocus={true}
             showSoftInputOnFocus={false}
             inputView={<View />}
           />

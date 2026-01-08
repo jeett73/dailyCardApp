@@ -68,7 +68,7 @@ export function useOwner() {
   }, [customers, query]);
 
   function onDigit(d: string) {
-    setInput((prev) => (prev + d).slice(0, 3));
+    setInput((prev) => (prev + d).slice(0, 10));
   }
 
   function onBackspace() {
