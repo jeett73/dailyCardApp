@@ -3,6 +3,8 @@ import { useLogin } from '@/component/LoginComponent';
 import React from 'react';
 import {
   ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -38,45 +40,53 @@ export default function LoginScreen() {
           {focused && <View style={styles.heroOverlay} pointerEvents="none" />}
         </ImageBackground>
       </View>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={[styles.card, focused && styles.cardFloating]}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Enter your phone number to continue</Text>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              keyboardType="phone-pad"
-              placeholder="Enter phone number"
-              placeholderTextColor="#0d101b"
-              style={styles.input}
-              maxLength={10}
-            />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.container, focused && { paddingTop: 210 }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={[styles.card, focused && styles.cardFocused]}>
+            <Text style={styles.title}>Welcome</Text>
+            <Text style={styles.subtitle}>Enter your phone and card number to continue</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                value={phone}
+                onChangeText={setPhone}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                keyboardType="phone-pad"
+                placeholder="Enter phone number"
+                placeholderTextColor="#0d101b"
+                style={styles.input}
+                maxLength={10}
+              />
+            </View>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                placeholder="Enter card number"
+                placeholderTextColor="#0d101b"
+                style={styles.input}
+                autoCapitalize="none"
+              />
+            </View>
+            <TouchableOpacity
+              onPress={handleContinue}
+              activeOpacity={0.9}
+              disabled={!isValid || loading}
+              style={[styles.button, (!isValid || loading) && styles.buttonDisabled]}
+            >
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              placeholder="Enter card number"
-              placeholderTextColor="#0d101b"
-              style={styles.input}
-              autoCapitalize="none"
-            />
-          </View>
-          <TouchableOpacity
-            onPress={handleContinue}
-            activeOpacity={0.9}
-            disabled={!isValid || loading}
-            style={[styles.button, (!isValid || loading) && styles.buttonDisabled]}
-          >
-            <Text style={styles.buttonText}>Login</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -111,7 +121,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 24,
-    paddingTop: 500,
+    paddingTop: 430,
     paddingBottom: 32,
   },
   card: {
@@ -130,11 +140,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 8,
   },
-  cardFloating: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    top: 210,
+  cardFocused: {
     zIndex: 10000,
     elevation: 20,
   },
