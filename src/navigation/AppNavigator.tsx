@@ -8,7 +8,6 @@ import LoginScreen from '@/screens/LoginScreen';
 import ModalScreen from '@/screens/ModalScreen';
 import MonthWiseReportScreen from '@/screens/MonthWiseReportScreen';
 import MpinScreen from '@/screens/MpinScreen';
-import OtpScreen from '@/screens/OtpScreen';
 import OwnerScreen from '@/screens/OwnerScreen';
 import ProductListScreen from '@/screens/ProductListScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
@@ -37,7 +36,7 @@ export default function AppNavigator() {
   return (
     <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Otp" component={OtpScreen} />
+      {/* <Stack.Screen name="Otp" component={OtpScreen} /> */}
       <Stack.Screen name="Mpin" component={MpinScreen} />
       <Stack.Screen name="SetMpin" component={SetMpinScreen} />
       <Stack.Screen name="MainTabs" component={MainTabs} />

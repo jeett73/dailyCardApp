@@ -9,6 +9,7 @@ export function useLogin() {
   const [phone, setPhone] = useState('');
   const [focused, setFocused] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState('');
   const isValid = useMemo(() => phone.length === 10, [phone]);
 
   async function handleContinue() {

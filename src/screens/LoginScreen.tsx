@@ -2,18 +2,28 @@
 import { useLogin } from '@/component/LoginComponent';
 import React from 'react';
 import {
-    ImageBackground,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Colors from '../constants/Colors';
 
 export default function LoginScreen() {
-  const { phone, focused, loading, isValid, setPhone, setFocused, handleContinue } = useLogin();
+  const {
+    phone,
+    password,
+    focused,
+    loading,
+    isValid,
+    setPhone,
+    setPassword,
+    setFocused,
+    handleContinue,
+  } = useLogin();
 
   return (
     <View style={styles.screen}>
@@ -45,13 +55,25 @@ export default function LoginScreen() {
               maxLength={10}
             />
           </View>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              placeholder="Enter card number"
+              placeholderTextColor="#0d101b"
+              style={styles.input}
+              autoCapitalize="none"
+            />
+          </View>
           <TouchableOpacity
             onPress={handleContinue}
             activeOpacity={0.9}
             disabled={!isValid || loading}
             style={[styles.button, (!isValid || loading) && styles.buttonDisabled]}
           >
-            <Text style={styles.buttonText}>Send OTP</Text>
+            <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
