@@ -267,7 +267,7 @@ export default function OrderSheet({
       />
       {editMode ? (
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidingView}
           pointerEvents="box-none"
         >
@@ -314,7 +314,7 @@ export default function OrderSheet({
             </Text>
           </View>
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.sheetCard}
           >
             {renderContent()}
@@ -346,8 +346,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
     top: 0,
+    height: '100%',
     justifyContent: 'flex-end',
     zIndex: 10,
   },

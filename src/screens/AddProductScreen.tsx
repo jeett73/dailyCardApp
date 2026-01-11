@@ -96,7 +96,7 @@ export default function AddProductScreen() {
     <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title="Select Product" />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
         <ScrollView
