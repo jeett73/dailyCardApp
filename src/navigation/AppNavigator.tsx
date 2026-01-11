@@ -12,6 +12,7 @@ import OwnerScreen from '@/screens/OwnerScreen';
 import ProductListScreen from '@/screens/ProductListScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
 import RecentOrderScreen from '@/screens/RecentOrderScreen';
+import ResetPasswordScreen from '@/screens/ResetPasswordScreen';
 import SetMpinScreen from '@/screens/SetMpinScreen';
 import { getItem } from '@/services/storage';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -54,6 +55,7 @@ export default function AppNavigator() {
       <Stack.Screen name="CreateCustomer" component={CreateCustomerScreen} />
       <Stack.Screen name="Owner" component={OwnerScreen} options={{ gestureEnabled: false }} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <Stack.Screen name="Modal" component={ModalScreen} />
     </Stack.Navigator>
   );

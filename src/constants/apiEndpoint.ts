@@ -13,6 +13,7 @@ const apiEndpoint = {
     logout: url('/auth/logout'),
     logoutUser: (id: Id) => url(`/auth/logout/${id}`),
     sendOtp: url('/auth/send-otp'),
+    resetPassword: url('/auth/reset-password'),
     refresh: url('/auth/refresh'),
   },
   mpin: {

@@ -63,11 +63,16 @@ export function useProfile() {
     });
   }
 
+  function resetPassword() {
+    navigation.navigate('ResetPassword');
+  }
+
   const baseMenuItems = [
     { label: 'Past Statements', onPress: gotoStatements, isFor: 'customer' },
     { label: 'Recent Order', onPress: gotoRecentOrder, isFor: 'shop' },
     { label: 'Customers', onPress: gotoCustomers, isFor: 'shop' },
     { label: 'Products', onPress: gotoProducts, isFor: 'shop' },
+    { label: 'Reset Password', onPress: resetPassword, isFor: 'shop' },
     { label: 'Logout', onPress: handleLogout, isFor: 'both' },
   ] as const;
 
