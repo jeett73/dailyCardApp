@@ -246,15 +246,15 @@ export function useCreateCustomer(params?: {
         address: {
           street1: form.street1.trim(),
           // street2: form?.street2?.trim() ?? '',
-          // city: form?.city?.trim() ?? '',
+          city: form?.city?.trim() ?? '',
           // state: form?.state?.trim() ?? '',
           // postalCode: form?.postalCode?.trim() ?? '',
         },
-        // phone: form.phone.trim(),
+        phone: form.phone.trim(),
         cardNumber: form.cardNumber.trim(),
         regularProduct,
-        // depositeAmount: Number(form.depositeAmount),
-        // shopId: shopId,
+        depositeAmount: Number(form.depositeAmount),
+        shopId: shopId,
       };
       if (isEdit && customerIdRef.current) {
         await putRequest(apiEndpoint.customers.update(customerIdRef.current), payload);
