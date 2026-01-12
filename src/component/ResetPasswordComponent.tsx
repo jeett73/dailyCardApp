@@ -3,7 +3,6 @@ import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 
 export function useResetPassword() {
   const navigation = useNavigation<any>();
@@ -59,9 +58,8 @@ export function useResetPassword() {
         password: newPassword,
       });
 
-      Alert.alert('Success', 'Password has been reset successfully', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      showSuccessToast('Success', 'Password has been reset successfully');
+      navigation.goBack();
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || 'Failed to reset password';
       setError(msg);

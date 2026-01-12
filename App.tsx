@@ -1,5 +1,5 @@
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { initAuthFromStorage } from '@/api/http';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import AppNavigator from '@/navigation/AppNavigator';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
@@ -7,6 +7,8 @@ import { registerRootComponent } from 'expo';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
+
+import Toast from 'react-native-toast-message';
 
 function App() {
   SplashScreen.preventAutoHideAsync();
@@ -36,9 +38,12 @@ function App() {
   }
 
   return (
-    <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AppNavigator />
-    </NavigationContainer>
+    <>
+      <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <AppNavigator />
+      </NavigationContainer>
+      <Toast />
+    </>
   );
 }
 
