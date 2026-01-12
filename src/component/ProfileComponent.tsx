@@ -4,7 +4,7 @@ import { getDeviceId } from '@/services/deviceService';
 import { clear, getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, useWindowDimensions } from 'react-native';
+import { Linking, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function useProfile() {

@@ -4,6 +4,7 @@ import { AvatarInitials } from '@/components/HeroHeader';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
 import { getItem } from '@/services/storage';
+import { showErrorToast, showSuccessToast } from '@/utils/toastUtils';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -72,8 +73,10 @@ export default function PaymentModal({
         setItems(list);
         setPayText(String(list.reduce((s, it) => s + (it.amount || 0), 0)));
         setLoading(false);
-      } catch (e) {
-        setError('Failed to load dues');
+      } catch (e: any) {
+        const msg = e?.response?.data?.message || e?.message || 'Failed to load dues';
+        setError(msg);
+        showErrorToast(msg);
         setLoading(false);
       }
     })();
@@ -94,9 +97,11 @@ export default function PaymentModal({
         paymentAmount: amount,
       };
       await postRequest(apiEndpoint.cards.payment, payload);
+      showSuccessToast('Payment Successful', `Amount: ${amount}`);
       onClose(amount);
     } catch {
       setError('Payment failed');
+      showErrorToast('Payment failed');
     } finally {
       setLoading(false);
     }

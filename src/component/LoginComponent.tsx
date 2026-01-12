@@ -5,7 +5,7 @@ import { registerForPushNotificationsAsync } from '@/services/notificationServic
 import { setItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Keyboard } from 'react-native';
+import { Keyboard } from 'react-native';
 
 export function useLogin() {
   const navigation = useNavigation<any>();
@@ -79,7 +79,7 @@ export function useLogin() {
         (e as any)?.response?.data?.message ||
         (e as any)?.message ||
         'Login failed. Please try again.';
-      Alert.alert('Login Failed', String(msg));
+      showErrorToast('Login Failed', String(msg));
     } finally {
       setLoading(false);
     }

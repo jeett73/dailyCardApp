@@ -1,9 +1,10 @@
 import { getRequest, postRequest, putRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
+import { showErrorToast, showSuccessToast } from '@/utils/toastUtils';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Keyboard, ScrollView } from 'react-native';
+import { Keyboard, ScrollView } from 'react-native';
 
 export type FormState = {
   name: string;
@@ -258,25 +259,20 @@ export function useCreateCustomer(params?: {
       };
       if (isEdit && customerIdRef.current) {
         await putRequest(apiEndpoint.customers.update(customerIdRef.current), payload);
-        Alert.alert('Success', 'Customer updated successfully');
+        showSuccessToast('Success', 'Customer updated successfully');
       } else {
         await postRequest(apiEndpoint.customers.add, payload, {
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
-        Alert.alert('Success', 'Customer created successfully');
+        showSuccessToast('Success', 'Customer created successfully');
       }
       navigation.navigate('CustomerList');
-    } catch (err) {
-      Alert.alert(
-        'Failed',
-        isEdit
-          ? err instanceof Error
-            ? err.message
-            : String(err ?? 'Unable to update customer')
-          : err instanceof Error
-            ? err.message
-            : String(err ?? 'Unable to create customer'),
-      );
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        (isEdit ? 'Unable to update customer' : 'Unable to create customer');
+      showErrorToast('Failed', String(msg));
     } finally {
       setLoading(false);
     }

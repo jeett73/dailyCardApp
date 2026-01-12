@@ -1,6 +1,7 @@
+import { showErrorToast } from '@/utils/toastUtils';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, TextInput } from 'react-native';
+import { Keyboard, TextInput } from 'react-native';
 import { postRequest } from '../api/apiMethods';
 import apiEndpoint from '../constants/apiEndpoint';
 import { getDeviceId } from '../services/deviceService';
@@ -131,7 +132,7 @@ export function useOtp() {
     } catch (e) {
       const msg =
         (e as any)?.response?.data?.message || (e as any)?.message || 'OTP verification failed';
-      Alert.alert('Failed to verify OTP', String(msg));
+      showErrorToast('Failed to verify OTP', String(msg));
     } finally {
       setLoading(false);
     }
