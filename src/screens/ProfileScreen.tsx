@@ -29,7 +29,7 @@ function MenuOption({ label, onPress }: MenuOptionProps) {
 }
 
 export default function ProfileScreen() {
-  const { insets, handleCall, menuItems, entityType, shopDetails } = useProfile();
+  const { insets, handleCall, menuItems, entityType, shopDetails, customerDetails } = useProfile();
 
   return (
     <View style={[styles.container]}>
@@ -50,24 +50,26 @@ export default function ProfileScreen() {
               <Text style={styles.summaryValue}>#15</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Deposit</Text>
-              <Text style={styles.summaryValue}>₹5000</Text>
+              <Text style={styles.summaryLabel}>Deposit Amount</Text>
+              <Text style={styles.summaryValue}>₹{customerDetails?.depositeAmount || '0'}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Mobile Number</Text>
-              <Pressable
+              {/* <Pressable
                 accessibilityRole="link"
                 accessibilityLabel="Call mobile number"
                 onPress={handleCall}
                 style={({ pressed }) => [styles.callRow, pressed && styles.callRowPressed]}
-              >
-                <Text style={[styles.summaryValue, styles.infoLink]}>7600924242</Text>
-              </Pressable>
+              > */}
+              <Text style={[styles.summaryValue, styles.infoLink]}>
+                {'+91 ' + customerDetails?.phone || ''}
+              </Text>
+              {/* </Pressable> */}
             </View>
-            <View style={styles.summaryRow}>
+            {/* <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Address</Text>
               <Text style={styles.summaryValue}>Gujarat</Text>
-            </View>
+            </View> */}
           </View>
         )}
         {entityType === 'shop' && (
@@ -83,10 +85,10 @@ export default function ProfileScreen() {
                 {shopDetails?.name || 'Patel Dairy and Sweet Store'}
               </Text>
             </View>
-            <View style={styles.summaryRow}>
+            {/* <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Owner Name</Text>
               <Text style={styles.summaryValue}>{shopDetails?.ownerName || 'Owner'}</Text>
-            </View>
+            </View> */}
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Mobile Number</Text>
               <Pressable
@@ -96,18 +98,18 @@ export default function ProfileScreen() {
                 style={({ pressed }) => [styles.callRow, pressed && styles.callRowPressed]}
               >
                 <Text style={[styles.summaryValue, styles.infoLink]}>
-                  {shopDetails?.phone || '7600924242'}
+                  {'+91 ' + shopDetails?.phone || ''}
                 </Text>
               </Pressable>
             </View>
-            <View style={styles.summaryRow}>
+            {/* <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Address</Text>
               <Text style={styles.summaryValue}>{shopDetails?.address || 'Gujarat'}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Shop ID</Text>
               <Text style={styles.summaryValue}>{shopDetails?.shopId || '—'}</Text>
-            </View>
+            </View> */}
           </View>
         )}
         <View style={styles.menuCard} accessibilityRole="menu">

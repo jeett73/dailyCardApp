@@ -1,4 +1,4 @@
-import { postRequest } from '@/api/apiMethods';
+import { patchRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
@@ -49,13 +49,12 @@ export function useResetPassword() {
 
     try {
       setLoading(true);
-      const userId = await getItem('userId');
-      if (!userId) {
-        throw new Error('User not found');
+      const shopId = await getItem('userId');
+      if (!shopId) {
+        throw new Error('Shop ID not found');
       }
 
-      await postRequest(apiEndpoint.auth.resetPassword, {
-        userId,
+      await patchRequest(apiEndpoint.shops.resetPassword(shopId), {
         password: newPassword,
       });
 

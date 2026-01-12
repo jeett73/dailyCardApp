@@ -14,6 +14,10 @@ export function useProfile() {
 
   const avatarSize = width >= 768 ? 64 : 56;
   const [entityType, setEntityType] = useState<string | null>(null);
+  const [customerDetails, setCustomerDetails] = useState<{
+    phone: string;
+    depositeAmount: string;
+  } | null>(null);
   const [shopDetails, setShopDetails] = useState<{
     name: string;
     ownerName: string;
@@ -26,6 +30,11 @@ export function useProfile() {
     (async () => {
       const t = await getItem('entityType');
       setEntityType(t);
+      if (t === 'customer') {
+        const phone = await getItem('phone');
+        const depositeAmount = await getItem('depositeAmount');
+        setCustomerDetails({ phone: phone || '', depositeAmount: depositeAmount || '0' });
+      }
     })();
   }, []);
 
@@ -103,5 +112,14 @@ export function useProfile() {
     })();
   }, []);
 
-  return { insets, width, avatarSize, menuItems, handleCall, entityType, shopDetails };
+  return {
+    insets,
+    width,
+    avatarSize,
+    menuItems,
+    handleCall,
+    entityType,
+    shopDetails,
+    customerDetails,
+  };
 }

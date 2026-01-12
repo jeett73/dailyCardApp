@@ -60,6 +60,9 @@ export function useLogin() {
           userDetails?.name && setItem('name', userDetails.name),
           userDetails?.cardNumber && setItem('cardNumber', userDetails.cardNumber),
           shopId && setItem('shopId', shopId),
+          userDetails?.phone && setItem('phone', userDetails?.phone),
+          userDetails?.depositeAmount &&
+            setItem('depositeAmount', userDetails?.depositeAmount.toString()),
         ].filter(Boolean),
       );
 

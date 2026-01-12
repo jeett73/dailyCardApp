@@ -21,12 +21,22 @@ import React, { useEffect, useState } from 'react';
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-  const [initialRoute, setInitialRoute] = useState<'Login' | 'Mpin' | null>(null);
+  const [initialRoute, setInitialRoute] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const token = await getItem('token');
-      setInitialRoute(token ? 'Mpin' : 'Login');
+      const entityType = await getItem('entityType');
+
+      if (token) {
+        if (entityType === 'customer') {
+          setInitialRoute('MainTabs');
+        } else {
+          setInitialRoute('Mpin');
+        }
+      } else {
+        setInitialRoute('Login');
+      }
     })();
   }, []);
 
