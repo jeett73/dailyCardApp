@@ -4,7 +4,7 @@ import { getDeviceId } from '@/services/deviceService';
 import { clear, getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
-import { Linking, useWindowDimensions } from 'react-native';
+import { Alert, Linking, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function useProfile() {
@@ -17,6 +17,7 @@ export function useProfile() {
   const [customerDetails, setCustomerDetails] = useState<{
     phone: string;
     depositeAmount: string;
+    cardNumber: string;
   } | null>(null);
   const [shopDetails, setShopDetails] = useState<{
     name: string;
@@ -33,7 +34,12 @@ export function useProfile() {
       if (t === 'customer') {
         const phone = await getItem('phone');
         const depositeAmount = await getItem('depositeAmount');
-        setCustomerDetails({ phone: phone || '', depositeAmount: depositeAmount || '0' });
+        const cardNumber = await getItem('cardNumber');
+        setCustomerDetails({
+          phone: phone || '',
+          depositeAmount: depositeAmount || '0',
+          cardNumber: `#${String(cardNumber).padStart(3, '0')}` || '',
+        });
       }
     })();
   }, []);

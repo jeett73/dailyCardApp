@@ -44,10 +44,10 @@ export default function ProfileScreen() {
             accessibilityRole="summary"
             accessibilityLabel="Profile summary"
           >
-            <Text style={styles.summaryTitle}>Profile Summary</Text>
+            {/* <Text style={styles.summaryTitle}>Profile Summary</Text> */}
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Card Number</Text>
-              <Text style={styles.summaryValue}>#15</Text>
+              <Text style={styles.summaryValue}>{customerDetails?.cardNumber || ''}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Deposit Amount</Text>

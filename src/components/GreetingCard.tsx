@@ -1,7 +1,7 @@
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React from 'react';
-import { StyleSheet, useColorScheme, useWindowDimensions } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 
 export type GreetingCardProps = {
   /** Shop display name to render in the greeting */
@@ -19,7 +19,6 @@ export type GreetingCardProps = {
  */
 export function GreetingCard({ shopName, message }: GreetingCardProps) {
   const { width } = useWindowDimensions();
-  const scheme = useColorScheme();
   const titleSize = Math.max(24, Math.min(32, width * 0.07));
   const subSize = Math.max(14, Math.min(16, width * 0.04));
   const cardBg = Colors.light.orange;
