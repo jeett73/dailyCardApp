@@ -8,8 +8,6 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 
-import Toast from 'react-native-toast-message';
-
 function App() {
   SplashScreen.preventAutoHideAsync();
   const [loaded, error] = useFonts({
@@ -42,7 +40,6 @@ function App() {
       <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <AppNavigator />
       </NavigationContainer>
-      <Toast />
     </>
   );
 }

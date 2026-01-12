@@ -1,7 +1,6 @@
 import { getRequest, postRequest, putRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
-import { showErrorToast, showSuccessToast } from '@/utils/toastUtils';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, ScrollView } from 'react-native';
@@ -259,20 +258,13 @@ export function useCreateCustomer(params?: {
       };
       if (isEdit && customerIdRef.current) {
         await putRequest(apiEndpoint.customers.update(customerIdRef.current), payload);
-        showSuccessToast('Success', 'Customer updated successfully');
       } else {
         await postRequest(apiEndpoint.customers.add, payload, {
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
-        showSuccessToast('Success', 'Customer created successfully');
       }
       navigation.navigate('CustomerList');
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        (isEdit ? 'Unable to update customer' : 'Unable to create customer');
-      showErrorToast('Failed', String(msg));
     } finally {
       setLoading(false);
     }

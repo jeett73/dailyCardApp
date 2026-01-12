@@ -1,7 +1,6 @@
 import { postRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
-import { showErrorToast } from '@/utils/toastUtils';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useMemo, useRef, useState } from 'react';
 import { Keyboard, TextInput } from 'react-native';
@@ -43,7 +42,6 @@ export function useSetMpin() {
       setLoading(true);
       const userId = await getItem('userId');
       if (!userId) {
-        showErrorToast('Missing Info', 'User ID not found');
         return;
       }
       await postRequest(apiEndpoint.mpin.set, { userId, mpin: cleaned });
@@ -59,7 +57,6 @@ export function useSetMpin() {
         (e as any)?.response?.data?.message ||
         (e as any)?.message ||
         'Failed to set MPIN. Please try again.';
-      showErrorToast('Failed to set MPIN', String(msg));
     } finally {
       setLoading(false);
     }

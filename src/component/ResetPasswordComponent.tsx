@@ -57,7 +57,6 @@ export function useResetPassword() {
         password: newPassword,
       });
 
-      showSuccessToast('Success', 'Password has been reset successfully');
       navigation.goBack();
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || 'Failed to reset password';

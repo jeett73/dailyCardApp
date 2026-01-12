@@ -4,7 +4,6 @@ import { AvatarInitials } from '@/components/HeroHeader';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
 import { getItem } from '@/services/storage';
-import { showErrorToast, showSuccessToast } from '@/utils/toastUtils';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -97,11 +96,9 @@ export default function PaymentModal({
         paymentAmount: amount,
       };
       await postRequest(apiEndpoint.cards.payment, payload);
-      showSuccessToast('Payment Successful', `Amount: ${amount}`);
       onClose(amount);
     } catch {
       setError('Payment failed');
-      showErrorToast('Payment failed');
     } finally {
       setLoading(false);
     }

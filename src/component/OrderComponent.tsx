@@ -1,7 +1,6 @@
 import { getRequest, postRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
-import { showErrorToast, showSuccessToast } from '@/utils/toastUtils';
 import { useMemo, useRef, useState } from 'react';
 import { Animated, useWindowDimensions } from 'react-native';
 import type { Customer } from './OwnerComponent';
@@ -324,12 +323,9 @@ export function useOrder() {
 
       setQuantities({});
       setOtherPurchased('');
-      showSuccessToast(editMode ? 'Order Updated' : 'Order Added');
       if (onSuccess && typeof onSuccess === 'function') onSuccess();
     } catch (e: any) {
       console.error(e);
-      const msg = e?.response?.data?.message || e?.message || 'Error saving order';
-      showErrorToast(msg);
     } finally {
       setSaving(false);
       closeSheet();

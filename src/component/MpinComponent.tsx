@@ -1,4 +1,3 @@
-import { showErrorToast } from '@/utils/toastUtils';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TextInput } from 'react-native';
@@ -61,7 +60,6 @@ export function useMpin() {
     try {
       const userId = await getItem('userId');
       if (!userId) {
-        showErrorToast('Missing Info', 'User ID not found');
         return;
       }
       const res = await postRequest(apiEndpoint.mpin.verify, { userId, mpin: cleaned });
@@ -76,13 +74,7 @@ export function useMpin() {
       } else {
         navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
       }
-    } catch (e) {
-      const msg =
-        (e as any)?.response?.data?.message ||
-        (e as any)?.message ||
-        'Failed to verify MPIN. Please try again.';
-      showErrorToast('Failed to verify MPIN', String(msg));
-    }
+    } catch (e) {}
   }
 
   useEffect(() => {
