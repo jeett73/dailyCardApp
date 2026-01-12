@@ -13,7 +13,6 @@ const apiEndpoint = {
     logout: url('/auth/logout'),
     logoutUser: (id: Id) => url(`/auth/logout/${id}`),
     sendOtp: url('/auth/send-otp'),
-    resetPassword: url('/auth/reset-password'),
     refresh: url('/auth/refresh'),
   },
   mpin: {
@@ -45,6 +44,9 @@ const apiEndpoint = {
   },
   products: {
     list: url('/products'),
+  },
+  shops: {
+    resetPassword: (shopId: string) => url(`/shops/${shopId}/password`),
   },
   uploads: (icon: string) => url(`/uploads/${icon}`),
 } as const;

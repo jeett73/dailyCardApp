@@ -41,11 +41,11 @@ export default function LoginScreen() {
         </ImageBackground>
       </View>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
       >
         <ScrollView
-          contentContainerStyle={[styles.container, focused && { paddingTop: 210 }]}
+          contentContainerStyle={[styles.container, focused && { paddingTop: 150 }]}
           keyboardShouldPersistTaps="handled"
         >
           <View style={[styles.card, focused && styles.cardFocused]}>
