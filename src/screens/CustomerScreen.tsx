@@ -1,4 +1,5 @@
 import { useMonthlyStatement } from '@/component/MonthlyStatementComponent';
+// eslint-disable-next-line import/no-named-as-default
 import GreetingCard from '@/components/GreetingCard';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
@@ -6,16 +7,15 @@ import Colors from '@/constants/Colors';
 import { getKolkataCurrentDate } from '@/utils/dateUtils';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CustomerScreen() {
   const insets = useSafeAreaInsets();
-  const [active, setActive] = useState<'home' | 'statements' | 'profile'>('home');
-  const cardNo = '#007';
 
   const { groupedByDay, loading, refetch } = useMonthlyStatement();
+  const [statementHeight, setStatementHeight] = useState(220);
 
   useFocusEffect(
     useCallback(() => {
@@ -27,8 +27,6 @@ export default function CustomerScreen() {
     const today = getKolkataCurrentDate().day;
     return groupedByDay[today] ?? { orders: [], total: 0 };
   }, [groupedByDay]);
-
-  const totalText = `Total ₹${todayData.total}`;
 
   return (
     <View style={styles.screen}>
@@ -46,28 +44,41 @@ export default function CustomerScreen() {
           message="We are delighted to serve your daily dairy needs."
         />
 
-        <View style={styles.statementCard}>
-          <Text style={styles.statementTitle}>Today's Dairy Order</Text>
+        <View style={[styles.statementCard, { height: statementHeight }]}>
+          <Text style={styles.statementTitle}>Today&apos;s Order</Text>
           <View style={styles.statementDivider} />
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : todayData.orders.length > 0 ? (
-            <>
-              {todayData.orders.map((it) => (
-                <View key={it.id} style={styles.statementRow}>
-                  <Text style={styles.itemName}>{it.item}</Text>
-                  <Text style={styles.itemQty}>{it.qty}</Text>
+          <View style={styles.statementContent}>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : todayData.orders.length > 0 ? (
+              <>
+                <ScrollView
+                  style={styles.statementScroll}
+                  contentContainerStyle={styles.statementScrollContent}
+                  showsVerticalScrollIndicator={false}
+                  onContentSizeChange={(_, height) => setStatementHeight(height > 220 ? 440 : 220)}
+                >
+                  {todayData.orders.map((it) => (
+                    <View key={it.id} style={styles.statementRow}>
+                      <Text style={styles.itemName}>
+                        {it.item === 'Others' ? 'Others' : `${it.item} × ${it.qty}`}
+                      </Text>
+                      <Text style={styles.itemQty}>{`₹${it.amount}`}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+                <View style={[styles.statementRow, styles.statementFooter]}>
+                  <Text style={styles.itemName}>Total</Text>
+                  <Text style={styles.itemQty}>{`₹${todayData.total}`}</Text>
                 </View>
-              ))}
-              <View style={[styles.statementRow, { marginTop: 8 }]}>
-                <Text style={styles.itemName}>{totalText}</Text>
+              </>
+            ) : (
+              <View style={styles.statementEmpty}>
+                <Text style={styles.itemName}>No orders for today</Text>
               </View>
-            </>
-          ) : (
-            <Text style={styles.itemName}>No orders for today</Text>
-          )}
+            )}
+          </View>
         </View>
-
         {/* Bottom navigation is now handled globally by MainTabs */}
       </View>
     </View>
@@ -139,10 +150,10 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
-    minHeight: 180,
     backgroundColor: '#a69af7',
   },
   statementTitle: {
+    alignSelf: 'center',
     fontSize: 20,
     fontWeight: '800',
     color: '#fff',
@@ -151,12 +162,34 @@ const styles = StyleSheet.create({
     height: 1,
     marginVertical: 12,
   },
+  statementContent: {
+    flex: 1,
+    backgroundColor: '#a69af7',
+  },
+  statementScroll: {
+    flex: 1,
+    backgroundColor: '#a69af7',
+  },
+  statementScrollContent: {
+    paddingBottom: 8,
+  },
+  statementEmpty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#a69af7',
+  },
   statementRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 6,
     backgroundColor: '#a69af7',
+  },
+  statementFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#fff',
+    marginTop: 8,
   },
   itemName: {
     fontSize: 18,

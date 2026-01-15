@@ -65,7 +65,7 @@ export default function PaymentModal({
         const arr = Array.isArray(data?.dues) ? data?.dues : Array.isArray(data) ? data : [];
         const list: DuesItem[] = arr
           .map((d: any) => ({
-            label: String(MONTHS_FULL[d?.month - 1] + ' ' + d?.year ?? 'Month'),
+            label: String((MONTHS_FULL[d?.month - 1] ?? 'Month') + ' ' + (d?.year ?? '')),
             amount: Number(d?.dueAmount ?? d?.due ?? 0),
           }))
           .filter((d: DuesItem) => !!d.label);
@@ -75,7 +75,6 @@ export default function PaymentModal({
       } catch (e: any) {
         const msg = e?.response?.data?.message || e?.message || 'Failed to load dues';
         setError(msg);
-        showErrorToast(msg);
         setLoading(false);
       }
     })();

@@ -42,7 +42,7 @@ export default function MonthWiseReportScreen() {
         <Text style={styles.statementTitle}>{m.label}</Text>
         <View style={styles.statementDivider} />
         <View style={styles.statementRow}>
-          <Text style={styles.itemName}>Total Amount</Text>
+          <Text style={styles.itemName}>Total</Text>
           <Text style={styles.itemQty}>₹{m.total}</Text>
         </View>
       </Pressable>

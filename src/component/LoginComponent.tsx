@@ -13,6 +13,7 @@ export function useLogin() {
   const [password, setPassword] = useState('');
   const [focused, setFocused] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [fcmToken, setFcmToken] = useState<string | undefined>(undefined);
   const isValid = useMemo(() => phone.length === 10, [phone]);
 
@@ -30,6 +31,7 @@ export function useLogin() {
     Keyboard.dismiss();
     try {
       setLoading(true);
+      setError(null);
 
       let tokenToSend = fcmToken;
       if (!tokenToSend) {
@@ -79,7 +81,7 @@ export function useLogin() {
         (e as any)?.response?.data?.message ||
         (e as any)?.message ||
         'Login failed. Please try again.';
-      showErrorToast('Login Failed', String(msg));
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -95,6 +97,7 @@ export function useLogin() {
     focused,
     loading,
     isValid,
+    error,
     setPhone: onPhoneChange,
     setPassword,
     setFocused,

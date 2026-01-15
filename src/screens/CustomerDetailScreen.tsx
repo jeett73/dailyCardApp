@@ -91,9 +91,7 @@ const StatementCard = memo(function StatementCard({
           ))}
           <View style={styles.statementDivider} />
           <View style={styles.statementRow}>
-            <Text style={[styles.totalAmount, { fontSize: Math.round(18 * scale) }]}>
-              Total Amount
-            </Text>
+            <Text style={[styles.totalAmount, { fontSize: Math.round(18 * scale) }]}>Total</Text>
             <Text style={[styles.totalAmount, { fontSize: Math.round(18 * scale) }]}>₹{total}</Text>
           </View>
         </>

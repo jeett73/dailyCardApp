@@ -21,6 +21,7 @@ export default function LoginScreen() {
     focused,
     loading,
     isValid,
+    error,
     setPhone,
     setPassword,
     setFocused,
@@ -45,7 +46,7 @@ export default function LoginScreen() {
         style={styles.flex}
       >
         <ScrollView
-          contentContainerStyle={[styles.container, focused && { paddingTop: 150 }]}
+          contentContainerStyle={[styles.container, focused && { paddingTop: error ? 95 : 150 }]}
           keyboardShouldPersistTaps="handled"
         >
           <View style={[styles.card, focused && styles.cardFocused]}>
@@ -76,6 +77,7 @@ export default function LoginScreen() {
                 autoCapitalize="none"
               />
             </View>
+            {!!error && <Text style={styles.errorText}>{error}</Text>}
             <TouchableOpacity
               onPress={handleContinue}
               activeOpacity={0.9}
@@ -195,5 +197,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#fff',
+  },
+  errorText: {
+    marginTop: 4,
+    marginBottom: 8,
+    textAlign: 'center',
+    color: '#ff3333',
   },
 });
