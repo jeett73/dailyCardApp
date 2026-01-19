@@ -1,6 +1,7 @@
 import { getRequest } from '@/api/apiMethods';
 import { MONTHS_FULL, MONTHS_SHORT } from '@/component/MonthlyStatementComponent';
 import apiEndpoint from '@/constants/apiEndpoint';
+import { log } from '@/services/logger';
 import { getItem } from '@/services/storage';
 import { formatToKolkataDateString } from '@/utils/dateUtils';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -21,6 +22,7 @@ export interface CustomerInfo {
   name: string;
   phone: string;
   cardNumber: string;
+  deposit: number;
 }
 
 export interface DueMonth {
@@ -58,11 +60,13 @@ export function useCustomerDetail() {
         const custData = (custRes?.data ?? {}) as any;
         const c = custData?.customer ?? custData;
         if (c) {
+          log('_________________', c);
           setCustomer({
             id: String(c._id ?? c.id),
             name: String(c.name ?? ''),
             phone: String(c.phone ?? ''),
             cardNumber: String(c.cardNumber ?? ''),
+            deposit: Number(c.depositeAmount ?? 0),
           });
         }
 

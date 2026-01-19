@@ -157,6 +157,10 @@ export default function CustomerDetailScreen() {
                 <Text style={styles.metaLabel}>Mobile</Text>
                 <Text style={styles.metaValue}>{formatMobile(customer.phone)}</Text>
               </View>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>Deposit</Text>
+                <Text style={styles.metaValue}>₹{customer.deposit || 0}</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -165,17 +169,21 @@ export default function CustomerDetailScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Due Months</Text>
         </View>
-        <View style={{ height: 100, backgroundColor: '#fff' }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.dueScroll}
-            contentContainerStyle={{ paddingRight: 16 }}
-          >
-            {dues.length === 0 ? (
+        {dues.length === 0 ? (
+          <View style={[styles.customerCard, styles.fullWidthCard]}>
+            <View style={[styles.customerRow, styles.centerRow]}>
               <Text style={styles.emptyText}>No dues found</Text>
-            ) : (
-              dues.map((due, index) => (
+            </View>
+          </View>
+        ) : (
+          <View style={{ height: 100, backgroundColor: '#fff' }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.dueScroll}
+              contentContainerStyle={{ paddingRight: 16 }}
+            >
+              {dues.map((due, index) => (
                 <TouchableOpacity
                   key={`${due.year}-${due.month}`}
                   style={[styles.dueCard, selectedDueIndex === index && styles.dueCardSelected]}
@@ -196,20 +204,26 @@ export default function CustomerDetailScreen() {
                     Due: ₹{due.amount}
                   </Text>
                 </TouchableOpacity>
-              ))
-            )}
-          </ScrollView>
-        </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Monthly Orders Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Monthly Orders</Text>
-        </View>
+        {dues.length > 0 && (
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Monthly Orders</Text>
+          </View>
+        )}
 
         {ordersLoading ? (
           <ActivityIndicator size="small" color={Colors.light.tint} style={{ marginTop: 2 }} />
-        ) : days.length === 0 ? (
-          <Text style={styles.emptyText}>No orders for this month</Text>
+        ) : days.length === 0 && dues.length > 0 ? (
+          <View style={[styles.customerCard, styles.fullWidthCard]}>
+            <View style={styles.customerRow}>
+              <Text style={styles.emptyText}>No orders for this month</Text>
+            </View>
+          </View>
         ) : (
           days.map((day) => {
             const entry = groupedByDay[day];
@@ -247,11 +261,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   customerRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff' },
+  centerRow: { justifyContent: 'center', width: '100%' },
   customerInfo: { marginLeft: 16, flex: 1, backgroundColor: '#fff' },
   customerTitle: { fontSize: 18, fontWeight: '700', color: Colors.light.text },
   metaRow: { flexDirection: 'row', marginTop: 4, alignItems: 'center', backgroundColor: '#fff' },
   metaLabel: { fontSize: 14, color: '#666', width: 50 },
   metaValue: { fontSize: 14, color: Colors.light.text, fontWeight: '600' },
+  fullWidthCard: { width: '100%' },
 
   sectionHeader: { marginBottom: 5, marginTop: 5, backgroundColor: '#fff' },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.light.text },
