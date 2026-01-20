@@ -22,11 +22,13 @@ const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
+  const [entityType, setEntityType] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const token = await getItem('token');
       const entityType = await getItem('entityType');
+      setEntityType(entityType);
 
       if (token) {
         if (entityType === 'customer') {
@@ -45,7 +47,33 @@ export default function AppNavigator() {
   }
 
   return (
-    <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      initialRouteName={initialRoute}
+      screenOptions={{ headerShown: false }}
+      screenListeners={({ route, navigation }) => ({
+        beforeRemove: (e) => {
+          if (entityType !== 'shop') {
+            return;
+          }
+          const actionType = e.data.action.type;
+          if (actionType !== 'GO_BACK' && actionType !== 'POP') {
+            return;
+          }
+          if (route.name === 'Profile') {
+            e.preventDefault();
+            navigation.reset({ index: 0, routes: [{ name: 'Owner' }] });
+            return;
+          }
+          if (route.name === 'CustomerList' || route.name === 'ProductList') {
+            e.preventDefault();
+            navigation.reset({
+              index: 1,
+              routes: [{ name: 'Owner' }, { name: 'Profile' }],
+            });
+          }
+        },
+      })}
+    >
       <Stack.Screen name="Login" component={LoginScreen} />
       {/* <Stack.Screen name="Otp" component={OtpScreen} /> */}
       <Stack.Screen name="Mpin" component={MpinScreen} />
