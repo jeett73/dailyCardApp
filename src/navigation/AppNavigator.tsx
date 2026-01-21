@@ -60,11 +60,21 @@ export default function AppNavigator() {
             return;
           }
           if (route.name === 'Profile') {
+            const state = navigation.getState();
+            const prev = state.routes[state.index - 1]?.name;
+            if (prev === 'Owner') {
+              return;
+            }
             e.preventDefault();
-            navigation.reset({ index: 0, routes: [{ name: 'Owner' }] });
+            navigation.replace('Owner');
             return;
           }
           if (route.name === 'CustomerList' || route.name === 'ProductList') {
+            const state = navigation.getState();
+            const prev = state.routes[state.index - 1]?.name;
+            if (prev === 'Profile') {
+              return;
+            }
             e.preventDefault();
             navigation.reset({
               index: 1,
