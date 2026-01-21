@@ -4,6 +4,7 @@ import GreetingCard from '@/components/GreetingCard';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { getItem } from '@/services/storage';
 import { getKolkataCurrentDate } from '@/utils/dateUtils';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
@@ -13,9 +14,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CustomerScreen() {
   const insets = useSafeAreaInsets();
+  const [shopName, setShopName] = useState<string | null>(null);
 
   const { groupedByDay, loading, refetch } = useMonthlyStatement();
   const [statementHeight, setStatementHeight] = useState(220);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        const storedShopName = await getItem('shopName');
+        if (active) {
+          setShopName(storedShopName);
+        }
+      })();
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -40,7 +57,7 @@ export default function CustomerScreen() {
         ]}
       >
         <GreetingCard
-          shopName="Patel Dairy and Sweet Store"
+          shopName={shopName ?? 'Patel Dairy and Sweet Store'}
           message="We are delighted to serve your daily dairy needs."
         />
 
@@ -56,7 +73,7 @@ export default function CustomerScreen() {
                   style={styles.statementScroll}
                   contentContainerStyle={styles.statementScrollContent}
                   showsVerticalScrollIndicator={false}
-                  onContentSizeChange={(_, height) => setStatementHeight(height > 220 ? 440 : 220)}
+                  onContentSizeChange={(_, height) => setStatementHeight(height > 220 ? 440 : 290)}
                 >
                   {todayData.orders.map((it) => (
                     <View key={it.id} style={styles.statementRow}>

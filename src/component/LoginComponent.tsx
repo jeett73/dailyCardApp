@@ -50,8 +50,16 @@ export function useLogin() {
 
       const res = await postRequest(apiEndpoint.auth.login, payload);
 
-      const { token, refreshToken, userId, entityType, isMpinAlreadySet, userDetails, shopId } =
-        res?.data ?? {};
+      const {
+        token,
+        refreshToken,
+        userId,
+        entityType,
+        isMpinAlreadySet,
+        userDetails,
+        shopId,
+        shopName,
+      } = res?.data ?? {};
 
       await Promise.all(
         [
@@ -65,6 +73,7 @@ export function useLogin() {
           userDetails?.phone && setItem('phone', userDetails?.phone),
           userDetails?.depositeAmount &&
             setItem('depositeAmount', userDetails?.depositeAmount.toString()),
+          shopName && setItem('shopName', shopName),
         ].filter(Boolean),
       );
 
