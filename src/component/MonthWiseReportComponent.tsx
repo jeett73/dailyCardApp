@@ -24,8 +24,6 @@ const MONTHS_FULL = [
   'December',
 ];
 
-const SHOP_ID = '692f04d99800aaaa111ccd9b';
-
 export function useMonthWiseReport() {
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
@@ -42,6 +40,7 @@ export function useMonthWiseReport() {
       try {
         const token = await getItem('token');
         const userId = await getItem('userId');
+        const shopId = await getItem('shopId');
         const customerId = userId; // Assuming logged in user is customer
 
         if (!customerId) {
@@ -50,7 +49,7 @@ export function useMonthWiseReport() {
           return;
         }
 
-        const res = await getRequest(apiEndpoint.cards.summary(customerId, SHOP_ID), {
+        const res = await getRequest(apiEndpoint.cards.summary(customerId, shopId!), {
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
 
