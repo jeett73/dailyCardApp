@@ -56,7 +56,7 @@ export default function CustomerScreen() {
                   style={styles.statementScroll}
                   contentContainerStyle={styles.statementScrollContent}
                   showsVerticalScrollIndicator={false}
-                  onContentSizeChange={(_, height) => setStatementHeight(height > 220 ? 440 : 220)}
+                  onContentSizeChange={(_, height) => setStatementHeight(height > 220 ? 440 : 290)}
                 >
                   {todayData.orders.map((it) => (
                     <View key={it.id} style={styles.statementRow}>
