@@ -72,7 +72,7 @@ export function useCustomerDetail() {
 
         // Fetch Due Months
         const dueRes = await getRequest(
-          apiEndpoint.cards.dueCards(customerIdParam, String(shopId ?? '')),
+          apiEndpoint.cards.duesDetails(customerIdParam, String(shopId ?? '')),
           { headers },
         );
         const dueData = (dueRes?.data ?? {}) as any;
@@ -122,16 +122,16 @@ export function useCustomerDetail() {
 
         // Fetch Orders for selected month
         // Note: apiEndpoint.cards.monthlyStatement updated to accept month/year
-        const url = apiEndpoint.cards.monthlyStatement(customerIdParam, String(shopId ?? ''));
+        const url = apiEndpoint.cards.duesDetails(customerIdParam, String(shopId ?? ''));
         const res = await getRequest(url, {
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
         const data = (res?.data ?? {}) as any;
-        const cardData = data?.card; // Assuming response structure { card: { products: ... } }
+        const cardData = data[selectedDueIndex]; // Assuming response structure { card: { products: ... } }
 
-        if (cardData && Array.isArray(cardData.products)) {
+        if (cardData && Array.isArray(cardData?.card?.products)) {
           const allTxns: Txn[] = [];
-          cardData.products.forEach((daily: any) => {
+          cardData?.card?.products.forEach((daily: any) => {
             if (Array.isArray(daily.product)) {
               daily.product.forEach((prod: any) => {
                 const date = formatToKolkataDateString(prod.time);

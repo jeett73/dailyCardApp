@@ -24,10 +24,10 @@ export default function MonthWiseReportScreen() {
         </View>
       );
     }
+    // onPress={() => handleNavigate(m)}
     return months.map((m) => (
       <Pressable
         key={`${m.year}-${m.month}`}
-        onPress={() => handleNavigate(m)}
         style={({ pressed }) =>
           StyleSheet.flatten([
             styles.statementCard,

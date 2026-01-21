@@ -244,7 +244,7 @@ export default function CustomerDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
+  container: { flex: 1, backgroundColor: '#fff' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   contentContainer: { paddingHorizontal: 16, backgroundColor: '#fff' },
   errorText: { fontSize: 16, color: '#e53935' },
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 18,
     paddingHorizontal: 16,
-    backgroundColor: Colors.light.brandPurple,
+    backgroundColor: Colors.light.orange,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 12,
@@ -307,11 +307,11 @@ const styles = StyleSheet.create({
     elevation: 6,
     minHeight: 120,
   },
-  statementTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
+  statementTitle: { fontSize: 20, fontWeight: '800', color: '#000' },
   statementDivider: {
     height: StyleSheet.hairlineWidth,
     marginVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(0,0,0)',
   },
   statementRow: {
     flexDirection: 'row',
@@ -320,8 +320,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: 'transparent',
   },
-  timeHeader: { fontSize: 16, color: '#fff', fontWeight: '800', marginBottom: 4, marginTop: 8 },
-  itemName: { fontSize: 18, color: '#fff', fontWeight: '300' },
-  itemQty: { fontSize: 18, color: '#fff', fontWeight: '300' },
-  totalAmount: { fontSize: 18, color: '#fff', fontWeight: '800' },
+  timeHeader: { fontSize: 16, color: '#000', fontWeight: '800', marginBottom: 4, marginTop: 8 },
+  itemName: { fontSize: 18, color: '#000', fontWeight: '300' },
+  itemQty: { fontSize: 18, color: '#000', fontWeight: '300' },
+  totalAmount: { fontSize: 18, color: '#000', fontWeight: '800' },
 });
