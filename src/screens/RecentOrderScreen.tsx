@@ -43,8 +43,8 @@ export default function RecentOrderScreen() {
                 <Text style={styles.metaValue}>{item.dateDisplay.toUpperCase()}</Text>
               </View> */}
               <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Amount</Text>
-                <Text style={styles.metaValue}>{item.amountDisplay}</Text>
+                <Text style={styles.metaLabel}>Mobile</Text>
+                <Text style={styles.metaValue}>{item.mobile}</Text>
               </View>
               <View style={styles.actionsRow}>
                 <TouchableOpacity

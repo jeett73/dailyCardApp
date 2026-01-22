@@ -293,33 +293,32 @@ export default function OrderSheet({
           </Animated.View>
         </KeyboardAvoidingView>
       ) : (
-        <Animated.View
-          style={[
-            styles.sheet,
-            {
-              transform: [{ translateY: sheetY }],
-              maxHeight: Math.round(height * 0.9),
-              minHeight: isKeyboardVisible ? 200 : Math.round(height * 0.6),
-              paddingBottom: 24,
-              position: 'absolute',
-              bottom: 0,
-            },
-          ]}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoidingView}
+          pointerEvents="box-none"
         >
-          <View style={styles.sheetHeader}>
-            <View style={styles.dragIndicator} />
-            <Text style={styles.sheetTitle}>
-              {cardNumber ? <Text style={{ fontStyle: 'italic' }}>#{cardNumber} </Text> : null}
-              {selectedName || ''}
-            </Text>
-          </View>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.sheetCard}
+          <Animated.View
+            style={[
+              styles.sheet,
+              {
+                transform: [{ translateY: sheetY }],
+                maxHeight: Math.round(height * 0.6),
+                minHeight: isKeyboardVisible ? Math.round(height * 0.45) : Math.round(height * 0.6),
+                paddingBottom: 24,
+              },
+            ]}
           >
-            {renderContent()}
-          </KeyboardAvoidingView>
-        </Animated.View>
+            <View style={styles.sheetHeader}>
+              <View style={styles.dragIndicator} />
+              <Text style={styles.sheetTitle}>
+                {cardNumber ? <Text style={{ fontStyle: 'italic' }}>#{cardNumber} </Text> : null}
+                {selectedName || ''}
+              </Text>
+            </View>
+            <View style={styles.sheetCard}>{renderContent()}</View>
+          </Animated.View>
+        </KeyboardAvoidingView>
       )}
     </>
   );
@@ -346,8 +345,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 0,
-    height: '100%',
+    top: 120,
+    bottom: 0,
     justifyContent: 'flex-end',
     zIndex: 10,
   },

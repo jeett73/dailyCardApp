@@ -32,7 +32,7 @@ export default function OwnerScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.flex}
     >
       <HeroHeader color={brandPurple} showHomeIcon={true} />
