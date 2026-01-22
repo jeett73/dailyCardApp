@@ -138,11 +138,10 @@ export default function CustomerDetailScreen() {
   return (
     <View style={styles.container}>
       <HeroHeader color={Colors.light.brandPurple} title="Customer Detail" />
-      <ScrollView
-        contentContainerStyle={[
+      <View
+        style={[
           styles.contentContainer,
           { paddingTop: Platform.OS === 'ios' ? 110 : insets.top + 90 },
-          { paddingBottom: Math.max(insets.bottom, 24) },
         ]}
       >
         {/* Customer Details Section */}
@@ -159,7 +158,7 @@ export default function CustomerDetailScreen() {
               </View>
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Deposit</Text>
-                <Text style={styles.metaValue}>₹{customer.deposit || 0}</Text>
+                <Text style={styles.metaValue}> ₹{customer.deposit || 0}</Text>
               </View>
             </View>
           </View>
@@ -215,7 +214,15 @@ export default function CustomerDetailScreen() {
             <Text style={styles.sectionTitle}>Monthly Orders</Text>
           </View>
         )}
+      </View>
 
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: Math.max(insets.bottom, 24) },
+        ]}
+      >
         {ordersLoading ? (
           <ActivityIndicator size="small" color={Colors.light.tint} style={{ marginTop: 2 }} />
         ) : days.length === 0 && dues.length > 0 ? (
