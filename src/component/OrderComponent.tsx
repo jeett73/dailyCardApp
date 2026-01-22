@@ -284,7 +284,8 @@ export function useOrder() {
         });
       } else {
         const items: { productId: string; time: number; qty: number; price: number }[] = [];
-        for (const p of products) {
+        const productsWithPrice = products.filter((p) => p?.price > 0);
+        for (const p of productsWithPrice) {
           const qty = quantities[p._id] ?? 0;
           if (qty > 0) {
             items.push({ productId: p._id, time: time, qty, price: p.price });

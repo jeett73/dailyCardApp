@@ -149,7 +149,7 @@ export function useAddProduct() {
       );
       const failed = results.filter((r) => r.status === 'rejected').length;
       if (failed === 0) {
-        navigation.goBack();
+        navigation.navigate('ProductList');
       } else {
         setError(`Failed to add ${failed} product(s)`);
       }
