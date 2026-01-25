@@ -46,7 +46,6 @@ export default function OwnerScreen() {
             maxLength={10}
             autoFocus={true}
             showSoftInputOnFocus={false}
-            inputView={<View />}
           />
           <View style={styles.searchIconWrap}>
             <Text style={styles.searchIcon}>🔍</Text>

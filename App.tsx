@@ -1,12 +1,15 @@
 import { initAuthFromStorage } from '@/api/http';
+import InfoToaster from '@/components/InfoToaster';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import AppNavigator from '@/navigation/AppNavigator';
+import { installGlobalErrorHandler } from '@/services/globalErrorHandler';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { registerRootComponent } from 'expo';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 function App() {
   SplashScreen.preventAutoHideAsync();
@@ -29,6 +32,10 @@ function App() {
     initAuthFromStorage();
   }, []);
 
+  useEffect(() => {
+    installGlobalErrorHandler();
+  }, []);
+
   const colorScheme = useColorScheme();
 
   if (!loaded) {
@@ -37,9 +44,14 @@ function App() {
 
   return (
     <>
-      <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AppNavigator />
-      </NavigationContainer>
+      <SafeAreaProvider>
+        <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <>
+            <AppNavigator />
+            <InfoToaster />
+          </>
+        </NavigationContainer>
+      </SafeAreaProvider>
     </>
   );
 }

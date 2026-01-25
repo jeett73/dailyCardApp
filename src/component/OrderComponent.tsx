@@ -1,6 +1,7 @@
 import { getRequest, postRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
+import { showSuccess } from '@/services/toastService';
 import { useMemo, useRef, useState } from 'react';
 import { Animated, useWindowDimensions } from 'react-native';
 import type { Customer } from './OwnerComponent';
@@ -282,6 +283,7 @@ export function useOrder() {
         await postRequest(apiEndpoint.cards.updateOrderPost, payload, {
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
+        showSuccess(`Order updated Successfully `);
       } else {
         const items: { productId: string; time: number; qty: number; price: number }[] = [];
         const productsWithPrice = products.filter((p) => p?.price > 0);
@@ -320,6 +322,7 @@ export function useOrder() {
         await postRequest(apiEndpoint.cards.order, payload, {
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
+        showSuccess(`Order Placed Successfully `);
       }
 
       setQuantities({});

@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import apiEndpoint from '../constants/apiEndpoint';
 import { getDeviceId } from '../services/deviceService';
+import { reportError } from '../services/globalErrorHandler';
 import { log, error as logError } from '../services/logger';
 import { getItem, removeItem, setItem } from '../services/storage';
 
@@ -38,6 +39,7 @@ api.interceptors.response.use(
       const rt = await getItem('refreshToken');
       if (!rt) {
         await removeItem('token');
+        reportError(error, { source: 'api', userMessage: 'Session expired. Please login again.' });
         return Promise.reject(error);
       }
       try {
@@ -59,9 +61,11 @@ api.interceptors.response.use(
       } catch (refreshErr) {
         await removeItem('token');
         await removeItem('refreshToken');
+        reportError(refreshErr, { source: 'api.refresh' });
         return Promise.reject(refreshErr);
       }
     }
+    reportError(error, { source: 'api' });
     return Promise.reject(error);
   },
 );
