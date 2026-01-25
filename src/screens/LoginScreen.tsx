@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 550,
+    height: 600,
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   heroImage: { flex: 1 },
-  heroImageInner: { width: '100%', height: '100%' },
+  heroImageInner: { width: '100%', height: '140%', transform: [{ translateY: -200 }] },
   heroOverlay: {
     position: 'absolute',
     top: 0,
