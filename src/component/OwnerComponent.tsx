@@ -3,8 +3,7 @@ import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { useEffect, useMemo, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
-import type { ShopProduct } from './OrderComponent';
-import { useOrder } from './OrderComponent';
+import { useOrder, type ShopProduct } from './OrderComponent';
 
 export type Customer = {
   _id?: any;

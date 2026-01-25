@@ -188,7 +188,11 @@ export default function OrderSheet({
                   );
                   if (!shopProduct) return null;
                   const qtyKey = `${item.productId}_${group.time}`;
-                  return renderProductItem(shopProduct, idx, `group-${groupIdx}-`, qtyKey);
+                  const pricedProduct: ShopProduct = {
+                    ...shopProduct,
+                    price: Number(item.price ?? shopProduct.price),
+                  };
+                  return renderProductItem(pricedProduct, idx, `group-${groupIdx}-`, qtyKey);
                 })}
                 {group.others.map((other, idx) => (
                   <View key={`other-${groupIdx}-${idx}`} style={styles.otherItemRow}>

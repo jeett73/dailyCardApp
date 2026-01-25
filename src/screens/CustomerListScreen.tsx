@@ -37,7 +37,7 @@ export default function CustomerListScreen() {
     return items.filter((it) => {
       const name = String(it.name || '').toLowerCase();
       const card = String(it.card || '');
-      const mobile = String(it.mobile || '');
+      const mobile = String(it.phone || '');
       return name.includes(q) || card.includes(q) || mobile.includes(q);
     });
   }, [items, query]);
