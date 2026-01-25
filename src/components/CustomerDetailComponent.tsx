@@ -38,6 +38,7 @@ export function useCustomerDetail() {
   const customerIdParam = route.params?.customerId;
 
   const [customer, setCustomer] = useState<CustomerInfo | null>(null);
+  const [customerResponseData, setCustomerResponseData] = useState<any[]>([]);
   const [dues, setDues] = useState<DueMonth[]>([]);
   const [selectedDueIndex, setSelectedDueIndex] = useState<number>(0);
   const [orders, setOrders] = useState<Txn[]>([]);
@@ -60,7 +61,6 @@ export function useCustomerDetail() {
         const custData = (custRes?.data ?? {}) as any;
         const c = custData?.customer ?? custData;
         if (c) {
-          log('_________________', c);
           setCustomer({
             id: String(c._id ?? c.id),
             name: String(c.name ?? ''),
@@ -81,6 +81,7 @@ export function useCustomerDetail() {
           : Array.isArray(dueData)
             ? dueData
             : [];
+        setCustomerResponseData(dueArr);
         const mappedDues: DueMonth[] = dueArr
           .map((d: any) => {
             const m = Number(d?.month ?? 0);
@@ -117,17 +118,17 @@ export function useCustomerDetail() {
     (async () => {
       try {
         setOrdersLoading(true);
-        const shopId = await getItem('userId');
-        const token = await getItem('token');
+        // const shopId = await getItem('userId');
+        // const token = await getItem('token');
 
         // Fetch Orders for selected month
         // Note: apiEndpoint.cards.monthlyStatement updated to accept month/year
-        const url = apiEndpoint.cards.duesDetails(customerIdParam, String(shopId ?? ''));
-        const res = await getRequest(url, {
-          headers: { authorization: token ? `Bearer ${token}` : '' },
-        });
-        const data = (res?.data ?? {}) as any;
-        const cardData = data[selectedDueIndex]; // Assuming response structure { card: { products: ... } }
+        // const url = apiEndpoint.cards.duesDetails(customerIdParam, String(shopId ?? ''));
+        // const res = await getRequest(url, {
+        //   headers: { authorization: token ? `Bearer ${token}` : '' },
+        // });
+        // const data = (res?.data ?? {}) as any;
+        const cardData = customerResponseData[selectedDueIndex];
 
         if (cardData && Array.isArray(cardData?.card?.products)) {
           const allTxns: Txn[] = [];
@@ -171,7 +172,7 @@ export function useCustomerDetail() {
         setOrdersLoading(false);
       }
     })();
-  }, [selectedDueIndex, dues, customerIdParam]);
+  }, [selectedDueIndex, dues, customerIdParam, customerResponseData]);
 
   const groupedByDay = useMemo(() => {
     const res: Record<number, DayEntry> = {};
