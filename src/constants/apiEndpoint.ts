@@ -1,6 +1,6 @@
 type Id = string | number;
 // const API_BASE_URL = 'http://172.20.10.2:3000';
-const API_BASE_URL = 'http://10.100.12.6:3000';
+const API_BASE_URL = 'http://13.62.99.96:3000'; // live IP
 
 const url = (path: string) => `${API_BASE_URL}${path}`;
 
