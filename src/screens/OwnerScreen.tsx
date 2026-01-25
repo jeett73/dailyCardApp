@@ -5,6 +5,7 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,6 +23,7 @@ export default function OwnerScreen() {
   const {
     input,
     filtered,
+    customersLoading,
     onDigit,
     onBackspace,
     onClear,
@@ -46,7 +48,6 @@ export default function OwnerScreen() {
             maxLength={10}
             autoFocus={true}
             showSoftInputOnFocus={false}
-            inputView={<View />}
           />
           <View style={styles.searchIconWrap}>
             <Text style={styles.searchIcon}>🔍</Text>
@@ -54,7 +55,12 @@ export default function OwnerScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.listContainer}>
-          {input && filtered.length === 0 && (
+          {input && customersLoading && (
+            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color={Colors.light.tint} />
+            </View>
+          )}
+          {input && !customersLoading && filtered.length === 0 && (
             <Text style={styles.emptyText}>No customers found</Text>
           )}
           {filtered.map((c) => {

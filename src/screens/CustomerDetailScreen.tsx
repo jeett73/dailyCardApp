@@ -119,22 +119,6 @@ export default function CustomerDetailScreen() {
     fmtDay,
   } = useCustomerDetail();
 
-  if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={Colors.light.tint} />
-      </View>
-    );
-  }
-
-  if (error || !customer) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error || 'Customer not found'}</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <HeroHeader color={Colors.light.brandPurple} title="Customer Detail" />
@@ -144,108 +128,123 @@ export default function CustomerDetailScreen() {
           { paddingTop: Platform.OS === 'ios' ? 110 : insets.top + 90 },
         ]}
       >
-        {/* Customer Details Section */}
-        <View style={styles.customerCard}>
-          <View style={styles.customerRow}>
-            <AvatarInitials title={customer.name} />
-            <View style={styles.customerInfo}>
-              <Text style={styles.customerTitle}>
-                <Text style={{ fontStyle: 'italic' }}>#{customer.cardNumber}</Text> {customer.name}
-              </Text>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Mobile</Text>
-                <Text style={styles.metaValue}>{formatMobile(customer.phone)}</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Deposit</Text>
-                <Text style={styles.metaValue}> ₹{customer.deposit || 0}</Text>
-              </View>
-            </View>
+        {loading ? (
+          <View style={[styles.centerContainer, { paddingVertical: 24 }]}>
+            <ActivityIndicator size="large" color={Colors.light.tint} />
           </View>
-        </View>
-
-        {/* Due Months Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Due Months</Text>
-        </View>
-        {dues.length === 0 ? (
-          <View style={[styles.customerCard, styles.fullWidthCard]}>
-            <View style={[styles.customerRow, styles.centerRow]}>
-              <Text style={styles.emptyText}>No dues found</Text>
-            </View>
+        ) : error || !customer ? (
+          <View style={[styles.centerContainer, { paddingVertical: 24 }]}>
+            <Text style={styles.errorText}>{error || 'Customer not found'}</Text>
           </View>
         ) : (
-          <View style={{ height: 100, backgroundColor: '#fff' }}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.dueScroll}
-              contentContainerStyle={{ paddingRight: 16 }}
-            >
-              {dues.map((due, index) => (
-                <TouchableOpacity
-                  key={`${due.year}-${due.month}`}
-                  style={[styles.dueCard, selectedDueIndex === index && styles.dueCardSelected]}
-                  onPress={() => setSelectedDueIndex(index)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[styles.dueLabel, selectedDueIndex === index && styles.dueLabelSelected]}
-                  >
-                    {due.label}
+          <>
+            <View style={styles.customerCard}>
+              <View style={styles.customerRow}>
+                <AvatarInitials title={customer.name} />
+                <View style={styles.customerInfo}>
+                  <Text style={styles.customerTitle}>
+                    <Text style={{ fontStyle: 'italic' }}>#{customer.cardNumber}</Text>{' '}
+                    {customer.name}
                   </Text>
-                  <Text
-                    style={[
-                      styles.dueAmount,
-                      selectedDueIndex === index && styles.dueAmountSelected,
-                    ]}
-                  >
-                    Due: ₹{due.amount}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
+                  <View style={styles.metaRow}>
+                    <Text style={styles.metaLabel}>Mobile</Text>
+                    <Text style={styles.metaValue}>{formatMobile(customer.phone)}</Text>
+                  </View>
+                  <View style={styles.metaRow}>
+                    <Text style={styles.metaLabel}>Deposit</Text>
+                    <Text style={styles.metaValue}> ₹{customer.deposit || 0}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
 
-        {/* Monthly Orders Section */}
-        {dues.length > 0 && (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Monthly Orders</Text>
-          </View>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Due Months</Text>
+            </View>
+            {dues.length === 0 ? (
+              <View style={[styles.customerCard, styles.fullWidthCard]}>
+                <View style={[styles.customerRow, styles.centerRow]}>
+                  <Text style={styles.emptyText}>No dues found</Text>
+                </View>
+              </View>
+            ) : (
+              <View style={{ height: 100, backgroundColor: '#fff' }}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.dueScroll}
+                  contentContainerStyle={{ paddingRight: 16 }}
+                >
+                  {dues.map((due, index) => (
+                    <TouchableOpacity
+                      key={`${due.year}-${due.month}`}
+                      style={[styles.dueCard, selectedDueIndex === index && styles.dueCardSelected]}
+                      onPress={() => setSelectedDueIndex(index)}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.dueLabel,
+                          selectedDueIndex === index && styles.dueLabelSelected,
+                        ]}
+                      >
+                        {due.label}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.dueAmount,
+                          selectedDueIndex === index && styles.dueAmountSelected,
+                        ]}
+                      >
+                        Due: ₹{due.amount}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {dues.length > 0 && (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Monthly Orders</Text>
+              </View>
+            )}
+          </>
         )}
       </View>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[
-          styles.contentContainer,
-          { paddingBottom: Math.max(insets.bottom, 24) },
-        ]}
-      >
-        {ordersLoading ? (
-          <ActivityIndicator size="small" color={Colors.light.tint} style={{ marginTop: 2 }} />
-        ) : days.length === 0 && dues.length > 0 ? (
-          <View style={[styles.customerCard, styles.fullWidthCard]}>
-            <View style={styles.customerRow}>
-              <Text style={styles.emptyText}>No orders for this month</Text>
+      {!loading && !error && customer ? (
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.contentContainer,
+            { paddingBottom: Math.max(insets.bottom, 24) },
+          ]}
+        >
+          {ordersLoading ? (
+            <ActivityIndicator size="small" color={Colors.light.tint} style={{ marginTop: 2 }} />
+          ) : days.length === 0 && dues.length > 0 ? (
+            <View style={[styles.customerCard, styles.fullWidthCard]}>
+              <View style={styles.customerRow}>
+                <Text style={styles.emptyText}>No orders for this month</Text>
+              </View>
             </View>
-          </View>
-        ) : (
-          days.map((day) => {
-            const entry = groupedByDay[day];
-            return (
-              <StatementCard
-                key={`day-${day}`}
-                dayLabel={fmtDay(day)}
-                orders={entry.orders}
-                total={entry.total}
-                scale={1}
-              />
-            );
-          })
-        )}
-      </ScrollView>
+          ) : (
+            days.map((day) => {
+              const entry = groupedByDay[day];
+              return (
+                <StatementCard
+                  key={`day-${day}`}
+                  dayLabel={fmtDay(day)}
+                  orders={entry.orders}
+                  total={entry.total}
+                  scale={1}
+                />
+              );
+            })
+          )}
+        </ScrollView>
+      ) : null}
     </View>
   );
 }

@@ -21,6 +21,7 @@ export function useOwner() {
   const [query, setQuery] = useState('');
   const [input, setInput] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customersLoading, setCustomersLoading] = useState(false);
 
   const orderLogic = useOrder();
 
@@ -29,9 +30,11 @@ export function useOwner() {
     async function fetchCustomers() {
       const q = input.trim();
       if (!q) {
+        if (!cancelled) setCustomersLoading(false);
         if (!cancelled) setCustomers([]);
         return;
       }
+      if (!cancelled) setCustomersLoading(true);
       try {
         const token = await getItem('token');
         const shopId = await getItem('userId');
@@ -52,6 +55,8 @@ export function useOwner() {
         if (!cancelled) setCustomers(list);
       } catch (e) {
         if (!cancelled) setCustomers([]);
+      } finally {
+        if (!cancelled) setCustomersLoading(false);
       }
     }
     fetchCustomers();
@@ -100,6 +105,7 @@ export function useOwner() {
     // orderLogic exports height.
     query,
     input,
+    customersLoading,
     selectedName,
     customers,
     filtered,

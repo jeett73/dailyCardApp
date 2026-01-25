@@ -14,7 +14,7 @@ Notifications.setNotificationHandler({
 });
 
 export async function registerForPushNotificationsAsync() {
-  let token;
+  let token: string | undefined;
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -34,7 +34,7 @@ export async function registerForPushNotificationsAsync() {
     }
     if (finalStatus !== 'granted') {
       console.log('Failed to get push token for push notification!');
-      return;
+      return undefined;
     }
 
     // Get the token that uniquely identifies this device
