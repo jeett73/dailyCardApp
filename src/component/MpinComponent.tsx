@@ -1,3 +1,4 @@
+import { log } from '@/services/logger';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TextInput } from 'react-native';
@@ -30,8 +31,10 @@ export function useMpin() {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const autoVerifyFiredRef = useRef<boolean>(false);
+  const verifyInFlightRef = useRef<boolean>(false);
 
   const r0 = useRef<TextInput>(null);
   const r1 = useRef<TextInput>(null);
@@ -50,51 +53,75 @@ export function useMpin() {
 
   const initials = computeInitials(name) || 'HD';
 
+  function resetMpin() {
+    autoVerifyFiredRef.current = false;
+    setDigits(['', '', '', '']);
+    setFocused(true);
+    setFocusedIndex(0);
+    inputRefs[0].current?.focus();
+  }
+
   async function handleContinue() {
+    if (verifyInFlightRef.current) return;
     const cleaned = otp.replace(/\D/g, '').slice(0, 4);
     if (cleaned.length !== 4) {
       setHasError(true);
       return;
     }
     setHasError(false);
+    setSuccess(false);
     try {
+      verifyInFlightRef.current = true;
+      setLoading(true);
       const userId = await getItem('userId');
       if (!userId) {
         return;
       }
       const res = await postRequest(apiEndpoint.mpin.verify, { userId, mpin: cleaned });
       setSuccess(true);
+      setLoading(false);
       const entityType: string | undefined = (res?.data as any)?.entityType;
       const token: string | undefined = (res?.data as any)?.token;
       if (token) {
-        Promise.all([setItem('token', token)]);
+        await Promise.all([setItem('token', token)]);
       }
       if (entityType === 'shop') {
         navigation.reset({ index: 0, routes: [{ name: 'Owner' }] });
       } else {
         navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
       }
-    } catch (e) {}
+    } catch (e) {
+      setHasError(true);
+      setSuccess(false);
+      resetMpin();
+    } finally {
+      setLoading(false);
+      verifyInFlightRef.current = false;
+    }
   }
 
   useEffect(() => {
-    if (isValid && !autoVerifyFiredRef.current) {
+    if (isValid && !autoVerifyFiredRef.current && !loading) {
       autoVerifyFiredRef.current = true;
       handleContinue();
     } else if (!isValid) {
       autoVerifyFiredRef.current = false;
     }
-  }, [isValid]);
+  }, [isValid, loading]);
 
   function onDigit(d: string) {
+    if (loading) return;
     setDigits((prev) => {
       const arr = [...prev];
-      for (let i = 0; i < arr.length; i++) {
-        if (!arr[i]) {
-          arr[i] = d;
-          break;
-        }
+      const idx = arr.findIndex((x) => !x);
+      if (idx === -1) {
+        return arr;
       }
+      arr[idx] = d;
+      const nextIdx = Math.min(idx + 1, 3);
+      setFocused(true);
+      setFocusedIndex(nextIdx);
+      inputRefs[nextIdx].current?.focus();
       return arr;
     });
     setHasError(false);
@@ -102,6 +129,7 @@ export function useMpin() {
   }
 
   function onBackspace() {
+    if (loading) return;
     setSuccess(false);
     if (focusedIndex !== null) {
       if (!digits[focusedIndex] && focusedIndex > 0) {
@@ -119,6 +147,9 @@ export function useMpin() {
           arr[focusedIndex] = '';
           return arr;
         });
+        inputRefs[focusedIndex].current?.focus();
+        setFocusedIndex(focusedIndex);
+        setFocused(true);
       }
     } else {
       setDigits((prev) => {
@@ -138,9 +169,14 @@ export function useMpin() {
   }
 
   function onClear() {
+    if (loading) return;
     setDigits(['', '', '', '']);
     setHasError(false);
     setSuccess(false);
+    autoVerifyFiredRef.current = false;
+    setFocused(true);
+    setFocusedIndex(0);
+    inputRefs[0].current?.focus();
   }
 
   return {
@@ -156,6 +192,7 @@ export function useMpin() {
     setHasError,
     success,
     setSuccess,
+    loading,
     initials,
     handleContinue,
     onDigit,

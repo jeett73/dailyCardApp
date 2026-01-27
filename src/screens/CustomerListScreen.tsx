@@ -8,8 +8,8 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Platform,
-  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -19,7 +19,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function CustomerListScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { items, loading, error, onAddPress } = useCustomerList();
+  const { items, loading, loadingMore, refreshing, error, refresh, loadMore, hasMore, onAddPress } =
+    useCustomerList();
   const [query, setQuery] = useState('');
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentCustomer, setPaymentCustomer] = useState<{
@@ -34,72 +35,58 @@ export default function CustomerListScreen() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((it) => {
-      const name = String(it.name || '').toLowerCase();
-      const card = String(it.card || '');
-      const mobile = String(it.phone || '');
-      return name.includes(q) || card.includes(q) || mobile.includes(q);
+    return items.filter((it: any) => {
+      const name = String(it?.name || '').toLowerCase();
+      const card = String(it?.cardNumber || it?.card || '').toLowerCase();
+      const phone = String(it?.phone || '').toLowerCase();
+      const mobile = String(it?.mobile || '').toLowerCase();
+      return name.includes(q) || card.includes(q) || phone.includes(q) || mobile.includes(q);
     });
   }, [items, query]);
 
-  const content = useMemo(() => {
-    if (loading) {
-      return (
-        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-          <ActivityIndicator size="small" color={Colors.light.tint} />
-        </View>
-      );
-    }
-    if (error) {
-      return <Text style={styles.error}>{error}</Text>;
-    }
-    if (!items || items.length === 0) {
-      return <Text style={styles.emptyText}>No customers found</Text>;
-    }
-    if (query && filtered.length === 0) {
-      return <Text style={styles.emptyText}>No customers found</Text>;
-    }
-    return filtered.map((it) => {
-      const override = dueOverrides[it.id];
+  const renderItem = React.useCallback(
+    ({ item }: { item: any }) => {
+      const override = dueOverrides[item.id];
       const currentDue =
-        typeof override === 'number' ? override : Number(it?.previousMonthDue ?? 0);
+        typeof override === 'number' ? override : Number(item?.previousMonthDue ?? 0);
       const canPay = currentDue > 0;
 
       function handleEdit() {
         navigation.navigate('CreateCustomer', {
           mode: 'edit',
-          initial: it,
+          initial: item,
         });
       }
 
       function handlePayment() {
         if (!canPay) return;
         setPaymentCustomer({
-          id: it.id,
-          name: it.name,
-          phone: it.mobile,
-          cardNumber: it.card,
-          previousMonthDue: Number(it?.previousMonthDue ?? 0),
+          id: item.id,
+          name: item.name,
+          phone: item.phone || item.mobile,
+          cardNumber: item.cardNumber || item.card,
+          previousMonthDue: Number(item?.previousMonthDue ?? 0),
         });
         setPaymentOpen(true);
       }
+
       return (
         <TouchableOpacity
-          key={it.id}
           style={[styles.customerCard, currentDue > 0 && styles.customerCardDue]}
           activeOpacity={0.85}
-          onPress={() => navigation.navigate('CustomerDetail', { customerId: it.id })}
-          accessibilityLabel={`${it.name || 'Unknown'} • Card ${it.card} • Mobile ${it.mobile}`}
+          onPress={() => navigation.navigate('CustomerDetail', { customerId: item.id })}
+          accessibilityLabel={`${item.name || 'Unknown'} • Card ${item.card} • Mobile ${item.mobile}`}
         >
           <View style={[styles.customerRow, currentDue > 0 && styles.DueBg]}>
-            <AvatarInitials title={it.name || 'Unknown'} />
+            <AvatarInitials title={item.name || 'Unknown'} />
             <View style={currentDue > 0 ? styles.customerInfoDue : styles.customerInfo}>
               <Text style={styles.customerTitle}>
-                <Text style={{ fontStyle: 'italic' }}>{it.card}</Text> {it.name || 'Hiren Dabhi'}
+                <Text style={{ fontStyle: 'italic' }}>{item.card}</Text>{' '}
+                {item.name || 'Hiren Dabhi'}
               </Text>
               <View style={currentDue > 0 ? styles.metaRowDue : styles.metaRow}>
                 <Text style={styles.metaLabel}>Mobile</Text>
-                <Text style={styles.metaValue}>{it.mobile}</Text>
+                <Text style={styles.metaValue}>{item.mobile}</Text>
               </View>
               <View style={currentDue > 0 ? styles.metaRowDue : styles.metaRow}>
                 <Text style={styles.metaLabel}>Last Due</Text>
@@ -116,7 +103,7 @@ export default function CustomerListScreen() {
                   <Feather name="edit-3" size={18} color="#0d101b" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.actionBtn]}
+                  style={styles.actionBtn}
                   activeOpacity={0.8}
                   onPress={handlePayment}
                   disabled={!canPay}
@@ -130,8 +117,37 @@ export default function CustomerListScreen() {
           </View>
         </TouchableOpacity>
       );
-    });
-  }, [items, loading, error, filtered, query, dueOverrides]);
+    },
+    [dueOverrides, navigation],
+  );
+
+  const ListEmptyComponent = React.useCallback(() => {
+    if (loading && !refreshing) {
+      return (
+        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={Colors.light.tint} />
+        </View>
+      );
+    }
+    if (error) {
+      return <Text style={styles.error}>{error}</Text>;
+    }
+    if (!loading && filtered.length === 0) {
+      return <Text style={styles.emptyText}>No customers found</Text>;
+    }
+    return null;
+  }, [loading, refreshing, error, filtered.length]);
+
+  const ListFooterComponent = React.useCallback(() => {
+    if (loadingMore) {
+      return (
+        <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={Colors.light.tint} />
+        </View>
+      );
+    }
+    return <View style={{ height: insets.bottom + 16 }} />;
+  }, [loadingMore, insets.bottom]);
 
   return (
     <View style={[styles.container]}>
@@ -149,14 +165,22 @@ export default function CustomerListScreen() {
             <Text style={styles.searchIcon}>🔍</Text>
           </View>
         </View>
-        <ScrollView
-          contentContainerStyle={[
-            styles.listContainer,
-            { paddingBottom: Math.max(insets.bottom, 24) },
-          ]}
-        >
-          {content}
-        </ScrollView>
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 16 }}
+          ListEmptyComponent={ListEmptyComponent}
+          ListFooterComponent={ListFooterComponent}
+          onRefresh={refresh}
+          refreshing={refreshing}
+          onEndReached={() => {
+            if (hasMore && !loadingMore && !loading) {
+              loadMore();
+            }
+          }}
+          onEndReachedThreshold={0.5}
+        />
       </View>
       <TouchableOpacity
         style={[styles.fab, { bottom: Math.max(insets.bottom, 24) + 12 }, { right: 16 }]}
