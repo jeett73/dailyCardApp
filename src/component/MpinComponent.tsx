@@ -1,3 +1,4 @@
+import { log } from '@/services/logger';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TextInput } from 'react-native';
