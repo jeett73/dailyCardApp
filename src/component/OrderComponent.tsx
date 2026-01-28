@@ -33,6 +33,7 @@ export function useOrder() {
   const sheetY = useMemo(() => new Animated.Value(0), []);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [products, setProducts] = useState<ShopProduct[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
   const qtyScales = useRef<Record<string, Animated.Value>>({});
   const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
   const [otherPurchased, setOtherPurchased] = useState<string>('');
@@ -76,6 +77,8 @@ export function useOrder() {
       setQuantities({});
       setOtherPurchased('');
       setGroupedItems([]);
+      setProducts([]);
+      setProductsLoading(true);
       loadProducts(customer);
     }
   }
@@ -107,6 +110,7 @@ export function useOrder() {
   }
 
   async function loadProducts(customer: Customer, orderToEdit?: any) {
+    setProductsLoading(true);
     try {
       const token = await getItem('token');
       const storedShopId = await getItem('userId');
@@ -214,6 +218,8 @@ export function useOrder() {
       setQuantities(nextQuantities);
     } catch (e) {
       setProducts([]);
+    } finally {
+      setProductsLoading(false);
     }
   }
 
@@ -358,6 +364,7 @@ export function useOrder() {
     sheetY,
     quantities,
     products,
+    productsLoading,
     qtyScales,
     currentCustomer,
     totalAmount,

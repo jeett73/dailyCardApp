@@ -2,6 +2,7 @@
 import { useLogin } from '@/component/LoginComponent';
 import React from 'react';
 import {
+  ActivityIndicator,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
@@ -84,7 +85,11 @@ export default function LoginScreen() {
               disabled={!isValid || loading}
               style={[styles.button, (!isValid || loading) && styles.buttonDisabled]}
             >
-              <Text style={styles.buttonText}>Login</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Login</Text>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>

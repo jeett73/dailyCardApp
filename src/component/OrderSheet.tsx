@@ -25,6 +25,7 @@ interface OrderSheetProps {
   height: number;
   currentCustomer: { name?: string; cardNumber?: string | number } | null;
   products: ShopProduct[];
+  productsLoading?: boolean;
   quantities: Record<string, number>;
   qtyScales: React.MutableRefObject<Record<string, Animated.Value>>;
   otherPurchased: string;
@@ -48,6 +49,7 @@ export default function OrderSheet({
   height,
   currentCustomer,
   products,
+  productsLoading = false,
   quantities,
   qtyScales,
   otherPurchased,
@@ -217,9 +219,13 @@ export default function OrderSheet({
           })}
         </ScrollView>
       ) : // Add Order Mode
-      products.length === 0 ? (
+      productsLoading ? (
         <View style={{ paddingVertical: 24, alignItems: 'center' }}>
           <ActivityIndicator size="small" color={Colors.light.tint} />
+        </View>
+      ) : products.length === 0 ? (
+        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+          <Text style={{ color: '#666', fontWeight: '600' }}>No products found</Text>
         </View>
       ) : (
         <>
