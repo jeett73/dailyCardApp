@@ -3,7 +3,13 @@ import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 
 const brandPurple = '#b3a0ff';
 
@@ -18,6 +24,7 @@ export default function MpinScreen() {
     hasError,
     setHasError,
     success,
+    loading,
     initials,
     handleContinue,
     onDigit,
@@ -37,6 +44,7 @@ export default function MpinScreen() {
         <Text style={styles.title}>{name || 'Hiren Dabhi'}</Text>
         {!!phone && <Text style={styles.phone}>{phone}</Text>}
         <Text style={styles.subtitle}>Unlock using PIN</Text>
+        {loading && <ActivityIndicator color={Colors.light.tint} style={styles.loader} />}
         <View style={styles.inputWrapper}>
           <View style={styles.otpRow}>
             {Array.from({ length: 4 }).map((_, i) => (
@@ -44,6 +52,7 @@ export default function MpinScreen() {
                 key={i}
                 ref={inputRefs[i]}
                 value={digits[i]}
+                editable={!loading}
                 onChangeText={(t) => {
                   const v = t.replace(/\D/g, '').slice(0, 1);
                   setDigits((prev) => {
@@ -99,6 +108,7 @@ export default function MpinScreen() {
             ))}
           </View>
         </View>
+        {hasError && <Text style={styles.errorText}>Wrong PIN</Text>}
         <TouchableOpacity activeOpacity={0.8}>
           <Text style={styles.forgot}>Forgot Login PIN?</Text>
         </TouchableOpacity>
@@ -111,6 +121,7 @@ export default function MpinScreen() {
               key={d}
               style={styles.key}
               activeOpacity={0.8}
+              disabled={loading}
               onPress={() => onDigit(d)}
               accessibilityRole="button"
               accessibilityLabel={`Digit ${d}`}
@@ -125,6 +136,7 @@ export default function MpinScreen() {
               key={d}
               style={styles.key}
               activeOpacity={0.8}
+              disabled={loading}
               onPress={() => onDigit(d)}
               accessibilityRole="button"
               accessibilityLabel={`Digit ${d}`}
@@ -139,6 +151,7 @@ export default function MpinScreen() {
               key={d}
               style={styles.key}
               activeOpacity={0.8}
+              disabled={loading}
               onPress={() => onDigit(d)}
               accessibilityRole="button"
               accessibilityLabel={`Digit ${d}`}
@@ -151,6 +164,7 @@ export default function MpinScreen() {
           <TouchableOpacity
             style={styles.key}
             activeOpacity={0.8}
+            disabled={loading}
             onPress={onClear}
             accessibilityRole="button"
             accessibilityLabel="Clear"
@@ -160,6 +174,7 @@ export default function MpinScreen() {
           <TouchableOpacity
             style={styles.key}
             activeOpacity={0.8}
+            disabled={loading}
             onPress={() => onDigit('0')}
             accessibilityRole="button"
             accessibilityLabel="Digit 0"
@@ -169,6 +184,7 @@ export default function MpinScreen() {
           <TouchableOpacity
             style={[styles.key]}
             activeOpacity={0.8}
+            disabled={loading}
             onPress={onBackspace}
             accessibilityRole="button"
             accessibilityLabel="Backspace"
@@ -254,6 +270,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     color: Colors.light.text,
+    marginBottom: 12,
+  },
+  loader: {
     marginBottom: 12,
   },
   inputWrapper: {
@@ -370,6 +389,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     marginTop: 6,
+  },
+  errorText: {
+    marginTop: -8,
+    marginBottom: 10,
+    textAlign: 'center',
+    color: '#e53935',
+    fontSize: 14,
+    fontWeight: '700',
   },
   faceIdBtn: {
     alignSelf: 'center',
