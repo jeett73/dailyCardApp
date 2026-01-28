@@ -108,9 +108,9 @@ export default function MpinScreen() {
             ))}
           </View>
         </View>
-        {hasError && <Text style={styles.errorText}>Wrong PIN</Text>}
+        {hasError && <Text style={styles.errorText}>Invalid PIN</Text>}
         <TouchableOpacity activeOpacity={0.8}>
-          <Text style={styles.forgot}>Forgot Login PIN?</Text>
+          {/* <Text style={styles.forgot}>Forgot Login PIN?</Text> */}
         </TouchableOpacity>
       </ScrollView>
 
