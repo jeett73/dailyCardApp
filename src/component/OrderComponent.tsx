@@ -288,6 +288,7 @@ export function useOrder() {
         await postRequest(apiEndpoint.cards.updateOrderPost, payload, {
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
+        // showSuccess(`Order updated Successfully `);
       } else {
         const items: { productId: string; time: number; qty: number; price: number }[] = [];
         const productsWithPrice = products.filter((p) => p?.price > 0);
@@ -326,6 +327,7 @@ export function useOrder() {
         await postRequest(apiEndpoint.cards.order, payload, {
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
+        // showSuccess(`Order Placed Successfully `);
       }
 
       setQuantities({});

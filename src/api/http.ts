@@ -1,4 +1,5 @@
 import { getDeviceId } from '@/services/deviceService';
+import { reportError } from '@/services/globalErrorHandler';
 import storage from '@/services/storage';
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
@@ -109,6 +110,7 @@ async function doTokenRefresh(): Promise<string | null> {
     await setTokens(newAccess, typeof newRefresh !== 'undefined' ? newRefresh : undefined);
     return newAccess;
   } catch (e) {
+    reportError(e, { source: 'http.refresh', toast: false });
     await clearTokens();
     inMemoryAccessToken = null;
     inMemoryRefreshToken = null;
@@ -126,10 +128,12 @@ http.interceptors.response.use(
     const isRefreshEndpoint = url?.includes('/auth/refresh');
 
     if (status !== 401 || isRefreshEndpoint) {
+      reportError(error, { source: 'http' });
       return Promise.reject(error);
     }
 
     if (originalRequest._retry) {
+      reportError(error, { source: 'http' });
       return Promise.reject(error);
     }
 
@@ -145,6 +149,10 @@ http.interceptors.response.use(
     return new Promise((resolve, reject) => {
       subscribeTokenRefresh(async (token) => {
         if (!token) {
+          reportError(error, {
+            source: 'http',
+            userMessage: 'Session expired. Please login again.',
+          });
           reject(error);
           return;
         }
@@ -155,6 +163,7 @@ http.interceptors.response.use(
           const resp = await http(originalRequest);
           resolve(resp);
         } catch (err) {
+          reportError(err, { source: 'http' });
           reject(err);
         }
       });
