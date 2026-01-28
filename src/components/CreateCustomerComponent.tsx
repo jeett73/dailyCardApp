@@ -134,7 +134,7 @@ export function useCreateCustomer(params?: {
             postalCode: String(data?.address?.postalCode ?? ''),
           });
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) setPrefillError('Failed to load customer');
       } finally {
         if (!cancelled) setPrefillLoading(false);
@@ -264,7 +264,7 @@ export function useCreateCustomer(params?: {
         });
       }
       navigation.navigate('CustomerList');
-    } catch (err: any) {
+    } catch {
     } finally {
       setLoading(false);
     }

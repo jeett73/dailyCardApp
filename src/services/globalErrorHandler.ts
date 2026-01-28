@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { showError } from '@/services/toastService';
+import { showError } from './toastService';
 
 export type ErrorEntry = {
   id: string;
@@ -22,6 +22,20 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function shouldToastForCustomerMutation(err: unknown) {
+  if (!err || typeof err !== 'object') return false;
+  const anyErr = err as any;
+  const method = String(anyErr?.config?.method ?? '').toLowerCase();
+  const url = String(anyErr?.config?.url ?? '');
+  if (!method || !url) return false;
+
+  if (method === 'post' && url.includes('/customers/add')) return true;
+  if (method === 'put' && /\/customers\/[^/?#]+\/?$/.test(url) && !url.includes('/customers/add'))
+    return true;
+
+  return false;
+}
+
 function extractMessage(err: unknown): string {
   if (!err) return 'Unknown error';
   if (typeof err === 'string') return err;
@@ -29,9 +43,7 @@ function extractMessage(err: unknown): string {
   const anyErr = err as any;
 
   const axiosMsg =
-    anyErr?.response?.data?.message ||
-    anyErr?.response?.data?.error ||
-    anyErr?.response?.data?.msg;
+    anyErr?.response?.data?.message || anyErr?.response?.data?.error || anyErr?.response?.data?.msg;
   if (typeof axiosMsg === 'string' && axiosMsg.trim()) return axiosMsg;
 
   const msg = anyErr?.message;
@@ -106,7 +118,9 @@ export function reportError(
   emit();
 
   if (opts?.toast !== false) {
-    showError(opts?.userMessage || entry.message);
+    if (shouldToastForCustomerMutation(err)) {
+      showError(opts?.userMessage || entry.message);
+    }
   }
 
   return entry;
@@ -138,4 +152,3 @@ export function installGlobalErrorHandler() {
     });
   }
 }
-
