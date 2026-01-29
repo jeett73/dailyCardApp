@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  FlatList,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -178,6 +179,8 @@ export default function OrderSheet({
           style={{ maxHeight: isKeyboardVisible ? height * 0.5 : height * 0.8 }}
           contentContainerStyle={styles.productsList}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
         >
           {groupedItems.map((group, groupIdx) => {
             const timeLabel = formatToKolkataTime(group.time);
@@ -229,13 +232,17 @@ export default function OrderSheet({
         </View>
       ) : (
         <>
-          <ScrollView
+          <FlatList
             style={{ maxHeight: isKeyboardVisible ? 180 : height * 0.6 }}
-            contentContainerStyle={styles.productsList}
             showsVerticalScrollIndicator={false}
-          >
-            {products?.filter((p) => p.price).map((p, i) => renderProductItem(p, i, 'list-'))}
-          </ScrollView>
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+            removeClippedSubviews={false}
+            data={products?.filter((p) => p.price) ?? []}
+            keyExtractor={(item, index) => `list-${String(item._id ?? item.productId)}-${index}`}
+            contentContainerStyle={styles.productsList}
+            renderItem={({ item, index }) => renderProductItem(item, index, 'list-')}
+          />
           <View style={styles.labelInputRow}>
             <Text style={styles.label50}>Other</Text>
             <TextInput
@@ -279,7 +286,6 @@ export default function OrderSheet({
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidingView}
-          pointerEvents="box-none"
         >
           <Animated.View
             style={[
@@ -306,7 +312,6 @@ export default function OrderSheet({
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidingView}
-          pointerEvents="box-none"
         >
           <Animated.View
             style={[
@@ -359,6 +364,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'flex-end',
     zIndex: 10,
+    elevation: 10,
   },
   sheetHeader: {
     alignItems: 'center',
