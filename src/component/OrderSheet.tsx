@@ -286,6 +286,7 @@ export default function OrderSheet({
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidingView}
+          pointerEvents="box-none"
         >
           <Animated.View
             style={[
@@ -312,6 +313,7 @@ export default function OrderSheet({
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidingView}
+          pointerEvents="box-none"
         >
           <Animated.View
             style={[
