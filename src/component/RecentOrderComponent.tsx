@@ -54,7 +54,7 @@ export function useRecentOrder() {
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<RecentOrder[]>([]);
   const [hasMore, setHasMore] = useState(true);
-  const LIMIT = 1;
+  const LIMIT = 10;
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
   const requestedPagesRef = useRef<Set<number>>(new Set());
