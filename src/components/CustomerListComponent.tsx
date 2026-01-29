@@ -2,7 +2,7 @@ import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Customer = {
   _id?: any;
@@ -33,79 +33,136 @@ function toTitleCaseLocal(s: string) {
     .join(' ');
 }
 
-export function useCustomerList() {
+export function useCustomerList(searchQuery = '') {
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const LIMIT = 10;
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const pageRef = useRef(1);
+  const hasMoreRef = useRef(true);
+  const requestSeqRef = useRef(0);
+  const inFlightSeqRef = useRef<number | null>(null);
+  const activeQueryRef = useRef('');
+  const requestedPagesByQueryRef = useRef<Map<string, Set<number>>>(new Map());
 
   function customerKey(c: Customer) {
     return String(c._id ?? `${c.name ?? ''}-${c.cardNumber ?? ''}-${c.phone ?? ''}`);
   }
 
   useEffect(() => {
-    fetchCustomers(true);
-  }, []);
+    const t = setTimeout(() => {
+      setDebouncedQuery(String(searchQuery ?? ''));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
-  async function fetchCustomers(reset = false) {
-    if (reset) {
-      setRefreshing(true);
-      setError(null);
-    } else {
-      if (!hasMore || loadingMore) return;
-      setLoadingMore(true);
-    }
-
-    try {
-      const token = await getItem('token');
-      const shopId = await getItem('userId');
-      const currentPage = reset ? 1 : page;
-
-      const res = await getRequest(apiEndpoint.customers.list, {
-        params: { shopId, page: currentPage, limit: LIMIT },
-        headers: { authorization: token ? `Bearer ${token}` : '' },
-      });
-      const data = (res?.data ?? []) as any;
-      const arr = Array.isArray(data?.customers)
-        ? data?.customers
-        : Array.isArray(data)
-          ? data
-          : [];
-      const list: Customer[] = arr
-        .map((item: any) => ({
-          _id: item?._id,
-          name: item?.name,
-          cardNumber: item?.cardNumber,
-          phone: item?.phone,
-          previousMonthDue: Number(item?.previousMonthDue ?? 0),
-        }))
-        .filter((c: Customer) => !!(c.name && String(c.name).trim()));
-
-      if (reset) {
-        setCustomers(list);
-        setPage(2);
-        setHasMore(list.length >= LIMIT);
-        setLoading(false);
-      } else {
-        const existing = new Set(customers.map(customerKey));
-        const newOnes = list.filter((c) => !existing.has(customerKey(c)));
-        setCustomers((prev) => [...prev, ...newOnes]);
-        setPage((prev) => prev + 1);
-        setHasMore(newOnes.length > 0 && list.length >= LIMIT);
-      }
-    } catch {
-      setError('Failed to load customers');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
-    }
+  function hasRequestedPage(query: string, page: number) {
+    const set = requestedPagesByQueryRef.current.get(query);
+    return !!set && set.has(page);
   }
+
+  function markRequestedPage(query: string, page: number) {
+    const map = requestedPagesByQueryRef.current;
+    const set = map.get(query) ?? new Set<number>();
+    set.add(page);
+    map.set(query, set);
+  }
+
+  const fetchCustomers = useCallback(
+    async (reset: boolean, query: string) => {
+      const seq = ++requestSeqRef.current;
+      if (reset) {
+        setRefreshing(true);
+        setError(null);
+      } else {
+        if (!hasMoreRef.current) return;
+        if (inFlightSeqRef.current !== null) return;
+        setLoadingMore(true);
+      }
+
+      const currentPage = reset ? 1 : pageRef.current;
+      if (!reset && hasRequestedPage(query, currentPage)) {
+        setLoadingMore(false);
+        return;
+      }
+
+      inFlightSeqRef.current = seq;
+      markRequestedPage(query, currentPage);
+
+      try {
+        const token = await getItem('token');
+        const shopId = await getItem('userId');
+
+        const res = await getRequest(apiEndpoint.customers.list, {
+          params: { shopId, page: currentPage, limit: LIMIT, q: query },
+          headers: { authorization: token ? `Bearer ${token}` : '' },
+        });
+
+        const data = (res?.data ?? []) as any;
+        const arr = Array.isArray(data?.customers)
+          ? data?.customers
+          : Array.isArray(data)
+            ? data
+            : [];
+
+        const list: Customer[] = arr
+          .map((item: any) => ({
+            _id: item?._id,
+            name: item?.name,
+            cardNumber: item?.cardNumber,
+            phone: item?.phone,
+            previousMonthDue: Number(item?.previousMonthDue ?? 0),
+          }))
+          .filter((c: Customer) => !!(c.name && String(c.name).trim()));
+
+        if (activeQueryRef.current !== query) {
+          return;
+        }
+
+        if (reset) {
+          setCustomers(list);
+          pageRef.current = 2;
+        } else {
+          setCustomers((prev) => {
+            const existing = new Set(prev.map(customerKey));
+            const newOnes = list.filter((c) => !existing.has(customerKey(c)));
+            return [...prev, ...newOnes];
+          });
+          if (pageRef.current === currentPage) {
+            pageRef.current = pageRef.current + 1;
+          }
+        }
+
+        hasMoreRef.current = list.length >= LIMIT;
+        setHasMore(hasMoreRef.current);
+      } catch {
+        setError('Failed to load customers');
+      } finally {
+        if (inFlightSeqRef.current === seq) {
+          inFlightSeqRef.current = null;
+          setLoading(false);
+          setRefreshing(false);
+          setLoadingMore(false);
+        }
+      }
+    },
+    [LIMIT],
+  );
+
+  useEffect(() => {
+    setLoading(true);
+    activeQueryRef.current = debouncedQuery;
+    requestedPagesByQueryRef.current = new Map();
+    hasMoreRef.current = true;
+    setHasMore(true);
+    pageRef.current = 1;
+    fetchCustomers(true, debouncedQuery);
+  }, [debouncedQuery, fetchCustomers]);
 
   const items = useMemo(
     () =>
@@ -132,8 +189,8 @@ export function useCustomerList() {
     loadingMore,
     refreshing,
     error,
-    refresh: () => fetchCustomers(true),
-    loadMore: () => fetchCustomers(false),
+    refresh: () => fetchCustomers(true, debouncedQuery),
+    loadMore: () => fetchCustomers(false, debouncedQuery),
     hasMore,
     onAddPress,
   };

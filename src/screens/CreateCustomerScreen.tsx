@@ -76,18 +76,13 @@ export default function CreateCustomerScreen() {
 
             <Text style={styles.label}>Phone</Text>
             <TextInput
-              style={[
-                styles.input,
-                isEdit && styles.inputDisabled,
-                errors.phone && styles.inputError,
-              ]}
+              style={[styles.input, errors.phone && styles.inputError]}
               placeholder="9876543210"
               keyboardType="number-pad"
               maxLength={10}
               value={form.phone}
               onChangeText={(t) => setField('phone', t.replace(/[^0-9]/g, ''))}
               {...getHandlers('phone')}
-              editable={!isEdit}
             />
             {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
 

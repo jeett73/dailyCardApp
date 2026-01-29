@@ -5,7 +5,7 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -19,9 +19,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function CustomerListScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { items, loading, loadingMore, refreshing, error, refresh, loadMore, hasMore, onAddPress } =
-    useCustomerList();
   const [query, setQuery] = useState('');
+  const { items, loading, loadingMore, refreshing, error, refresh, loadMore, hasMore, onAddPress } =
+    useCustomerList(query);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentCustomer, setPaymentCustomer] = useState<{
     id: string;
@@ -31,18 +31,6 @@ export default function CustomerListScreen() {
     previousMonthDue: number;
   } | null>(null);
   const [dueOverrides, setDueOverrides] = useState<Record<string, number>>({});
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((it: any) => {
-      const name = String(it?.name || '').toLowerCase();
-      const card = String(it?.cardNumber || it?.card || '').toLowerCase();
-      const phone = String(it?.phone || '').toLowerCase();
-      const mobile = String(it?.mobile || '').toLowerCase();
-      return name.includes(q) || card.includes(q) || phone.includes(q) || mobile.includes(q);
-    });
-  }, [items, query]);
 
   const renderItem = React.useCallback(
     ({ item }: { item: any }) => {
@@ -132,11 +120,11 @@ export default function CustomerListScreen() {
     if (error) {
       return <Text style={styles.error}>{error}</Text>;
     }
-    if (!loading && filtered.length === 0) {
+    if (!loading && items.length === 0) {
       return <Text style={styles.emptyText}>No customers found</Text>;
     }
     return null;
-  }, [loading, refreshing, error, filtered.length]);
+  }, [loading, refreshing, error, items.length]);
 
   const ListFooterComponent = React.useCallback(() => {
     if (loadingMore) {
@@ -166,7 +154,7 @@ export default function CustomerListScreen() {
           </View>
         </View>
         <FlatList
-          data={filtered}
+          data={items}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 16 }}
