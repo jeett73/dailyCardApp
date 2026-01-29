@@ -2,8 +2,7 @@ import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { formatToKolkataDateString } from '@/utils/dateUtils';
-import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type RecentOrder = {
   _id: string;
@@ -49,74 +48,109 @@ function toTitleCaseLocal(s: string) {
 }
 
 export function useRecentOrder() {
-  const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<RecentOrder[]>([]);
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const LIMIT = 10;
+  const LIMIT = 1;
+  const pageRef = useRef(1);
+  const hasMoreRef = useRef(true);
+  const requestedPagesRef = useRef<Set<number>>(new Set());
+  const requestSeqRef = useRef(0);
+  const inFlightSeqRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    fetchOrders(true);
-  }, []);
+  function orderKey(o: RecentOrder) {
+    return String(o._id ?? '');
+  }
 
-  async function fetchOrders(reset = false) {
-    if (reset) {
-      setRefreshing(true);
-      setError(null);
-    } else {
-      if (!hasMore || loadingMore) return;
-      setLoadingMore(true);
-    }
-
-    try {
-      const shopId = await getItem('userId');
-      const currentPage = reset ? 1 : page;
-      const res = await getRequest(apiEndpoint.cards.recentOrder(shopId!, currentPage, LIMIT));
-
-      const data = (res?.data ?? []) as any;
-      const arr = Array.isArray(data?.orders) ? data?.orders : Array.isArray(data) ? data : [];
-
-      const list: RecentOrder[] = arr.map((item: any) => ({
-        _id: item?._id,
-        customerName: item?.customerName || item?.customer?.name,
-        cardNumber: item?.cardNumber || item?.customer?.cardNumber,
-        phoneNumber: item?.phone || item?.phoneNumber || item?.customer?.phone,
-        amount: Number(item?.totalBill ?? item?.totalAmount ?? 0),
-        date:
-          item?.createdAt ||
-          item?.date ||
-          (item?.month && item?.year
-            ? `${item.year}-${String(item.month).padStart(2, '0')}-01`
-            : formatToKolkataDateString(new Date())),
-        products: Array.isArray(item?.products) ? item.products : [],
-        others: Array.isArray(item?.others) ? item.others : [],
-        cardId: item?.cardId || item?.card?._id || item?.card,
-        day: item?.day,
-      }));
+  const fetchOrders = useCallback(
+    async (reset: boolean) => {
+      const seq = ++requestSeqRef.current;
 
       if (reset) {
-        setOrders(list);
-        setPage(2);
-        setHasMore(list.length >= LIMIT);
-        setLoading(false);
+        setLoading(true);
+        setRefreshing(true);
+        setError(null);
       } else {
-        setOrders((prev) => [...prev, ...list]);
-        setPage((prev) => prev + 1);
-        setHasMore(list.length >= LIMIT);
+        if (!hasMoreRef.current) return;
+        if (inFlightSeqRef.current !== null) return;
+        setLoadingMore(true);
       }
-    } catch (e) {
-      console.error(e);
-      setError('Failed to load recent orders');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
-    }
-  }
+
+      const currentPage = reset ? 1 : pageRef.current;
+      if (!reset && requestedPagesRef.current.has(currentPage)) {
+        setLoadingMore(false);
+        return;
+      }
+
+      inFlightSeqRef.current = seq;
+      requestedPagesRef.current.add(currentPage);
+
+      try {
+        const shopId = await getItem('userId');
+        const res = await getRequest(apiEndpoint.cards.recentOrder(shopId!, currentPage, LIMIT));
+
+        const data = (res?.data ?? []) as any;
+        const arr = Array.isArray(data?.orders) ? data?.orders : Array.isArray(data) ? data : [];
+
+        const list: RecentOrder[] = arr.map((item: any) => ({
+          _id: item?._id,
+          customerName: item?.customerName || item?.customer?.name,
+          cardNumber: item?.cardNumber || item?.customer?.cardNumber,
+          phoneNumber: item?.phone || item?.phoneNumber || item?.customer?.phone,
+          amount: Number(item?.totalBill ?? item?.totalAmount ?? 0),
+          date:
+            item?.createdAt ||
+            item?.date ||
+            (item?.month && item?.year
+              ? `${item.year}-${String(item.month).padStart(2, '0')}-01`
+              : formatToKolkataDateString(new Date())),
+          products: Array.isArray(item?.products) ? item.products : [],
+          others: Array.isArray(item?.others) ? item.others : [],
+          cardId: item?.cardId || item?.card?._id || item?.card,
+          day: item?.day,
+        }));
+
+        if (reset) {
+          setOrders(list);
+          pageRef.current = 2;
+        } else {
+          setOrders((prev) => {
+            const existing = new Set(prev.map(orderKey));
+            const newOnes = list.filter((o) => !existing.has(orderKey(o)));
+            return [...prev, ...newOnes];
+          });
+          if (pageRef.current === currentPage) {
+            pageRef.current = pageRef.current + 1;
+          }
+        }
+
+        hasMoreRef.current = list.length >= LIMIT;
+        setHasMore(hasMoreRef.current);
+      } catch {
+        setError('Failed to load recent orders');
+      } finally {
+        if (inFlightSeqRef.current === seq) {
+          inFlightSeqRef.current = null;
+          setLoading(false);
+          setRefreshing(false);
+          setLoadingMore(false);
+        }
+      }
+    },
+    [LIMIT],
+  );
+
+  useEffect(() => {
+    setLoading(true);
+    requestedPagesRef.current = new Set();
+    hasMoreRef.current = true;
+    setHasMore(true);
+    pageRef.current = 1;
+    fetchOrders(true);
+  }, [fetchOrders]);
 
   const items = useMemo(
     () =>

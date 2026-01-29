@@ -70,7 +70,7 @@ export default function CustomerListScreen() {
             <View style={currentDue > 0 ? styles.customerInfoDue : styles.customerInfo}>
               <Text style={styles.customerTitle}>
                 <Text style={{ fontStyle: 'italic' }}>{item.card}</Text>{' '}
-                {item.name || 'Hiren Dabhi'}
+                {item.name?.length > 17 ? item.name.substring(0, 17) + '...' : item.name}
               </Text>
               <View style={currentDue > 0 ? styles.metaRowDue : styles.metaRow}>
                 <Text style={styles.metaLabel}>Mobile</Text>
