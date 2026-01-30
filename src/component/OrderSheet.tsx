@@ -3,6 +3,7 @@ import { Text, View } from '@/components/Themed';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
 import { formatToKolkataTime } from '@/utils/dateUtils';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
@@ -68,6 +69,7 @@ export default function OrderSheet({
 }: OrderSheetProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   React.useEffect(() => {
     const showSubscription = Keyboard.addListener(
@@ -105,14 +107,8 @@ export default function OrderSheet({
     const qty = quantities[qtyKey] ?? 0;
     const scale = qtyScales.current[qtyKey] ?? (qtyScales.current[qtyKey] = new Animated.Value(1));
 
-    // For edit mode, we only show items with qty > 0.
-    // If user decreases to 0, it will disappear on re-render if we strictly filter by `quantities`.
-    // However, for smooth UX, maybe we keep it until save?
-    // Requirement: "On edit itme those product show in list that have more that 0 qty"
-    // I will filter at the list generation level.
-
     return (
-      <View key={keyPrefix + productId + i} style={styles.productItem}>
+      <View key={keyPrefix + productId + i} style={styles.productCard}>
         <View style={styles.thumbWrap}>
           <Image
             source={{
@@ -131,42 +127,39 @@ export default function OrderSheet({
           </Animated.View>
         </View>
         <View style={styles.productInfoBlock}>
-          <Text style={styles.productTitle} numberOfLines={1}>
+          <Text style={styles.productTitle} numberOfLines={2}>
             {p.productName || p.productId}
           </Text>
-          <Text style={styles.productSubPrice}>₹{p.price}</Text>
         </View>
-        <View style={styles.rowRight}>
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={[styles.pillButton, styles.pillButtonSeconder]}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={`Decrease quantity for ${p.productName || p.productId}`}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                dec(qtyKey);
-                pulseQty(qtyKey);
-              }}
-            >
-              <Text style={styles.pillButtonText}>−</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.pillButton, styles.pillButtonPrimary]}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={`Increase quantity for ${p.productName || p.productId}`}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                inc(qtyKey);
-                pulseQty(qtyKey);
-              }}
-            >
-              <Text style={styles.pillButtonText}>+</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.pillButton, styles.pillButtonSeconder]}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={`Decrease quantity for ${p.productName || p.productId}`}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              dec(qtyKey);
+              pulseQty(qtyKey);
+            }}
+          >
+            <Text style={styles.pillButtonText}>−</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.pillButton, styles.pillButtonPrimary]}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={`Increase quantity for ${p.productName || p.productId}`}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              inc(qtyKey);
+              pulseQty(qtyKey);
+            }}
+          >
+            <Text style={styles.pillButtonText}>+</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -187,18 +180,20 @@ export default function OrderSheet({
             return (
               <View key={group.time} style={styles.groupContainer}>
                 <Text style={styles.groupHeader}>{timeLabel}</Text>
-                {group.products.map((item, idx) => {
-                  const shopProduct = products.find(
-                    (sp) => sp._id === item.productId || sp.productId === item.productId,
-                  );
-                  if (!shopProduct) return null;
-                  const qtyKey = `${item.productId}_${group.time}`;
-                  const pricedProduct: ShopProduct = {
-                    ...shopProduct,
-                    price: Number(item.price ?? shopProduct.price),
-                  };
-                  return renderProductItem(pricedProduct, idx, `group-${groupIdx}-`, qtyKey);
-                })}
+                <View style={styles.gridContainer}>
+                  {group.products.map((item, idx) => {
+                    const shopProduct = products.find(
+                      (sp) => sp._id === item.productId || sp.productId === item.productId,
+                    );
+                    if (!shopProduct) return null;
+                    const qtyKey = `${item.productId}_${group.time}`;
+                    const pricedProduct: ShopProduct = {
+                      ...shopProduct,
+                      price: Number(item.price ?? shopProduct.price),
+                    };
+                    return renderProductItem(pricedProduct, idx, `group-${groupIdx}-`, qtyKey);
+                  })}
+                </View>
                 {group.others.map((other, idx) => (
                   <View key={`other-${groupIdx}-${idx}`} style={styles.otherItemRow}>
                     <View style={styles.labelInputRow}>
@@ -241,6 +236,8 @@ export default function OrderSheet({
             data={products?.filter((p) => p.price) ?? []}
             keyExtractor={(item, index) => `list-${String(item._id ?? item.productId)}-${index}`}
             contentContainerStyle={styles.productsList}
+            numColumns={3}
+            columnWrapperStyle={styles.columnWrapper}
             renderItem={({ item, index }) => renderProductItem(item, index, 'list-')}
           />
           <View style={styles.labelInputRow}>
@@ -261,7 +258,7 @@ export default function OrderSheet({
       <TouchableOpacity
         style={[styles.saveButton, saving && { opacity: 0.7 }]}
         activeOpacity={0.9}
-        onPress={save}
+        onPress={handleOrderPress}
         disabled={saving}
       >
         {saving ? (
@@ -273,8 +270,96 @@ export default function OrderSheet({
     </>
   );
 
+  const getConfirmationItems = () => {
+    const items: { name: string; qty: number; price: number }[] = [];
+    products.forEach((p) => {
+      const productId = String(p._id ?? p.productId);
+      const qty = quantities[productId];
+      const price = Number(p.price || 0);
+      if (qty && qty > 0 && price > 0) {
+        items.push({
+          name: p.productName || p.productId || 'Item',
+          qty,
+          price,
+        });
+      }
+    });
+    return items;
+  };
+
+  const handleOrderPress = () => {
+    if (saving) return;
+    if (editMode) {
+      save();
+    } else {
+      setShowConfirm(true);
+    }
+  };
+
+  const renderConfirmation = () => {
+    if (!showConfirm) return null;
+
+    const items = getConfirmationItems();
+    const otherVal = Number(otherPurchased);
+    const hasOther = !isNaN(otherVal) && otherVal > 0;
+
+    return (
+      <View style={styles.confirmOverlay}>
+        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+        <View style={styles.confirmCard}>
+          <Text style={styles.confirmTitle}>Confirm Order</Text>
+
+          <ScrollView style={styles.confirmList} contentContainerStyle={{ paddingVertical: 10 }}>
+            {items.map((item, idx) => (
+              <View key={`confirm-${idx}`} style={styles.confirmItemRow}>
+                <Text style={styles.confirmItemName}>{item.name}</Text>
+                <Text style={styles.confirmItemQty}>{item.qty}</Text>
+              </View>
+            ))}
+
+            {hasOther && (
+              <View style={styles.confirmItemRow}>
+                <Text style={styles.confirmItemName}>Other</Text>
+                <Text style={styles.confirmItemQty}>{otherVal}</Text>
+              </View>
+            )}
+
+            {items.length === 0 && !hasOther && (
+              <Text
+                style={{
+                  color: '#999',
+                  textAlign: 'center',
+                  marginVertical: 10,
+                }}
+              >
+                No items selected
+              </Text>
+            )}
+          </ScrollView>
+
+          <View style={styles.confirmButtons}>
+            <TouchableOpacity style={styles.btnCancel} onPress={() => setShowConfirm(false)}>
+              <Text style={styles.btnCancelText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.btnConfirm}
+              onPress={() => {
+                setShowConfirm(false);
+                save();
+              }}
+            >
+              <Text style={styles.btnConfirmText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <>
+      {/* Overlay */}
       <Pressable
         style={styles.overlay}
         onPress={() => {
@@ -282,61 +367,38 @@ export default function OrderSheet({
           closeSheet();
         }}
       />
-      {editMode ? (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardAvoidingView}
-          pointerEvents="box-none"
+
+      {/* Bottom Sheet */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+        pointerEvents="box-none"
+      >
+        <Animated.View
+          style={[
+            styles.sheet,
+            {
+              transform: [{ translateY: sheetY }],
+              maxHeight: Math.round(height * 0.6),
+              minHeight: isKeyboardVisible ? Math.round(height * 0.45) : Math.round(height * 0.6),
+              paddingBottom: 24,
+            },
+          ]}
         >
-          <Animated.View
-            style={[
-              styles.sheet,
-              {
-                transform: [{ translateY: sheetY }],
-                maxHeight: Math.round(height * 0.6),
-                minHeight: isKeyboardVisible ? Math.round(height * 0.45) : Math.round(height * 0.6),
-                paddingBottom: 24,
-              },
-            ]}
-          >
-            <View style={styles.sheetHeader}>
-              <View style={styles.dragIndicator} />
-              <Text style={styles.sheetTitle}>
-                {cardNumber ? <Text style={{ fontStyle: 'italic' }}>#{cardNumber} </Text> : null}
-                {selectedName || ''}
-              </Text>
-            </View>
-            <View style={styles.sheetCard}>{renderContent()}</View>
-          </Animated.View>
-        </KeyboardAvoidingView>
-      ) : (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardAvoidingView}
-          pointerEvents="box-none"
-        >
-          <Animated.View
-            style={[
-              styles.sheet,
-              {
-                transform: [{ translateY: sheetY }],
-                maxHeight: Math.round(height * 0.6),
-                minHeight: isKeyboardVisible ? Math.round(height * 0.45) : Math.round(height * 0.6),
-                paddingBottom: 24,
-              },
-            ]}
-          >
-            <View style={styles.sheetHeader}>
-              <View style={styles.dragIndicator} />
-              <Text style={styles.sheetTitle}>
-                {cardNumber ? <Text style={{ fontStyle: 'italic' }}>#{cardNumber} </Text> : null}
-                {selectedName || ''}
-              </Text>
-            </View>
-            <View style={styles.sheetCard}>{renderContent()}</View>
-          </Animated.View>
-        </KeyboardAvoidingView>
-      )}
+          <View style={styles.sheetHeader}>
+            <View style={styles.dragIndicator} />
+            <Text style={styles.sheetTitle}>
+              {cardNumber ? <Text style={{ fontStyle: 'italic' }}>#{cardNumber} </Text> : null}
+              {selectedName || ''}
+            </Text>
+          </View>
+
+          <View style={styles.sheetCard}>{renderContent()}</View>
+        </Animated.View>
+      </KeyboardAvoidingView>
+
+      {/* Confirmation Modal */}
+      {renderConfirmation()}
     </>
   );
 }
@@ -391,9 +453,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  productsList: { gap: 5, backgroundColor: '#fff' },
-  productItem: {
-    flexDirection: 'row',
+  productsList: {
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+  },
+  productCard: {
+    flex: 1,
+    width: '31%', // Approx 1/3 with gaps
+    minWidth: '30%',
+    maxWidth: '33%',
+    flexDirection: 'column',
     alignItems: 'center',
     borderRadius: 16,
     backgroundColor: '#FFFFFF',
@@ -404,12 +473,12 @@ const styles = StyleSheet.create({
   },
   thumbWrap: {
     position: 'relative',
-    marginRight: 12,
+    marginBottom: 10,
   },
   productThumb: {
-    width: 50,
-    height: 50,
-    borderRadius: 10,
+    width: 60,
+    height: 60,
+    borderRadius: 12,
     backgroundColor: '#ffffffff',
   },
   qtyChipImage: {
@@ -432,22 +501,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   productInfoBlock: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   productTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: Colors.light.text,
-    marginBottom: 2,
-  },
-  productSubPrice: {
-    fontSize: 13,
-    color: '#666',
-    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 4,
   },
   rowRight: {
+    // Deprecated but kept for compatibility if referenced elsewhere (it's not)
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -456,14 +522,16 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#fff',
     borderRadius: 20,
     padding: 2,
+    width: '100%',
+    paddingHorizontal: 12,
   },
   pillButton: {
     width: 32,
     height: 32,
-    margin: 5,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
@@ -528,6 +596,7 @@ const styles = StyleSheet.create({
   },
   groupContainer: {
     backgroundColor: '#fff',
+    marginBottom: 16,
   },
   groupHeader: {
     fontSize: 16,
@@ -535,6 +604,16 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 8,
     marginLeft: 4,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  columnWrapper: {
+    gap: 8,
+    justifyContent: 'space-between',
   },
   otherItemRow: {
     flexDirection: 'row',
@@ -553,5 +632,97 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#0d101b',
+  },
+  confirmOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmCard: {
+    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  confirmTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 10,
+    color: '#0d101b',
+    textAlign: 'center',
+  },
+  confirmMessage: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  confirmList: {
+    maxHeight: 200,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+  },
+  confirmItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+  },
+  confirmItemName: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  confirmItemQty: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0d101b',
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  btnCancel: {
+    width: '48%',
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: '#bababaff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnConfirm: {
+    width: '48%',
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: '#0d101b',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0d101b',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  btnCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000ff',
+  },
+  btnConfirmText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
