@@ -14,6 +14,7 @@ export function useAddProduct() {
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Record<string, SelectedProduct>>({});
   const [enteredPrices, setEnteredPrices] = useState<Record<string, string>>({});
+  const [orderIds, setOrderIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -70,6 +71,7 @@ export function useAddProduct() {
         setProducts(list);
         setSelectedProducts(initSelected);
         setEnteredPrices(initPrices);
+        setOrderIds(list.map((p) => p._id));
         setLoading(false);
       } catch {
         setError('Failed to load products');
@@ -80,13 +82,22 @@ export function useAddProduct() {
 
   const items = useMemo(
     () =>
-      products.map((p) => {
-        const id = p._id;
-        const selected = !!selectedProducts[id];
-        const priceText = enteredPrices[id] ?? '';
-        return { id, name: p.name, selected, priceText, icon: p.icon };
-      }),
-    [products, selectedProducts, enteredPrices],
+      orderIds
+        .map((id) => products.find((p) => p._id === id))
+        .filter(Boolean)
+        .map((p) => {
+          const id = (p as CatalogProduct)._id;
+          const selected = !!selectedProducts[id];
+          const priceText = enteredPrices[id] ?? '';
+          return {
+            id,
+            name: (p as CatalogProduct).name,
+            selected,
+            priceText,
+            icon: (p as CatalogProduct).icon,
+          };
+        }),
+    [orderIds, products, selectedProducts, enteredPrices],
   );
 
   function toggle(id: string) {
@@ -127,8 +138,7 @@ export function useAddProduct() {
     try {
       const token = await getItem('token');
       const shopId = await getItem('userId');
-      const payloads = products.map((p) => {
-        const id = p._id;
+      const payloads = orderIds.map((id, index) => {
         const isSelected = !!selectedProducts[id];
         let price = 0;
         if (isSelected) {
@@ -138,6 +148,7 @@ export function useAddProduct() {
           shopId: String(shopId ?? ''),
           productId: id,
           price,
+          order: index + 1,
         };
       });
       const results = await Promise.allSettled(
@@ -160,5 +171,5 @@ export function useAddProduct() {
     }
   }
 
-  return { items, loading, error, toggle, setPriceText, saveAll, saving };
+  return { items, loading, error, toggle, setPriceText, saveAll, saving, setOrderIds };
 }

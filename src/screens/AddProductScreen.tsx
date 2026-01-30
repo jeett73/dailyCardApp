@@ -11,26 +11,29 @@ import {
   Keyboard,
   LayoutAnimation,
   Platform,
-  ScrollView,
+  Pressable,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   UIManager,
 } from 'react-native';
+import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type InputRef = React.ElementRef<typeof TextInput>;
 
 export default function AddProductScreen() {
   const insets = useSafeAreaInsets();
-  const { items, loading, error, toggle, setPriceText, saveAll, saving } = useAddProduct();
-  const scrollRef = useRef<ScrollView | null>(null);
+  const { items, loading, error, toggle, setPriceText, saveAll, saving, setOrderIds } =
+    useAddProduct();
+  const listRef = useRef<import('react-native-gesture-handler').FlatList<any> | null>(null);
   const inputRefs = useRef<Record<string, InputRef | null>>({});
   const cardOffsets = useRef<Record<string, number>>({});
   const inputOffsets = useRef<Record<string, number>>({});
   const lastFocusedIdRef = useRef<string | null>(null);
   const [focusTargetId, setFocusTargetId] = useState<string | null>(null);
   const [keyboardPadding, setKeyboardPadding] = useState(0);
+  const [dragging, setDragging] = useState(false);
 
   const footerBottomPadding = Math.max(insets.bottom, 16);
   const footerHeight = 12 + 50 + footerBottomPadding;
@@ -38,10 +41,10 @@ export default function AddProductScreen() {
   const scrollToProductInput = useCallback((id: string) => {
     const y = inputOffsets.current[id] ?? cardOffsets.current[id] ?? 0;
     const offset = Math.max(0, y - 120);
-    scrollRef.current?.scrollTo({ y: offset, animated: true });
+    listRef.current?.scrollToOffset?.({ offset, animated: true });
     setTimeout(() => {
       if (lastFocusedIdRef.current === id) {
-        scrollRef.current?.scrollTo({ y: offset, animated: true });
+        listRef.current?.scrollToOffset?.({ offset, animated: true });
       }
     }, 250);
   }, []);
@@ -102,81 +105,102 @@ export default function AddProductScreen() {
     if (!items || items.length === 0) {
       return <Text style={styles.emptyText}>No products available</Text>;
     }
-    return items.map((it) => {
-      return (
-        <View
-          key={it.id}
-          style={[styles.productCard, it.selected && styles.productCardSelected]}
-          accessibilityLabel={`${it.name}`}
-          onLayout={(e) => {
-            cardOffsets.current[it.id] = e?.nativeEvent?.layout?.y ?? 0;
-          }}
-        >
-          <View style={[styles.productRow, it.selected && styles.productRowSelected]}>
-            <Image
-              source={{ uri: apiEndpoint.uploads(it.icon) }}
-              style={styles.productThumb}
-              resizeMode="cover"
-            />
-            <View style={styles.productInfo}>
-              <Text style={styles.productTitle} numberOfLines={1}>
-                {it.name}
-              </Text>
-              {it.selected && (
-                <TextInput
-                  ref={(r) => {
-                    inputRefs.current[it.id] = r;
-                  }}
-                  style={styles.priceInput}
-                  placeholder="Enter price"
-                  keyboardType="decimal-pad"
-                  value={it.priceText}
-                  onChangeText={(t) => setPriceText(it.id, t)}
-                  onLayout={(e) => {
-                    const localY = e?.nativeEvent?.layout?.y ?? 0;
-                    inputOffsets.current[it.id] = (cardOffsets.current[it.id] ?? 0) + localY;
-                  }}
-                  onFocus={() => {
-                    lastFocusedIdRef.current = it.id;
-                    scrollToProductInput(it.id);
-                  }}
-                />
-              )}
-            </View>
-            <TouchableOpacity
-              style={[styles.checkbox, it.selected && styles.checkboxChecked]}
-              activeOpacity={0.85}
-              onPress={() => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                if (!it.selected) setFocusTargetId(it.id);
-                toggle(it.id);
-              }}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: it.selected }}
-            >
-              {it.selected && <Feather name="check" size={14} color="#fff" />}
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    });
+    return null;
   }, [items, loading, error, toggle, setPriceText, scrollToProductInput]);
 
   return (
     <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title="Select Product" />
       <View style={styles.flex}>
-        <ScrollView
-          ref={scrollRef}
-          contentContainerStyle={[
-            styles.contentContainer,
-            { paddingTop: insets.top + 90 },
-            { paddingBottom: footerHeight + 24 + keyboardPadding },
-          ]}
-          keyboardShouldPersistTaps="handled"
-        >
-          {content}
-        </ScrollView>
+        {content ? (
+          content
+        ) : (
+          <DraggableFlatList
+            ref={listRef}
+            data={items}
+            keyExtractor={(item) => item.id}
+            activationDistance={0}
+            containerStyle={styles.flex}
+            scrollEnabled={!dragging}
+            contentContainerStyle={[
+              styles.contentContainer,
+              { paddingTop: insets.top + 90 },
+              { paddingBottom: footerHeight + 24 + keyboardPadding },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            onDragBegin={() => setDragging(true)}
+            onDragEnd={({ data }) => {
+              setDragging(false);
+              cardOffsets.current = {};
+              inputOffsets.current = {};
+              setOrderIds(data.map((x) => x.id));
+            }}
+            renderItem={({ item, drag, isActive, getIndex }: RenderItemParams<any>) => {
+              return (
+                <Pressable
+                  style={[
+                    styles.productCard,
+                    item.selected && styles.productCardSelected,
+                    isActive && styles.productCardActive,
+                  ]}
+                  onLongPress={drag}
+                  delayLongPress={200}
+                  accessibilityLabel={`${item.name}`}
+                  onLayout={(e) => {
+                    cardOffsets.current[item.id] = e?.nativeEvent?.layout?.y ?? 0;
+                  }}
+                >
+                  <View style={[styles.productRow, item.selected && styles.productRowSelected]}>
+                    <Image
+                      source={{ uri: apiEndpoint.uploads(item.icon) }}
+                      style={styles.productThumb}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.productInfo}>
+                      <Text style={styles.productTitle} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      {item.selected && (
+                        <TextInput
+                          ref={(r) => {
+                            inputRefs.current[item.id] = r;
+                          }}
+                          style={styles.priceInput}
+                          placeholder="Enter price"
+                          keyboardType="decimal-pad"
+                          value={item.priceText}
+                          onChangeText={(t) => setPriceText(item.id, t)}
+                          onLayout={(e) => {
+                            const localY = e?.nativeEvent?.layout?.y ?? 0;
+                            inputOffsets.current[item.id] =
+                              (cardOffsets.current[item.id] ?? 0) + localY;
+                          }}
+                          onFocus={() => {
+                            lastFocusedIdRef.current = item.id;
+                            scrollToProductInput(item.id);
+                          }}
+                        />
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      style={[styles.checkbox, item.selected && styles.checkboxChecked]}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                        if (!item.selected) setFocusTargetId(item.id);
+                        toggle(item.id);
+                      }}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: item.selected }}
+                    >
+                      {item.selected && <Feather name="check" size={14} color="#fff" />}
+                    </TouchableOpacity>
+                  </View>
+                </Pressable>
+              );
+            }}
+          />
+        )}
         <View
           style={[styles.footer, { paddingBottom: footerBottomPadding, bottom: keyboardPadding }]}
         >
@@ -212,6 +236,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   productCardSelected: { borderColor: Colors.light.tint, backgroundColor: '#fff' },
+  productCardActive: { opacity: 0.9 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
   productRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
   productRowSelected: { backgroundColor: '#fff' },
