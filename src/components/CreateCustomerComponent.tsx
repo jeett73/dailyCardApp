@@ -59,6 +59,8 @@ export function useCreateCustomer(params?: {
     cardNumber: 0,
     depositeAmount: 0,
   });
+  const formContainerOffsetYRef = useRef(0);
+  const lastFocusedFieldRef = useRef<keyof FormState | null>(null);
   const [keyboardPadding, setKeyboardPadding] = useState(0);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -66,6 +68,12 @@ export function useCreateCustomer(params?: {
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', (e: any) => {
       setKeyboardPadding(e?.endCoordinates?.height ?? 0);
+      const field = lastFocusedFieldRef.current;
+      if (field) {
+        setTimeout(() => {
+          if (lastFocusedFieldRef.current === field) scrollToField(field);
+        }, 50);
+      }
     });
     const hideSub = Keyboard.addListener('keyboardDidHide', () => {
       setKeyboardPadding(0);
@@ -189,15 +197,26 @@ export function useCreateCustomer(params?: {
 
   function scrollToField(field: keyof FormState) {
     const y = inputPositions.current[field] ?? 0;
-    const offset = Math.max(0, y - 24);
+    const offset = Math.max(0, y - 120);
     scrollRef.current?.scrollTo({ y: offset, animated: true });
+  }
+
+  function setFormContainerOffsetY(y: number) {
+    formContainerOffsetYRef.current = Number.isFinite(y) ? y : 0;
   }
 
   function getHandlers(field: keyof FormState) {
     return {
-      onFocus: () => scrollToField(field),
+      onFocus: () => {
+        lastFocusedFieldRef.current = field;
+        scrollToField(field);
+        setTimeout(() => {
+          if (lastFocusedFieldRef.current === field) scrollToField(field);
+        }, 250);
+      },
       onLayout: (e: any) => {
-        inputPositions.current[field] = e?.nativeEvent?.layout?.y ?? 0;
+        const localY = e?.nativeEvent?.layout?.y ?? 0;
+        inputPositions.current[field] = formContainerOffsetYRef.current + localY;
       },
     };
   }
@@ -280,6 +299,7 @@ export function useCreateCustomer(params?: {
     keyboardPadding,
     scrollToField,
     getHandlers,
+    setFormContainerOffsetY,
     products,
     productsLoading,
     productsError,

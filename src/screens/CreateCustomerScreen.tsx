@@ -6,7 +6,6 @@ import { useRoute } from '@react-navigation/native';
 import React from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -26,6 +25,7 @@ export default function CreateCustomerScreen() {
     scrollRef,
     keyboardPadding,
     getHandlers,
+    setFormContainerOffsetY,
     products,
     productsLoading,
     productsError,
@@ -37,6 +37,9 @@ export default function CreateCustomerScreen() {
     prefillError,
     errors,
   } = useCreateCustomer(route?.params);
+
+  const footerBottomPadding = Math.max(insets.bottom, 16);
+  const footerHeight = 12 + 50 + footerBottomPadding;
 
   return (
     <View style={[styles.container]}>
@@ -51,13 +54,17 @@ export default function CreateCustomerScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           contentInsetAdjustmentBehavior="automatic"
+          style={styles.flex}
           contentContainerStyle={[
             styles.listContainer,
             { paddingTop: Platform.OS === 'ios' ? 80 : insets.top + 90 },
-            { paddingBottom: Math.max(insets.bottom, 24) + keyboardPadding },
+            { paddingBottom: footerHeight + 24 + keyboardPadding },
           ]}
         >
-          <View style={styles.card}>
+          <View
+            style={styles.card}
+            onLayout={(e) => setFormContainerOffsetY(e?.nativeEvent?.layout?.y ?? 0)}
+          >
             {prefillLoading ? (
               <View style={{ paddingVertical: 8, alignItems: 'center' }}>
                 <ActivityIndicator size="small" color={Colors.light.tint} />
@@ -197,29 +204,34 @@ export default function CreateCustomerScreen() {
                           keyboardType="number-pad"
                           value={qty ? String(qty) : ''}
                           onChangeText={(t) => setProductQty(p.id, t)}
+                          onFocus={() => {
+                            scrollRef.current?.scrollToEnd({ animated: true });
+                            setTimeout(() => {
+                              scrollRef.current?.scrollToEnd({ animated: true });
+                            }, 250);
+                          }}
                         />
                       </View>
                     );
                   })
               )}
             </View>
-
-            <TouchableOpacity
-              style={[styles.saveButton, loading && styles.saveButtonDisabled]}
-              activeOpacity={0.9}
-              onPress={handleSave}
-              disabled={loading}
-            >
-              <Text style={styles.saveButtonText}>
-                {loading ? 'Saving…' : isEdit ? 'Update Customer' : 'Save Customer'}
-              </Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardSpacer}
-        />
+        <View
+          style={[styles.footer, { paddingBottom: footerBottomPadding, bottom: keyboardPadding }]}
+        >
+          <TouchableOpacity
+            style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+            activeOpacity={0.9}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            <Text style={styles.saveButtonText}>
+              {loading ? 'Saving…' : isEdit ? 'Update Customer' : 'Save Customer'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -334,8 +346,16 @@ const styles = StyleSheet.create({
   textArea: {
     height: 80,
   },
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    backgroundColor: Colors.light.background,
+  },
   saveButton: {
-    marginTop: 16,
     height: 50,
     borderRadius: 18,
     alignItems: 'center',
@@ -344,5 +364,4 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: { opacity: 0.7 },
   saveButtonText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  keyboardSpacer: { height: 0 },
 });
