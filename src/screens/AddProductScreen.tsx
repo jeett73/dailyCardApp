@@ -38,17 +38,69 @@ export default function AddProductScreen() {
   const footerBottomPadding = Math.max(insets.bottom, 16);
   const footerHeight = 12 + 50 + footerBottomPadding;
 
-  const scrollToProductInput = useCallback((id: string) => {
-    const y = inputOffsets.current[id] ?? cardOffsets.current[id] ?? 0;
-    const offset = Math.max(0, y - 120);
-    listRef.current?.scrollToOffset?.({ offset, animated: true });
-    setTimeout(() => {
-      if (lastFocusedIdRef.current === id) {
-        listRef.current?.scrollToOffset?.({ offset, animated: true });
-      }
-    }, 250);
-  }, []);
+  const keyboardHeightRef = useRef(0);
+  const scrollYRef = useRef(0);
+  const listHeightRef = useRef(0);
 
+  const scrollToProductInput = useCallback(
+    (id: string) => {
+      if (!listRef.current) return;
+
+      // Get stored Y position of input or card
+      const cardY = cardOffsets.current[id] ?? 0;
+      const inputY = inputOffsets.current[id] ?? 0;
+      const y = cardY + inputY;
+
+      const currentScrollY = scrollYRef.current;
+      const viewHeight = listHeightRef.current;
+      const keyboardHeight = keyboardHeightRef.current;
+
+      if (viewHeight === 0) return;
+
+      // Visible height after keyboard opens
+      const effectiveVisibleHeight = viewHeight - keyboardHeight;
+
+      // Height available for list content after footer
+      const availableHeight = effectiveVisibleHeight - footerHeight;
+
+      // Approximate input size and margin
+      const INPUT_HEIGHT = 60;
+      const MARGIN = 20;
+
+      // Position of input relative to current viewport
+      const inputTop = y - currentScrollY;
+
+      let targetOffset: number | null = null;
+
+      // Case 1: Input is above visible area
+      if (inputTop < MARGIN) {
+        targetOffset = Math.max(0, y - MARGIN);
+      }
+      // Case 2: Input is below visible area (hidden by keyboard/footer)
+      else if (inputTop + INPUT_HEIGHT + MARGIN > availableHeight) {
+        targetOffset = Math.max(0, y + INPUT_HEIGHT - availableHeight + MARGIN);
+      }
+
+      if (targetOffset === null) return;
+
+      // First scroll
+      listRef.current.scrollToOffset({
+        offset: targetOffset,
+        animated: true,
+      });
+
+      // Second scroll to stabilize after keyboard animation
+      setTimeout(() => {
+        if (lastFocusedIdRef.current === id) {
+          listRef.current?.scrollToOffset({
+            offset: targetOffset!,
+            animated: true,
+          });
+        }
+      }, 250);
+    },
+    [footerHeight],
+  );
   useEffect(() => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
       UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -59,6 +111,7 @@ export default function AddProductScreen() {
     const showSub = Keyboard.addListener('keyboardDidShow', (e: any) => {
       const h = e?.endCoordinates?.height ?? 0;
       setKeyboardPadding(h);
+      keyboardHeightRef.current = h;
       const id = lastFocusedIdRef.current;
       if (id) {
         setTimeout(() => {
@@ -68,6 +121,7 @@ export default function AddProductScreen() {
     });
     const hideSub = Keyboard.addListener('keyboardDidHide', () => {
       setKeyboardPadding(0);
+      keyboardHeightRef.current = 0;
     });
     return () => {
       showSub.remove();
@@ -111,13 +165,20 @@ export default function AddProductScreen() {
   return (
     <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title="Select Product" />
-      <View style={styles.flex}>
+      <View
+        style={styles.flex}
+        onLayout={(e) => (listHeightRef.current = e.nativeEvent.layout.height)}
+      >
         {content ? (
           content
         ) : (
           <DraggableFlatList
             ref={listRef}
             data={items}
+            onScroll={(e) => {
+              scrollYRef.current = e.nativeEvent.contentOffset.y;
+            }}
+            scrollEventThrottle={16}
             keyExtractor={(item) => item.id}
             activationDistance={0}
             containerStyle={styles.flex}
@@ -131,8 +192,17 @@ export default function AddProductScreen() {
             onDragBegin={() => setDragging(true)}
             onDragEnd={({ data }) => {
               setDragging(false);
-              cardOffsets.current = {};
-              inputOffsets.current = {};
+              // Preserve approximate Y positions for the new order to prevent scroll jumping
+              // (onLayout will correct these if heights differ, but this covers the no-layout-change case)
+              const currentYs = Object.values(cardOffsets.current).sort((a, b) => a - b);
+              const newOffsets: Record<string, number> = {};
+              data.forEach((item, index) => {
+                if (index < currentYs.length) {
+                  newOffsets[item.id] = currentYs[index];
+                }
+              });
+              cardOffsets.current = newOffsets;
+
               setOrderIds(data.map((x) => x.id));
             }}
             renderItem={({ item, drag, isActive, getIndex }: RenderItemParams<any>) => {
@@ -171,9 +241,7 @@ export default function AddProductScreen() {
                           value={item.priceText}
                           onChangeText={(t) => setPriceText(item.id, t)}
                           onLayout={(e) => {
-                            const localY = e?.nativeEvent?.layout?.y ?? 0;
-                            inputOffsets.current[item.id] =
-                              (cardOffsets.current[item.id] ?? 0) + localY;
+                            inputOffsets.current[item.id] = e?.nativeEvent?.layout?.y ?? 0;
                           }}
                           onFocus={() => {
                             lastFocusedIdRef.current = item.id;
