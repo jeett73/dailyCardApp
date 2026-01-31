@@ -49,10 +49,21 @@ export function useAddProduct() {
         const shopData = (shopRes?.data ?? {}) as any;
         const shopArr = Array.isArray(shopData?.shopProducts) ? shopData?.shopProducts : [];
         const shopMap = new Map<string, number>();
+        const orderMap = new Map<string, number>();
         shopArr.forEach((p: any) => {
           const pid = String(p?.productId || '');
           const price = Number(p?.price ?? 0);
-          if (pid) shopMap.set(pid, price);
+          const order = Number(p?.order ?? 0);
+          if (pid) {
+            shopMap.set(pid, price);
+            orderMap.set(pid, order);
+          }
+        });
+
+        list.sort((a, b) => {
+          const orderA = orderMap.has(a._id) ? orderMap.get(a._id)! : Number.MAX_SAFE_INTEGER;
+          const orderB = orderMap.has(b._id) ? orderMap.get(b._id)! : Number.MAX_SAFE_INTEGER;
+          return orderA - orderB;
         });
 
         const initSelected: Record<string, SelectedProduct> = {};
@@ -151,19 +162,14 @@ export function useAddProduct() {
           order: index + 1,
         };
       });
-      const results = await Promise.allSettled(
-        payloads.map((payload) =>
-          postRequest(apiEndpoint.shopProducts.add, payload, {
-            headers: { authorization: token ? `Bearer ${token}` : '' },
-          }),
-        ),
+      await postRequest(
+        apiEndpoint.shopProducts.add,
+        { products: payloads },
+        {
+          headers: { authorization: token ? `Bearer ${token}` : '' },
+        },
       );
-      const failed = results.filter((r) => r.status === 'rejected').length;
-      if (failed === 0) {
-        navigation.navigate('ProductList');
-      } else {
-        setError(`Failed to add ${failed} product(s)`);
-      }
+      navigation.navigate('ProductList');
     } catch {
       setError('Failed to add product');
     } finally {
