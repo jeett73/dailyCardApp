@@ -11,7 +11,6 @@ import {
   Keyboard,
   LayoutAnimation,
   Platform,
-  Pressable,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -180,7 +179,6 @@ export default function AddProductScreen() {
             }}
             scrollEventThrottle={16}
             keyExtractor={(item) => item.id}
-            activationDistance={0}
             containerStyle={styles.flex}
             scrollEnabled={!dragging}
             contentContainerStyle={[
@@ -188,7 +186,7 @@ export default function AddProductScreen() {
               { paddingTop: insets.top + 90 },
               { paddingBottom: footerHeight + 24 + keyboardPadding },
             ]}
-            keyboardShouldPersistTaps="handled"
+            keyboardShouldPersistTaps="always"
             onDragBegin={() => setDragging(true)}
             onDragEnd={({ data }) => {
               setDragging(false);
@@ -207,7 +205,7 @@ export default function AddProductScreen() {
             }}
             renderItem={({ item, drag, isActive, getIndex }: RenderItemParams<any>) => {
               return (
-                <Pressable
+                <TouchableOpacity
                   style={[
                     styles.productCard,
                     item.selected && styles.productCardSelected,
@@ -215,6 +213,7 @@ export default function AddProductScreen() {
                   ]}
                   onLongPress={drag}
                   delayLongPress={200}
+                  activeOpacity={1}
                   accessibilityLabel={`${item.name}`}
                   onLayout={(e) => {
                     cardOffsets.current[item.id] = e?.nativeEvent?.layout?.y ?? 0;
@@ -264,7 +263,7 @@ export default function AddProductScreen() {
                       {item.selected && <Feather name="check" size={14} color="#fff" />}
                     </TouchableOpacity>
                   </View>
-                </Pressable>
+                </TouchableOpacity>
               );
             }}
           />
