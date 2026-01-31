@@ -61,7 +61,7 @@ export default function OrderSheet({
   dec,
   pulseQty,
   save,
-  saveLabel = 'Order',
+  saveLabel = 'Place Order',
   editMode,
   groupedItems,
   updateOther,
@@ -119,12 +119,6 @@ export default function OrderSheet({
             accessibilityRole="image"
             accessibilityLabel={`${p.productName || p.productId} image`}
           />
-          <Animated.View
-            style={[styles.qtyChipImage, { transform: [{ scale }] }]}
-            accessibilityLabel={`Quantity ${qty}`}
-          >
-            <Text style={styles.qtyChipText}>{qty}</Text>
-          </Animated.View>
         </View>
         <View style={styles.productInfoBlock}>
           <Text style={styles.productTitle} numberOfLines={2}>
@@ -133,7 +127,7 @@ export default function OrderSheet({
         </View>
         <View style={styles.actionRow}>
           <TouchableOpacity
-            style={[styles.pillButton, styles.pillButtonSeconder]}
+            style={styles.qtyBtn}
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={`Decrease quantity for ${p.productName || p.productId}`}
@@ -144,10 +138,11 @@ export default function OrderSheet({
               pulseQty(qtyKey);
             }}
           >
-            <Text style={styles.pillButtonText}>−</Text>
+            <Text style={styles.qtyBtnText}>−</Text>
           </TouchableOpacity>
+          <Animated.Text style={[styles.qtyText, { transform: [{ scale }] }]}>{qty}</Animated.Text>
           <TouchableOpacity
-            style={[styles.pillButton, styles.pillButtonPrimary]}
+            style={styles.qtyBtn}
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={`Increase quantity for ${p.productName || p.productId}`}
@@ -158,7 +153,7 @@ export default function OrderSheet({
               pulseQty(qtyKey);
             }}
           >
-            <Text style={styles.pillButtonText}>+</Text>
+            <Text style={styles.qtyBtnText}>+</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -264,11 +259,48 @@ export default function OrderSheet({
         {saving ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.saveButtonText}>{saveLabel}</Text>
+          <View style={styles.saveButtonContent}>
+            <Text style={styles.saveButtonText}>{saveLabel}</Text>
+            <Text style={styles.saveButtonText}>Total: ₹{calculateTotal()}</Text>
+          </View>
         )}
       </TouchableOpacity>
     </>
   );
+
+  const calculateTotal = () => {
+    let total = 0;
+    if (editMode) {
+      groupedItems?.forEach((group) => {
+        group.products?.forEach((item) => {
+          const shopProduct = products?.find(
+            (sp) => sp._id === item.productId || sp.productId === item.productId,
+          );
+          if (shopProduct) {
+            const price = Number(item.price ?? shopProduct.price ?? 0);
+            const qtyKey = `${item.productId}_${group.time}`;
+            const qty = quantities[qtyKey] ?? 0;
+            total += price * qty;
+          }
+        });
+        group.others?.forEach((other) => {
+          total += Number(other.price || 0);
+        });
+      });
+    } else {
+      products?.forEach((p) => {
+        const qtyKey = String(p._id ?? p.productId);
+        const qty = quantities[qtyKey] ?? 0;
+        const price = Number(p.price || 0);
+        total += price * qty;
+      });
+      const otherVal = Number(otherPurchased);
+      if (!isNaN(otherVal)) {
+        total += otherVal;
+      }
+    }
+    return total;
+  };
 
   const getConfirmationItems = () => {
     const items: { name: string; qty: number; price: number }[] = [];
@@ -305,7 +337,7 @@ export default function OrderSheet({
 
     return (
       <View style={styles.confirmOverlay}>
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={15} tint="dark" style={StyleSheet.absoluteFill} />
         <View style={styles.confirmCard}>
           <Text style={styles.confirmTitle}>Confirm Order</Text>
 
@@ -313,14 +345,14 @@ export default function OrderSheet({
             {items.map((item, idx) => (
               <View key={`confirm-${idx}`} style={styles.confirmItemRow}>
                 <Text style={styles.confirmItemName}>{item.name}</Text>
-                <Text style={styles.confirmItemQty}>{item.qty}</Text>
+                <Text style={styles.confirmItemQty}>[ {item.qty} ]</Text>
               </View>
             ))}
 
             {hasOther && (
               <View style={styles.confirmItemRow}>
                 <Text style={styles.confirmItemName}>Other</Text>
-                <Text style={styles.confirmItemQty}>{otherVal}</Text>
+                <Text style={styles.confirmItemQty}>₹{otherVal}</Text>
               </View>
             )}
 
@@ -335,6 +367,17 @@ export default function OrderSheet({
                 No items selected
               </Text>
             )}
+
+            <Text style={{ textAlign: 'center', color: '#ccc', marginVertical: 4 }}>
+              -----------------------------------
+            </Text>
+
+            <View style={styles.confirmItemRow}>
+              <Text style={[styles.confirmItemName, { fontWeight: '700' }]}>Total</Text>
+              <Text style={[styles.confirmItemQty, { fontWeight: '700' }]}>
+                ₹{calculateTotal()}
+              </Text>
+            </View>
           </ScrollView>
 
           <View style={styles.confirmButtons}>
@@ -481,25 +524,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#ffffffff',
   },
-  qtyChipImage: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: '#0d101b',
-    borderRadius: 20,
-    minWidth: 30,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#fff',
-    zIndex: 2,
-  },
-  qtyChipText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '800',
-  },
+
   productInfoBlock: {
     width: '100%',
     alignItems: 'center',
@@ -524,34 +549,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 2,
+    borderRadius: 8,
     width: '100%',
-    paddingHorizontal: 12,
-  },
-  pillButton: {
-    width: 32,
     height: 32,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.light.tint,
+  },
+  qtyBtn: {
+    width: 32,
+    height: '100%',
+    backgroundColor: Colors.light.tint,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
   },
-  pillButtonPrimary: {
-    backgroundColor: Colors.light.brandPurple,
+  qtyBtnText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '500',
+    marginTop: -2,
   },
-  pillButtonSeconder: {
-    backgroundColor: Colors.light.tint,
-  },
-  pillButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    lineHeight: 20,
+  qtyText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0d101b',
+    flex: 1,
+    textAlign: 'center',
   },
   labelInputRow: {
     flexDirection: 'row',
@@ -590,6 +613,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
+  },
+  saveButtonContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   saveButtonText: {
     color: '#fff',
