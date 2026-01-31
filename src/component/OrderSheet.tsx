@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
   columnWrapper: {
     gap: 8,
