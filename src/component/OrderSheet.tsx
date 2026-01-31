@@ -70,7 +70,7 @@ function OrderConfirmationOverlay({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.confirmOverlay}>
         <BlurView
-          intensity={5}
+          intensity={Platform.OS === 'android' ? 5 : 15}
           tint="dark"
           experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
           style={StyleSheet.absoluteFill}
@@ -540,10 +540,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   productCard: {
-    flex: 1,
     width: '31%', // Approx 1/3 with gaps
-    minWidth: '30%',
-    maxWidth: '33%',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -553,7 +550,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(13,16,27,0.06)',
     padding: 8,
     marginBottom: 8,
-    minHeight: 160,
+    height: 180,
   },
   thumbWrap: {
     position: 'relative',
