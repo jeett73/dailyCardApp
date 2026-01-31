@@ -13,6 +13,7 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -43,6 +44,89 @@ interface OrderSheetProps {
   groupedItems: GroupedItem[];
   updateOther?: (groupIdx: number, otherIdx: number, newPrice: string) => void;
   saving?: boolean;
+}
+
+type OrderConfirmationItem = { name: string; qty: number };
+
+function OrderConfirmationOverlay({
+  visible,
+  items,
+  otherPurchased,
+  total,
+  onCancel,
+  onConfirm,
+}: {
+  visible: boolean;
+  items: OrderConfirmationItem[];
+  otherPurchased: string;
+  total: number;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const otherVal = Number(otherPurchased);
+  const hasOther = !isNaN(otherVal) && otherVal > 0;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={styles.confirmOverlay}>
+        <BlurView
+          intensity={5}
+          tint="dark"
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.confirmCard}>
+          <Text style={styles.confirmTitle}>Confirm Order</Text>
+
+          <ScrollView style={styles.confirmList} contentContainerStyle={{ paddingVertical: 10 }}>
+            {items.map((item, idx) => (
+              <View key={`confirm-${idx}`} style={styles.confirmItemRow}>
+                <Text style={styles.confirmItemName}>{item.name}</Text>
+                <Text style={styles.confirmItemQty}>[ {item.qty} ]</Text>
+              </View>
+            ))}
+
+            {hasOther && (
+              <View style={styles.confirmItemRow}>
+                <Text style={styles.confirmItemName}>Other</Text>
+                <Text style={styles.confirmItemQty}>₹{otherVal}</Text>
+              </View>
+            )}
+
+            {items.length === 0 && !hasOther && (
+              <Text
+                style={{
+                  color: '#999',
+                  textAlign: 'center',
+                  marginVertical: 10,
+                }}
+              >
+                No items selected
+              </Text>
+            )}
+          </ScrollView>
+          <Text style={{ textAlign: 'center', color: '#ccc', marginVertical: 4 }}>
+            -----------------------------------
+          </Text>
+
+          <View style={styles.confirmItemRow}>
+            <Text style={[styles.confirmItemName, { fontWeight: '700' }]}>Total</Text>
+            <Text style={[styles.confirmItemQty, { fontWeight: '700' }]}>₹{total}</Text>
+          </View>
+
+          <View style={styles.confirmButtons}>
+            <TouchableOpacity style={styles.btnCancel} onPress={onCancel}>
+              <Text style={styles.btnCancelText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.btnConfirm} onPress={onConfirm}>
+              <Text style={styles.btnConfirmText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 }
 
 export default function OrderSheet({
@@ -122,9 +206,16 @@ export default function OrderSheet({
         </View>
         <View style={styles.productInfoBlock}>
           <Text style={styles.productTitle} numberOfLines={2}>
-            {p.productName || p.productId}
+            {(p.productName || p.productId)?.split('(')[0]?.trim()}
           </Text>
+
+          {(p.productName || p.productId)?.includes('(') && (
+            <Text style={styles.productTitle} numberOfLines={1}>
+              {(p.productName || p.productId)?.split('(')[1]?.replace(')', '')?.trim()}
+            </Text>
+          )}
         </View>
+
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.qtyBtn}
@@ -332,71 +423,19 @@ export default function OrderSheet({
     if (!showConfirm) return null;
 
     const items = getConfirmationItems();
-    const otherVal = Number(otherPurchased);
-    const hasOther = !isNaN(otherVal) && otherVal > 0;
 
     return (
-      <View style={styles.confirmOverlay}>
-        <BlurView intensity={15} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={styles.confirmCard}>
-          <Text style={styles.confirmTitle}>Confirm Order</Text>
-
-          <ScrollView style={styles.confirmList} contentContainerStyle={{ paddingVertical: 10 }}>
-            {items.map((item, idx) => (
-              <View key={`confirm-${idx}`} style={styles.confirmItemRow}>
-                <Text style={styles.confirmItemName}>{item.name}</Text>
-                <Text style={styles.confirmItemQty}>[ {item.qty} ]</Text>
-              </View>
-            ))}
-
-            {hasOther && (
-              <View style={styles.confirmItemRow}>
-                <Text style={styles.confirmItemName}>Other</Text>
-                <Text style={styles.confirmItemQty}>₹{otherVal}</Text>
-              </View>
-            )}
-
-            {items.length === 0 && !hasOther && (
-              <Text
-                style={{
-                  color: '#999',
-                  textAlign: 'center',
-                  marginVertical: 10,
-                }}
-              >
-                No items selected
-              </Text>
-            )}
-
-            <Text style={{ textAlign: 'center', color: '#ccc', marginVertical: 4 }}>
-              -----------------------------------
-            </Text>
-
-            <View style={styles.confirmItemRow}>
-              <Text style={[styles.confirmItemName, { fontWeight: '700' }]}>Total</Text>
-              <Text style={[styles.confirmItemQty, { fontWeight: '700' }]}>
-                ₹{calculateTotal()}
-              </Text>
-            </View>
-          </ScrollView>
-
-          <View style={styles.confirmButtons}>
-            <TouchableOpacity style={styles.btnCancel} onPress={() => setShowConfirm(false)}>
-              <Text style={styles.btnCancelText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.btnConfirm}
-              onPress={() => {
-                setShowConfirm(false);
-                save();
-              }}
-            >
-              <Text style={styles.btnConfirmText}>Confirm</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <OrderConfirmationOverlay
+        visible={showConfirm}
+        items={items}
+        otherPurchased={otherPurchased}
+        total={calculateTotal()}
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={() => {
+          setShowConfirm(false);
+          save();
+        }}
+      />
     );
   };
 
@@ -507,12 +546,14 @@ const styles = StyleSheet.create({
     maxWidth: '33%',
     flexDirection: 'column',
     alignItems: 'center',
+    justifyContent: 'space-between',
     borderRadius: 16,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: 'rgba(13,16,27,0.06)',
     padding: 8,
     marginBottom: 8,
+    minHeight: 160,
   },
   thumbWrap: {
     position: 'relative',
@@ -522,13 +563,14 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 12,
-    backgroundColor: '#ffffffff',
+    backgroundColor: '#fff',
   },
 
   productInfoBlock: {
     width: '100%',
     alignItems: 'center',
     marginBottom: 10,
+    backgroundColor: '#fff',
   },
   productTitle: {
     fontSize: 14,
@@ -665,13 +707,10 @@ const styles = StyleSheet.create({
     color: '#0d101b',
   },
   confirmOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.25)',
     zIndex: 100,
+    elevation: 100,
     justifyContent: 'center',
     alignItems: 'center',
   },
