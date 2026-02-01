@@ -122,12 +122,7 @@ export default function CustomerDetailScreen() {
   return (
     <View style={styles.container}>
       <HeroHeader color={Colors.light.brandPurple} title="Customer Detail" />
-      <View
-        style={[
-          styles.contentContainer,
-          { paddingTop: Platform.OS === 'ios' ? 110 : insets.top + 90 },
-        ]}
-      >
+      <View style={[styles.body, { paddingTop: Platform.OS === 'ios' ? 110 : insets.top + 90 }]}>
         {loading ? (
           <View style={[styles.centerContainer, { paddingVertical: 24 }]}>
             <ActivityIndicator size="large" color={Colors.light.tint} />
@@ -138,7 +133,7 @@ export default function CustomerDetailScreen() {
           </View>
         ) : (
           <>
-            <View style={styles.customerCard}>
+            <View style={[styles.card, styles.customerCard]}>
               <View style={styles.customerRow}>
                 <AvatarInitials title={customer.name} />
                 <View style={styles.customerInfo}>
@@ -158,22 +153,18 @@ export default function CustomerDetailScreen() {
               </View>
             </View>
 
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Current & Previous Month Dues</Text>
-            </View>
-            {dues.length === 0 ? (
-              <View style={[styles.customerCard, styles.fullWidthCard]}>
-                <View style={[styles.customerRow, styles.centerRow]}>
+            <View style={[styles.card, styles.dueSectionCard]}>
+              <Text style={styles.cardTitle}>Current & Previous Month Dues</Text>
+              {dues.length === 0 ? (
+                <View style={styles.cardBodyCenter}>
                   <Text style={styles.emptyText}>No dues found</Text>
                 </View>
-              </View>
-            ) : (
-              <View style={{ height: 100, backgroundColor: '#fff' }}>
+              ) : (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   style={styles.dueScroll}
-                  contentContainerStyle={{ paddingRight: 16 }}
+                  contentContainerStyle={styles.dueScrollContent}
                 >
                   {dues.map((due, index) => (
                     <TouchableOpacity
@@ -201,70 +192,80 @@ export default function CustomerDetailScreen() {
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
-              </View>
-            )}
+              )}
+            </View>
 
-            {dues.length > 0 && (
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Monthly Orders</Text>
-              </View>
-            )}
+            <View style={[styles.card, styles.monthlyOrdersCard]}>
+              <Text style={styles.cardTitle}>Monthly Orders</Text>
+              {ordersLoading ? (
+                <View style={styles.cardBodyCenter}>
+                  <ActivityIndicator size="small" color={Colors.light.tint} />
+                </View>
+              ) : days.length === 0 ? (
+                <View style={styles.cardBodyCenter}>
+                  <Text style={styles.emptyText}>No orders for this month</Text>
+                </View>
+              ) : (
+                <ScrollView
+                  style={styles.monthlyScroll}
+                  contentContainerStyle={[
+                    styles.monthlyScrollContent,
+                    { paddingBottom: Math.max(insets.bottom, 16) },
+                  ]}
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled
+                >
+                  {days.map((day) => {
+                    const entry = groupedByDay[day];
+                    return (
+                      <StatementCard
+                        key={`day-${day}`}
+                        dayLabel={fmtDay(day)}
+                        orders={entry.orders}
+                        total={entry.total}
+                        scale={1}
+                      />
+                    );
+                  })}
+                </ScrollView>
+              )}
+            </View>
           </>
         )}
       </View>
-
-      {!loading && !error && customer ? (
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={[
-            styles.contentContainer,
-            { paddingBottom: Math.max(insets.bottom, 24) },
-          ]}
-        >
-          {ordersLoading ? (
-            <ActivityIndicator size="small" color={Colors.light.tint} style={{ marginTop: 2 }} />
-          ) : days.length === 0 && dues.length > 0 ? (
-            <View style={[styles.customerCard, styles.fullWidthCard]}>
-              <View style={styles.customerRow}>
-                <Text style={styles.emptyText}>No orders for this month</Text>
-              </View>
-            </View>
-          ) : (
-            days.map((day) => {
-              const entry = groupedByDay[day];
-              return (
-                <StatementCard
-                  key={`day-${day}`}
-                  dayLabel={fmtDay(day)}
-                  orders={entry.orders}
-                  total={entry.total}
-                  scale={1}
-                />
-              );
-            })
-          )}
-        </ScrollView>
-      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: Colors.light.background },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  contentContainer: { paddingHorizontal: 16, backgroundColor: '#fff' },
+  body: { flex: 1, paddingHorizontal: 16, backgroundColor: Colors.light.background },
   errorText: { fontSize: 16, color: '#e53935' },
 
+  card: {
+    marginTop: 12,
+    borderRadius: 16,
+    padding: 16,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  cardTitle: { fontSize: 18, fontWeight: '800', color: Colors.light.text, alignSelf: 'center' },
+  cardBodyCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+
   customerCard: {
-    // backgroundColor: '#fff',
-    // borderRadius: 12,
-    // padding: 16,
-    // marginBottom: 5,
-    // // shadowColor: '#000',
-    // shadowOpacity: 0.05,
-    // shadowRadius: 8,
-    // shadowOffset: { width: 0, height: 4 },
-    // elevation: 3,
+    marginTop: 0,
   },
   customerRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff' },
   centerRow: { justifyContent: 'center', width: '100%' },
@@ -275,10 +276,12 @@ const styles = StyleSheet.create({
   metaValue: { fontSize: 14, color: Colors.light.text, fontWeight: '600' },
   fullWidthCard: { width: '100%' },
 
-  sectionHeader: { marginBottom: 5, marginTop: 5, backgroundColor: '#fff', alignItems: 'center' },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.light.text },
+  dueSectionCard: {
+    paddingBottom: 10,
+  },
 
-  dueScroll: { marginBottom: 5, flexDirection: 'row', backgroundColor: '#fff' },
+  dueScroll: { marginTop: 12, flexDirection: 'row', backgroundColor: 'transparent' },
+  dueScrollContent: { paddingRight: 16 },
   dueCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -298,7 +301,15 @@ const styles = StyleSheet.create({
   dueAmount: { fontSize: 14, color: '#666' },
   dueAmountSelected: { color: 'rgba(255,255,255,0.9)' },
 
-  emptyText: { fontSize: 14, color: '#666', fontStyle: 'italic', marginTop: 8 },
+  monthlyOrdersCard: {
+    flex: 1,
+    paddingBottom: 10,
+    marginBottom: 12,
+  },
+  monthlyScroll: { flex: 1, backgroundColor: 'transparent', marginTop: 6, borderRadius: 12 },
+  monthlyScrollContent: { paddingBottom: 8 },
+
+  emptyText: { fontSize: 14, color: '#666', fontStyle: 'italic' },
 
   statementCard: {
     marginTop: 12,
