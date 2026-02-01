@@ -38,12 +38,13 @@ interface OrderSheetProps {
   inc: (id: string) => void;
   dec: (id: string) => void;
   pulseQty: (id: string) => void;
-  save: () => void;
+  save: (onSuccess?: () => void) => void;
   saveLabel?: string;
   editMode: boolean;
   groupedItems: GroupedItem[];
   updateOther?: (groupIdx: number, otherIdx: number, newPrice: string) => void;
   saving?: boolean;
+  onClear?: () => void;
 }
 
 type OrderConfirmationItem = { name: string; qty: number };
@@ -150,6 +151,7 @@ export default function OrderSheet({
   groupedItems,
   updateOther,
   saving,
+  onClear,
 }: OrderSheetProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -413,7 +415,7 @@ export default function OrderSheet({
   const handleOrderPress = () => {
     if (saving) return;
     if (editMode) {
-      save();
+      save(() => onClear && onClear());
     } else {
       setShowConfirm(true);
     }
@@ -433,7 +435,7 @@ export default function OrderSheet({
         onCancel={() => setShowConfirm(false)}
         onConfirm={() => {
           setShowConfirm(false);
-          save();
+          save(() => onClear && onClear());
         }}
       />
     );
@@ -550,11 +552,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(13,16,27,0.06)',
     padding: 8,
     marginBottom: 8,
-    height: 180,
+    height: 150,
   },
   thumbWrap: {
     position: 'relative',
-    marginBottom: 10,
+    // marginBottom: 2,
   },
   productThumb: {
     width: 60,
@@ -566,7 +568,7 @@ const styles = StyleSheet.create({
   productInfoBlock: {
     width: '100%',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 0,
     backgroundColor: '#fff',
   },
   productTitle: {
@@ -574,7 +576,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.light.text,
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 0,
   },
   rowRight: {
     // Deprecated but kept for compatibility if referenced elsewhere (it's not)
@@ -680,6 +682,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'flex-start',
+    backgroundColor: '#fff',
   },
   columnWrapper: {
     gap: 8,

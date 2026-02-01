@@ -127,7 +127,7 @@ export function useOrder() {
         productName: String(p?.productName || ''),
         icon: String(p?.icon || ''),
       }));
-      setProducts(list);
+      let productsToShow = list;
 
       const nextQuantities: Record<string, number> = {};
 
@@ -207,13 +207,28 @@ export function useOrder() {
             }
           }
         }
-        for (const p of list) {
-          const q = regMap[String(p._id)];
+        if (Object.keys(regMap).length > 0) {
+          const indexed = productsToShow.map((p, idx) => ({
+            p,
+            idx,
+            qty: regMap[String(p._id)] ?? 0,
+          }));
+          indexed.sort((a, b) => {
+            const qDiff = b.qty - a.qty;
+            if (qDiff !== 0) return qDiff;
+            return a.idx - b.idx;
+          });
+          productsToShow = indexed.map((x) => x.p);
+        }
+
+        for (const p of productsToShow) {
+          const q = regMap[String(p._id)] ?? 0;
           if (typeof q === 'number' && q > 0) {
             nextQuantities[p._id] = q;
           }
         }
       }
+      setProducts(productsToShow);
       setQuantities(nextQuantities);
     } catch (e) {
       setProducts([]);
