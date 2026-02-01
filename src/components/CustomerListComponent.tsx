@@ -1,7 +1,7 @@
 import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Customer = {
@@ -154,15 +154,17 @@ export function useCustomerList(searchQuery = '') {
     [LIMIT],
   );
 
-  useEffect(() => {
-    setLoading(true);
-    activeQueryRef.current = debouncedQuery;
-    requestedPagesByQueryRef.current = new Map();
-    hasMoreRef.current = true;
-    setHasMore(true);
-    pageRef.current = 1;
-    fetchCustomers(true, debouncedQuery);
-  }, [debouncedQuery, fetchCustomers]);
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      activeQueryRef.current = debouncedQuery;
+      requestedPagesByQueryRef.current = new Map();
+      hasMoreRef.current = true;
+      setHasMore(true);
+      pageRef.current = 1;
+      fetchCustomers(true, debouncedQuery);
+    }, [debouncedQuery, fetchCustomers]),
+  );
 
   const items = useMemo(
     () =>

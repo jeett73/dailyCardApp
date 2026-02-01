@@ -282,7 +282,7 @@ export function useCreateCustomer(params?: {
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
       }
-      navigation.navigate('CustomerList');
+      navigation.goBack();
     } catch {
     } finally {
       setLoading(false);

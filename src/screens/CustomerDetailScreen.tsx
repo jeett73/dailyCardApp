@@ -159,7 +159,7 @@ export default function CustomerDetailScreen() {
             </View>
 
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Due Months</Text>
+              <Text style={styles.sectionTitle}>Current & Previous Month Dues</Text>
             </View>
             {dues.length === 0 ? (
               <View style={[styles.customerCard, styles.fullWidthCard]}>
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   metaValue: { fontSize: 14, color: Colors.light.text, fontWeight: '600' },
   fullWidthCard: { width: '100%' },
 
-  sectionHeader: { marginBottom: 5, marginTop: 5, backgroundColor: '#fff' },
+  sectionHeader: { marginBottom: 5, marginTop: 5, backgroundColor: '#fff', alignItems: 'center' },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.light.text },
 
   dueScroll: { marginBottom: 5, flexDirection: 'row', backgroundColor: '#fff' },
