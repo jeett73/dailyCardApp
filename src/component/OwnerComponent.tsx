@@ -20,15 +20,26 @@ export function useOwner() {
   const { width } = useWindowDimensions();
   const [query, setQuery] = useState('');
   const [input, setInput] = useState('');
+  const [debouncedInput, setDebouncedInput] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customersLoading, setCustomersLoading] = useState(false);
 
   const orderLogic = useOrder();
 
   useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedInput(input);
+    }, 200);
+    if (!input) {
+      setDebouncedInput('');
+    }
+    return () => clearTimeout(t);
+  }, [input]);
+
+  useEffect(() => {
     let cancelled = false;
     async function fetchCustomers() {
-      const q = input.trim();
+      const q = debouncedInput.trim();
       if (!q) {
         if (!cancelled) setCustomersLoading(false);
         if (!cancelled) setCustomers([]);
@@ -63,7 +74,7 @@ export function useOwner() {
     return () => {
       cancelled = true;
     };
-  }, [input]);
+  }, [debouncedInput]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

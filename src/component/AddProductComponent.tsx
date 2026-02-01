@@ -169,7 +169,7 @@ export function useAddProduct() {
           headers: { authorization: token ? `Bearer ${token}` : '' },
         },
       );
-      navigation.navigate('ProductList');
+      navigation.goBack();
     } catch {
       setError('Failed to add product');
     } finally {
