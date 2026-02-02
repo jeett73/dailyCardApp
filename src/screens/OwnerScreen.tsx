@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   keyText: {
-    fontSize: 18,
+    fontSize: 35,
     fontWeight: '700',
     color: '#fff',
   },

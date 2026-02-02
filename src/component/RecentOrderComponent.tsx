@@ -47,7 +47,8 @@ function toTitleCaseLocal(s: string) {
     .join(' ');
 }
 
-export function useRecentOrder() {
+export function useRecentOrder(searchQuery = '') {
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,13 +61,21 @@ export function useRecentOrder() {
   const requestedPagesRef = useRef<Set<number>>(new Set());
   const requestSeqRef = useRef(0);
   const inFlightSeqRef = useRef<number | null>(null);
+  const activeQueryRef = useRef('');
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQuery(String(searchQuery ?? ''));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
   function orderKey(o: RecentOrder) {
     return String(o._id ?? '');
   }
 
   const fetchOrders = useCallback(
-    async (reset: boolean) => {
+    async (reset: boolean, query: string) => {
       const seq = ++requestSeqRef.current;
 
       if (reset) {
@@ -90,7 +99,9 @@ export function useRecentOrder() {
 
       try {
         const shopId = await getItem('userId');
-        const res = await getRequest(apiEndpoint.cards.recentOrder(shopId!, currentPage, LIMIT));
+        const res = await getRequest(
+          apiEndpoint.cards.recentOrder(shopId!, currentPage, LIMIT, query),
+        );
 
         const data = (res?.data ?? []) as any;
         const arr = Array.isArray(data?.orders) ? data?.orders : Array.isArray(data) ? data : [];
@@ -112,6 +123,10 @@ export function useRecentOrder() {
           cardId: item?.cardId || item?.card?._id || item?.card,
           day: item?.day,
         }));
+
+        if (activeQueryRef.current !== query) {
+          return;
+        }
 
         if (reset) {
           setOrders(list);
@@ -145,12 +160,13 @@ export function useRecentOrder() {
 
   useEffect(() => {
     setLoading(true);
+    activeQueryRef.current = debouncedQuery;
     requestedPagesRef.current = new Set();
     hasMoreRef.current = true;
     setHasMore(true);
     pageRef.current = 1;
-    fetchOrders(true);
-  }, [fetchOrders]);
+    fetchOrders(true, debouncedQuery);
+  }, [debouncedQuery, fetchOrders]);
 
   const items = useMemo(
     () =>
@@ -172,8 +188,8 @@ export function useRecentOrder() {
     loadingMore,
     refreshing,
     error,
-    refresh: () => fetchOrders(true),
-    loadMore: () => fetchOrders(false),
+    refresh: () => fetchOrders(true, debouncedQuery),
+    loadMore: () => fetchOrders(false, debouncedQuery),
     hasMore,
   };
 }

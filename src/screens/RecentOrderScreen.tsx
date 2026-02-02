@@ -5,14 +5,23 @@ import HeroHeader, { AvatarInitials } from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
-import React from 'react';
-import { ActivityIndicator, FlatList, Platform, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function RecentOrderScreen() {
   const insets = useSafeAreaInsets();
+  const [query, setQuery] = useState('');
+  const searchInputRef = useRef<TextInput>(null);
   const { items, loading, loadingMore, refreshing, error, refresh, loadMore, hasMore } =
-    useRecentOrder();
+    useRecentOrder(query);
 
   // Initialize order logic
   const orderLogic = useOrder();
@@ -97,6 +106,19 @@ export default function RecentOrderScreen() {
     <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title="Recent Orders" />
       <View style={{ paddingTop: Platform.OS === 'ios' ? 130 : insets.top + 90, flex: 1 }}>
+        <View style={styles.searchBar}>
+          <TextInput
+            ref={searchInputRef}
+            style={styles.searchInput}
+            placeholder="Search orders..."
+            placeholderTextColor="#aaa"
+            value={query}
+            onChangeText={setQuery}
+          />
+          <View style={styles.searchIconWrap}>
+            <Text style={styles.searchIcon}>🔍</Text>
+          </View>
+        </View>
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
@@ -218,5 +240,41 @@ const styles = StyleSheet.create({
   productDetails: {
     fontSize: 13,
     color: '#666',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 10,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.08)',
+    paddingLeft: 16,
+    paddingRight: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    width: '90%',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  searchIconWrap: {
+    marginLeft: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchIcon: {
+    fontSize: 16,
+    color: '#0d101b',
   },
 });
