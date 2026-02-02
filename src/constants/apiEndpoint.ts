@@ -33,8 +33,8 @@ const apiEndpoint = {
     dueCards: (customerId: string, shopId: string) =>
       url(`/cards/due-cards?customerId=${customerId}&shopId=${shopId}`),
     payment: url('/cards/payment-done'),
-    recentOrder: (shopId: string, page: number, limit: number) =>
-      url(`/cards/recent-orders?shopId=${shopId}&page=${page}&limit=${limit}`),
+    recentOrder: (shopId: string, page: number, limit: number, q?: string) =>
+      url(`/cards/recent-orders?shopId=${shopId}&page=${page}&limit=${limit}${q ? `&q=${q}` : ''}`),
     updateOrderPost: url('/cards/update-order'),
     duesDetails: (customerId: string, shopId: string) =>
       url(`/cards/dues-details?customerId=${customerId}&shopId=${shopId}`),
