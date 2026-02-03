@@ -1,18 +1,25 @@
+import { deleteRequest } from '@/api/apiMethods';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { useCustomerList } from '@/components/CustomerListComponent';
 import HeroHeader, { AvatarInitials } from '@/components/HeroHeader';
 import PaymentModal from '@/components/PaymentModal';
 import { Text, View } from '@/components/Themed';
+import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
+import { getItem } from '@/services/storage';
 import Feather from '@expo/vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
+  Modal,
   Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,31 +39,74 @@ export default function CustomerListScreen() {
   } | null>(null);
   const [dueOverrides, setDueOverrides] = useState<Record<string, number>>({});
 
+  // Menu State
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+
+  // Delete Modal State
+  const [customerToDelete, setCustomerToDelete] = useState<any>(null);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorModalTitle, setErrorModalTitle] = useState('');
+  const [errorModalMessage, setErrorModalMessage] = useState('');
+
+  const handleDelete = async (customer: any) => {
+    const hasDue = customer.previousMonthDue > 0;
+    const hasDeposit = customer.deposit > 0;
+
+    // Build message
+    let message = '';
+    if (hasDue || hasDeposit) {
+      const issues = [];
+      if (hasDue) issues.push(`₹${customer.previousMonthDue} due`);
+      if (hasDeposit) issues.push(`₹${customer.deposit} deposit`);
+      message = `This customer has ${issues.join(' and ')}. Are you sure you want to delete ${customer.name}?`;
+    } else {
+      message = `Are you sure you want to delete ${customer.name}?`;
+    }
+
+    setErrorModalTitle('Delete Customer');
+    setErrorModalMessage(message);
+    setCustomerToDelete(customer);
+    setErrorModalVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!customerToDelete) return;
+    try {
+      const token = await getItem('token');
+      await deleteRequest(apiEndpoint.customers.delete(customerToDelete.id), {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      refresh();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCustomerToDelete(null);
+    }
+  };
+
   const renderItem = React.useCallback(
     ({ item }: { item: any }) => {
       const override = dueOverrides[item.id];
       const currentDue =
         typeof override === 'number' ? override : Number(item?.previousMonthDue ?? 0);
-      const canPay = currentDue > 0;
 
-      function handleEdit() {
-        navigation.navigate('CreateCustomer', {
-          mode: 'edit',
-          initial: item,
-        });
-      }
+      const handleMenuPress = (event: any) => {
+        const { pageX, pageY } = event.nativeEvent;
+        const screenHeight = Dimensions.get('window').height;
+        const menuHeight = 160; // Approximate menu height
 
-      function handlePayment() {
-        if (!canPay) return;
-        setPaymentCustomer({
-          id: item.id,
-          name: item.name,
-          phone: item.phone || item.mobile,
-          cardNumber: item.cardNumber || item.card,
-          previousMonthDue: Number(item?.previousMonthDue ?? 0),
-        });
-        setPaymentOpen(true);
-      }
+        let top = pageY + 10;
+        // If menu would go off screen bottom, show it above the touch point
+        if (pageY + menuHeight > screenHeight - 20) {
+          top = pageY - menuHeight;
+        }
+
+        setMenuPosition({ x: pageX - 130, y: top });
+        setSelectedCustomer({ ...item, currentDue });
+        setMenuVisible(true);
+      };
 
       return (
         <TouchableOpacity
@@ -83,22 +133,12 @@ export default function CustomerListScreen() {
               <View style={currentDue > 0 ? styles.actionsRowDue : styles.actionsRow}>
                 <TouchableOpacity
                   style={styles.actionBtn}
-                  activeOpacity={0.8}
-                  onPress={handleEdit}
+                  activeOpacity={0.6}
+                  onPress={handleMenuPress}
                   accessibilityRole="button"
-                  accessibilityLabel="Edit customer"
+                  accessibilityLabel="More options"
                 >
-                  <Feather name="edit-3" size={18} color="#0d101b" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionBtn}
-                  activeOpacity={0.8}
-                  onPress={handlePayment}
-                  disabled={!canPay}
-                  accessibilityRole="button"
-                  accessibilityLabel="Pay due"
-                >
-                  <Text style={styles.actionIcon}>₹</Text>
+                  <Feather name="more-vertical" size={20} color="#0d101b" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -193,6 +233,82 @@ export default function CustomerListScreen() {
             setDueOverrides((m) => ({ ...m, [paymentCustomer.id]: next }));
           }
           setPaymentCustomer(null);
+        }}
+      />
+
+      {/* Action Menu Modal */}
+      <Modal transparent visible={menuVisible} animationType="fade" onRequestClose={() => setMenuVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
+          <View style={styles.menuOverlay}>
+            <View style={[styles.menuContainer, { top: menuPosition.y, left: menuPosition.x }]}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('CreateCustomer', {
+                    mode: 'edit',
+                    initial: selectedCustomer,
+                  });
+                }}
+              >
+                <Feather name="edit-3" size={18} color="#333" />
+                <Text style={styles.menuItemText}>Edit</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.menuItem, selectedCustomer?.currentDue <= 0 && { opacity: 0.5 }]}
+                disabled={selectedCustomer?.currentDue <= 0}
+                onPress={() => {
+                  setMenuVisible(false);
+                  if (selectedCustomer) {
+                    setPaymentCustomer({
+                      id: selectedCustomer.id,
+                      name: selectedCustomer.name,
+                      phone: selectedCustomer.phone || selectedCustomer.mobile,
+                      cardNumber: selectedCustomer.cardNumber || selectedCustomer.card,
+                      previousMonthDue: Number(selectedCustomer.currentDue ?? 0),
+                    });
+                    setPaymentOpen(true);
+                  }
+                }}
+              >
+                <Text style={{ fontSize: 18, width: 18, textAlign: 'center', color: '#333' }}>₹</Text>
+                <Text style={styles.menuItemText}>Pay Due</Text>
+              </TouchableOpacity>
+
+              <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 4 }} />
+
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  if (selectedCustomer) handleDelete(selectedCustomer);
+                }}
+              >
+                <Feather name="trash-2" size={18} color="#ff3b30" />
+                <Text style={[styles.menuItemText, { color: '#ff3b30' }]}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+      {/* Warning/Error Modal */}
+      <ConfirmationModal
+        visible={errorModalVisible}
+        title={errorModalTitle}
+        message={errorModalMessage}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setErrorModalVisible(false);
+          // If customer is set, proceed with deletion
+          if (customerToDelete) {
+            confirmDelete();
+          }
+        }}
+        onCancel={() => {
+          setErrorModalVisible(false);
+          setCustomerToDelete(null);
         }}
       />
     </View>
@@ -326,4 +442,37 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabText: { fontSize: 28, fontWeight: '800', color: '#fff', lineHeight: 28 },
+
+  // Menu Styles
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  menuContainer: {
+    position: 'absolute',
+    width: 160,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  menuItemText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 12,
+  },
 });

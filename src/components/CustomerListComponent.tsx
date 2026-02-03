@@ -10,6 +10,7 @@ type Customer = {
   cardNumber?: string | number;
   phone?: string | number;
   previousMonthDue?: number;
+  deposit?: number;
 };
 
 function formatCardNumber(card?: string | number) {
@@ -117,6 +118,7 @@ export function useCustomerList(searchQuery = '') {
             cardNumber: item?.cardNumber,
             phone: item?.phone,
             previousMonthDue: Number(item?.previousMonthDue ?? 0),
+            deposit: Number(item?.deposit ?? 0),
           }))
           .filter((c: Customer) => !!(c.name && String(c.name).trim()));
 
@@ -177,6 +179,7 @@ export function useCustomerList(searchQuery = '') {
         previousMonthDue: Number(c?.previousMonthDue ?? 0),
         phone: String(c?.phone ?? ''),
         cardNumber: String(c?.cardNumber ?? ''),
+        deposit: Number(c?.deposit ?? 0),
       })),
     [customers],
   );

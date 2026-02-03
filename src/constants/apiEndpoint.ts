@@ -23,6 +23,7 @@ const apiEndpoint = {
     customerById: (id: Id) => url(`/customers/${id}`),
     add: url('/customers/add'),
     update: (id: Id) => url(`/customers/${id}`),
+    delete: (id: Id) => url(`/customers/${id}`),
   },
   cards: {
     order: url('/cards/order'),
