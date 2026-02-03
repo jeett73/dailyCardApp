@@ -1,5 +1,6 @@
 import { getRequest, postRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
+import { getCachedProducts, setCachedProducts } from '@/services/productCacheService';
 import { getItem } from '@/services/storage';
 import { useMemo, useRef, useState } from 'react';
 import { Animated, useWindowDimensions } from 'react-native';
@@ -111,22 +112,42 @@ export function useOrder() {
   async function loadProducts(customer: Customer, orderToEdit?: any) {
     setProductsLoading(true);
     try {
-      const token = await getItem('token');
-      const storedShopId = await getItem('userId');
-      const shopId = storedShopId;
-      const res = await getRequest(apiEndpoint.shopProducts.listShopProducts, {
-        params: { shopId },
-        headers: { authorization: token ? `Bearer ${token}` : '' },
-      });
-      const data = (res?.data ?? {}) as any;
-      const arr = Array.isArray(data?.shopProducts) ? data?.shopProducts : [];
-      const list: ShopProduct[] = arr.map((p: any) => ({
-        _id: String(p?._id || ''),
-        productId: String(p?.productId || ''),
-        price: Number(p?.price ?? 0),
-        productName: String(p?.productName || ''),
-        icon: String(p?.icon || ''),
-      }));
+      // Try to get cached products first
+      const cachedProducts = await getCachedProducts();
+      let list: ShopProduct[] = [];
+
+      if (cachedProducts && cachedProducts.length > 0) {
+        // Use cached data - no API call needed!
+        list = cachedProducts.map((p: any) => ({
+          _id: String(p?._id || ''),
+          productId: String(p?.productId || ''),
+          price: Number(p?.price ?? 0),
+          productName: String(p?.productName || ''),
+          icon: String(p?.icon || ''),
+        }));
+      } else {
+        // Cache is empty, fetch from API
+        const token = await getItem('token');
+        const storedShopId = await getItem('userId');
+        const shopId = storedShopId;
+        const res = await getRequest(apiEndpoint.shopProducts.listShopProducts, {
+          params: { shopId },
+          headers: { authorization: token ? `Bearer ${token}` : '' },
+        });
+        const data = (res?.data ?? {}) as any;
+        const arr = Array.isArray(data?.shopProducts) ? data?.shopProducts : [];
+        list = arr.map((p: any) => ({
+          _id: String(p?._id || ''),
+          productId: String(p?.productId || ''),
+          price: Number(p?.price ?? 0),
+          productName: String(p?.productName || ''),
+          icon: String(p?.icon || ''),
+        }));
+
+        // Update cache for next time
+        await setCachedProducts(list);
+      }
+
       let productsToShow = list;
 
       const nextQuantities: Record<string, number> = {};
@@ -327,11 +348,11 @@ export function useOrder() {
         const others =
           otherAmount > 0
             ? [
-                {
-                  time: time,
-                  price: otherAmount,
-                },
-              ]
+              {
+                time: time,
+                price: otherAmount,
+              },
+            ]
             : [];
 
         const payload = {
