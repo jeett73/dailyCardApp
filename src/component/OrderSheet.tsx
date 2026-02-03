@@ -305,43 +305,43 @@ export default function OrderSheet({
           })}
         </ScrollView>
       ) : // Add Order Mode
-      productsLoading ? (
-        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-          <ActivityIndicator size="small" color={Colors.light.tint} />
-        </View>
-      ) : products.length === 0 ? (
-        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-          <Text style={{ color: '#666', fontWeight: '600' }}>No products found</Text>
-        </View>
-      ) : (
-        <>
-          <FlatList
-            style={{ maxHeight: isKeyboardVisible ? 180 : height * 0.6 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            nestedScrollEnabled
-            removeClippedSubviews={false}
-            data={products?.filter((p) => p.price) ?? []}
-            keyExtractor={(item, index) => `list-${String(item._id ?? item.productId)}-${index}`}
-            contentContainerStyle={styles.productsList}
-            numColumns={3}
-            columnWrapperStyle={styles.columnWrapper}
-            renderItem={({ item, index }) => renderProductItem(item, index, 'list-')}
-          />
-          <View style={styles.labelInputRow}>
-            <Text style={styles.label50}>Other</Text>
-            <TextInput
-              style={styles.input50}
-              value={otherPurchased}
-              onChangeText={(t) => setOtherPurchased(t.replace(/\D/g, ''))}
-              keyboardType="numeric"
-              placeholderTextColor="#666"
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-            />
+        productsLoading ? (
+          <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color={Colors.light.tint} />
           </View>
-        </>
-      )}
+        ) : products.length === 0 ? (
+          <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+            <Text style={{ color: '#666', fontWeight: '600' }}>No products found</Text>
+          </View>
+        ) : (
+          <>
+            <FlatList
+              style={{ maxHeight: isKeyboardVisible ? 180 : height * 0.6 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+              removeClippedSubviews={false}
+              data={products?.filter((p) => p.price) ?? []}
+              keyExtractor={(item, index) => `list-${String(item._id ?? item.productId)}-${index}`}
+              contentContainerStyle={styles.productsList}
+              numColumns={3}
+              columnWrapperStyle={styles.columnWrapper}
+              renderItem={({ item, index }) => renderProductItem(item, index, 'list-')}
+            />
+            <View style={styles.labelInputRow}>
+              <Text style={styles.label50}>Other</Text>
+              <TextInput
+                style={styles.input50}
+                value={otherPurchased}
+                onChangeText={(t) => setOtherPurchased(t.replace(/\D/g, ''))}
+                keyboardType="numeric"
+                placeholderTextColor="#666"
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+              />
+            </View>
+          </>
+        )}
 
       <TouchableOpacity
         style={[styles.saveButton, saving && { opacity: 0.7 }]}
@@ -686,7 +686,7 @@ const styles = StyleSheet.create({
   },
   columnWrapper: {
     gap: 8,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
   otherItemRow: {
     flexDirection: 'row',
