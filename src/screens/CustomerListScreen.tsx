@@ -394,7 +394,8 @@ const styles = StyleSheet.create({
   actionsRow: {
     position: 'absolute',
     right: 8,
-    top: 8,
+    top: '50%',
+    transform: [{ translateY: -16 }],
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -404,7 +405,8 @@ const styles = StyleSheet.create({
   actionsRowDue: {
     position: 'absolute',
     right: 8,
-    top: 8,
+    top: '50%',
+    transform: [{ translateY: -16 }],
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,

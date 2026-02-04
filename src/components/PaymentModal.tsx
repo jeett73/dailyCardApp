@@ -4,10 +4,12 @@ import { AvatarInitials } from '@/components/HeroHeader';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
 import { getItem } from '@/services/storage';
+import { BlurView } from 'expo-blur';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -106,6 +108,12 @@ export default function PaymentModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => onClose()}>
       <View style={styles.overlay}>
+        <BlurView
+          intensity={Platform.OS === 'android' ? 5 : 15}
+          tint="dark"
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.card}>
           <Text style={styles.title}>Payment</Text>
           {customer ? (
@@ -192,7 +200,7 @@ export default function PaymentModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0,0,0,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,

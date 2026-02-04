@@ -32,7 +32,7 @@ export default function RecentOrderScreen() {
       function handleEdit() {
         // Construct a customer object for display
         // Open sheet in edit mode
-        openSheet({ ...item.raw.customer, name: item.name }, item.raw);
+        openSheet({ ...item.raw.customer, name: item.name, cardNumber: item.raw.cardNumber }, item.raw);
       }
 
       return (
