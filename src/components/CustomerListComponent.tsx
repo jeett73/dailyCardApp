@@ -34,7 +34,7 @@ function toTitleCaseLocal(s: string) {
     .join(' ');
 }
 
-export function useCustomerList(searchQuery = '') {
+export function useCustomerList(searchQuery = '', showDueOnly = false, sortBy: 'none' | 'card' | 'name' = 'none') {
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -99,8 +99,18 @@ export function useCustomerList(searchQuery = '') {
         const token = await getItem('token');
         const shopId = await getItem('userId');
 
+        const params: any = { shopId, page: currentPage, limit: LIMIT, q: query };
+
+        // Add filter parameters
+        if (showDueOnly) {
+          params.dueOnly = 'true';
+        }
+        if (sortBy !== 'none') {
+          params.sortBy = sortBy;
+        }
+
         const res = await getRequest(apiEndpoint.customers.list, {
-          params: { shopId, page: currentPage, limit: LIMIT, q: query },
+          params,
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
 
@@ -155,6 +165,19 @@ export function useCustomerList(searchQuery = '') {
     },
     [LIMIT],
   );
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    if (activeQueryRef.current !== '') {
+      setLoading(true);
+      activeQueryRef.current = debouncedQuery;
+      requestedPagesByQueryRef.current = new Map();
+      hasMoreRef.current = true;
+      setHasMore(true);
+      pageRef.current = 1;
+      fetchCustomers(true, debouncedQuery);
+    }
+  }, [showDueOnly, sortBy, fetchCustomers, debouncedQuery]);
 
   useFocusEffect(
     useCallback(() => {
