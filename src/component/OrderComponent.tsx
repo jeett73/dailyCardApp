@@ -258,7 +258,7 @@ export function useOrder() {
     }
   }
 
-  async function save(onSuccess?: () => void) {
+  async function save(onSuccess?: () => void, options: { autoClose?: boolean } = { autoClose: true }) {
     if (saving) return;
     setSaving(true);
     try {
@@ -341,7 +341,9 @@ export function useOrder() {
           if (editMode) {
             // Should not reach here due to if check above
           } else {
-            closeSheet();
+            if (options.autoClose) {
+              closeSheet();
+            }
             return;
           }
         }
@@ -373,7 +375,10 @@ export function useOrder() {
       console.error(e);
     } finally {
       setSaving(false);
-      closeSheet();
+      // Let the UI handle closing (e.g. after animation)
+      // if (options.autoClose) {
+      //   closeSheet();
+      // }
     }
   }
 

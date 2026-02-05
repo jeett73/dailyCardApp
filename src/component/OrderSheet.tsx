@@ -38,7 +38,7 @@ interface OrderSheetProps {
   inc: (id: string) => void;
   dec: (id: string) => void;
   pulseQty: (id: string) => void;
-  save: (onSuccess?: () => void) => void;
+  save: (onSuccess?: () => void, options?: { autoClose?: boolean }) => void;
   saveLabel?: string;
   editMode: boolean;
   groupedItems: GroupedItem[];
@@ -130,6 +130,39 @@ function OrderConfirmationOverlay({
   );
 }
 
+function SuccessOverlay({
+  visible,
+  title = 'Order Placed!',
+  message = 'Your order has been confirmed successfully.',
+}: {
+  visible: boolean;
+  title?: string;
+  message?: string;
+}) {
+  if (!visible) return null;
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.confirmOverlay}>
+        <BlurView
+          intensity={Platform.OS === 'android' ? 5 : 15}
+          tint="dark"
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={[styles.confirmCard, { alignItems: 'center', paddingVertical: 30 }]}>
+          <Image
+            source={require('../../assets/Success.gif')}
+            style={{ width: 120, height: 120, marginBottom: 16 }}
+            resizeMode="contain"
+          />
+          <Text style={[styles.confirmTitle, { marginBottom: 8 }]}>{title}</Text>
+          <Text style={styles.confirmMessage}>{message}</Text>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function OrderSheet({
   sheetVisible,
   sheetY,
@@ -156,6 +189,7 @@ export default function OrderSheet({
   const [isFocused, setIsFocused] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   React.useEffect(() => {
     const showSubscription = Keyboard.addListener(
@@ -415,7 +449,18 @@ export default function OrderSheet({
   const handleOrderPress = () => {
     if (saving) return;
     if (editMode) {
-      save(() => onClear && onClear());
+      save(
+        () => {
+          setShowSuccess(true);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setTimeout(() => {
+            setShowSuccess(false);
+            if (onClear) onClear();
+            closeSheet();
+          }, 2500);
+        },
+        { autoClose: false },
+      );
     } else {
       setShowConfirm(true);
     }
@@ -435,7 +480,18 @@ export default function OrderSheet({
         onCancel={() => setShowConfirm(false)}
         onConfirm={() => {
           setShowConfirm(false);
-          save(() => onClear && onClear());
+          save(
+            () => {
+              setShowSuccess(true);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setTimeout(() => {
+                setShowSuccess(false);
+                if (onClear) onClear();
+                closeSheet();
+              }, 2500);
+            },
+            { autoClose: false },
+          );
         }}
       />
     );
@@ -483,6 +539,17 @@ export default function OrderSheet({
 
       {/* Confirmation Modal */}
       {renderConfirmation()}
+
+      {/* Success Overlay */}
+      <SuccessOverlay
+        visible={showSuccess}
+        title={editMode ? 'Order Updated!' : 'Order Placed!'}
+        message={
+          editMode
+            ? 'Order has been updated successfully.'
+            : 'Your order has been confirmed successfully.'
+        }
+      />
     </>
   );
 }
