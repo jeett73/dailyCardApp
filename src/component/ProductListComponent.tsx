@@ -1,6 +1,5 @@
 import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
-import { setCachedProducts } from '@/services/productCacheService';
 import { getItem } from '@/services/storage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useMemo, useState } from 'react';
@@ -48,7 +47,7 @@ export function useProductList() {
           setLoading(false);
 
           // Cache the products for use in OrderComponent
-          await setCachedProducts(list);
+          // await setCachedProducts(list);
         } catch {
           if (!isActive) return;
           setError('Failed to load products');

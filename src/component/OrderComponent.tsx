@@ -1,6 +1,5 @@
 import { getRequest, postRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
-import { getCachedProducts, setCachedProducts } from '@/services/productCacheService';
 import { getItem } from '@/services/storage';
 import { useMemo, useRef, useState } from 'react';
 import { Animated, useWindowDimensions } from 'react-native';
@@ -113,7 +112,8 @@ export function useOrder() {
     setProductsLoading(true);
     try {
       // Try to get cached products first
-      const cachedProducts = await getCachedProducts();
+      // const cachedProducts = await getCachedProducts();
+      const cachedProducts: any = []
       let list: ShopProduct[] = [];
 
       if (cachedProducts && cachedProducts.length > 0) {
@@ -145,7 +145,7 @@ export function useOrder() {
         }));
 
         // Update cache for next time
-        await setCachedProducts(list);
+        // await setCachedProducts(list);
       }
 
       let productsToShow = list;
