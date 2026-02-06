@@ -132,8 +132,8 @@ function OrderConfirmationOverlay({
 
 function SuccessOverlay({
   visible,
-  title = 'Order Placed!',
-  message = 'Your order has been confirmed successfully.',
+  title = 'Quantities saved!',
+  message = 'Product quantities saved to customer card.',
 }: {
   visible: boolean;
   title?: string;
@@ -543,11 +543,11 @@ export default function OrderSheet({
       {/* Success Overlay */}
       <SuccessOverlay
         visible={showSuccess}
-        title={editMode ? 'Order Updated!' : 'Order Placed!'}
+        title={editMode ? 'Quantities updated!' : 'Quantities saved!'}
         message={
           editMode
-            ? 'Order has been updated successfully.'
-            : 'Your order has been confirmed successfully.'
+            ? 'Product quantities updated on the customer card.'
+            : 'Product quantities saved to customer card.'
         }
       />
     </>
