@@ -511,6 +511,7 @@ export default function OrderSheet({
       {/* Bottom Sheet */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        enabled={Platform.OS === 'ios' || isKeyboardVisible}
         style={styles.keyboardAvoidingView}
         pointerEvents="box-none"
       >
