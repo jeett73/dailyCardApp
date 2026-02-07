@@ -3,6 +3,11 @@ import InfoToaster from '@/components/InfoToaster';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import AppNavigator from '@/navigation/AppNavigator';
 import { installGlobalErrorHandler } from '@/services/globalErrorHandler';
+import {
+  handleNotificationOpenedApp,
+  setupBackgroundHandler,
+  setupForegroundHandler,
+} from '@/services/notificationService';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { registerRootComponent } from 'expo';
@@ -14,6 +19,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const GestureHandlerRootView = require('react-native-gesture-handler')
   .GestureHandlerRootView as any;
+
+// Set up background handler outside of component
+setupBackgroundHandler();
 
 function App() {
   SplashScreen.preventAutoHideAsync();
@@ -34,6 +42,9 @@ function App() {
 
   useEffect(() => {
     initAuthFromStorage();
+    handleNotificationOpenedApp();
+    const unsubscribe = setupForegroundHandler();
+    return unsubscribe;
   }, []);
 
   useEffect(() => {

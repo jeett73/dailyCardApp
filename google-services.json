@@ -1,14 +1,13 @@
 {
   "project_info": {
-    "project_number": "105107301611",
-    "firebase_url": "https://fir-5786f-default-rtdb.firebaseio.com",
-    "project_id": "fir-5786f",
-    "storage_bucket": "fir-5786f.firebasestorage.app"
+    "project_number": "222321520056",
+    "project_id": "dailycard-582c3",
+    "storage_bucket": "dailycard-582c3.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:105107301611:android:de95ceec4d8e28cc868aae",
+        "mobilesdk_app_id": "1:222321520056:android:f96dc780edc68ccb42334d",
         "android_client_info": {
           "package_name": "com.hiren.d.dailyCardApp"
         }
@@ -16,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCHPb0W7FNdCeeUkZdrcrLhpEqsSmEnx4Q"
+          "current_key": "AIzaSyAuXA6FrwhgpODQ7liGqpKAT7ceBbwUKcs"
         }
       ],
       "services": {

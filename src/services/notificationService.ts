@@ -1,62 +1,82 @@
-import Constants from 'expo-constants';
-import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import messaging from '@react-native-firebase/messaging';
+import { PermissionsAndroid, Platform } from 'react-native';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldSetBadge: false,
-  }),
-});
-
-export async function registerForPushNotificationsAsync() {
-  let token: string | undefined;
-
+export async function requestUserPermission() {
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-    });
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+    );
+    if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+      console.log("Permission denied")
+      return false
+    }
+    return true
   }
 
-  if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== 'granted') {
-      console.log('Failed to get push token for push notification!');
+  const authStatus = await messaging().requestPermission();
+  const enabled =
+    authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+    authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+  return enabled;
+}
+
+export async function registerForPushNotificationsAsync() {
+  try {
+    const hasPermission = await requestUserPermission();
+    if (!hasPermission) {
+      console.log('User declined permission or permissions not granted');
       return undefined;
     }
 
-    // Get the token that uniquely identifies this device
-    // If you need the native FCM token, use getDevicePushTokenAsync
-    // If you use Expo's push service, use getExpoPushTokenAsync
-    try {
-      const projectId =
-        Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-      if (!projectId) {
-        throw new Error('Project ID not found');
-      }
-      const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId,
-      });
-      token = tokenData.data;
-      console.log('Expo Push Token:', token);
-    } catch (e) {
-      console.log('Error getting expo push token', e);
-      // Fallback or retry logic could go here
-    }
-  } else {
-    console.log('Must use physical device for Push Notifications');
+    // Get the token
+    const token = await messaging().getToken();
+    console.log('FCM Token:', token);
+    return token;
+  } catch (error) {
+    console.error('Error getting FCM token:', error);
+    return undefined;
   }
-  return token;
 }
+
+// Handler for foreground messages
+export function setupForegroundHandler() {
+  return messaging().onMessage(async remoteMessage => {
+    console.log('A new FCM message arrived!', JSON.stringify(remoteMessage));
+    // You can show a local notification here if needed using a library like notifee or keeping expo-notifications for generic alerts
+    // For now, just logging it as per the request to switch to firebase logic
+  });
+}
+
+// Handler for background/quit state messages
+export function setupBackgroundHandler() {
+  messaging().setBackgroundMessageHandler(async remoteMessage => {
+    console.log('Message handled in the background!', remoteMessage);
+  });
+}
+
+// Handle notification opening
+export function handleNotificationOpenedApp() {
+  // When the application is running, but in the background
+  messaging().onNotificationOpenedApp(remoteMessage => {
+    console.log(
+      'Notification caused app to open from background state:',
+      remoteMessage.notification,
+    );
+    // Navigation logic can go here
+  });
+
+  // Check whether an initial notification is available
+  messaging()
+    .getInitialNotification()
+    .then(remoteMessage => {
+      if (remoteMessage) {
+        console.log(
+          'Notification caused app to open from quit state:',
+          remoteMessage.notification,
+        );
+        // Navigation logic can go here
+      }
+    });
+}
+
