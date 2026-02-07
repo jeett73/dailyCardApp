@@ -27,8 +27,13 @@ export default function CustomerListScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [query, setQuery] = useState('');
+
+  // Filter State (must be before useCustomerList)
+  const [showDueOnly, setShowDueOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<'none' | 'card' | 'name'>('none');
+
   const { items, loading, loadingMore, refreshing, error, refresh, loadMore, hasMore, onAddPress } =
-    useCustomerList(query);
+    useCustomerList(query, showDueOnly, sortBy);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentCustomer, setPaymentCustomer] = useState<{
     id: string;
@@ -49,6 +54,13 @@ export default function CustomerListScreen() {
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorModalTitle, setErrorModalTitle] = useState('');
   const [errorModalMessage, setErrorModalMessage] = useState('');
+
+  // Filter Modal State
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+
+  // Temporary filter state for modal
+  const [tempShowDueOnly, setTempShowDueOnly] = useState(false);
+  const [tempSortBy, setTempSortBy] = useState<'none' | 'card' | 'name'>('none');
 
   const handleDelete = async (customer: any) => {
     const hasDue = customer.previousMonthDue > 0;
@@ -84,6 +96,59 @@ export default function CustomerListScreen() {
     } finally {
       setCustomerToDelete(null);
     }
+  };
+
+  // Apply filters and sorting
+  const filteredAndSortedItems = React.useMemo(() => {
+    let result = [...items];
+
+    // Filter by due
+    if (showDueOnly) {
+      result = result.filter((item) => {
+        const override = dueOverrides[item.id];
+        const currentDue = typeof override === 'number' ? override : Number(item?.previousMonthDue ?? 0);
+        return currentDue > 0;
+      });
+    }
+
+    // Sort
+    if (sortBy === 'card') {
+      result.sort((a, b) => {
+        const cardA = String(a.card || '');
+        const cardB = String(b.card || '');
+        return cardA.localeCompare(cardB, undefined, { numeric: true });
+      });
+    } else if (sortBy === 'name') {
+      result.sort((a, b) => {
+        const nameA = String(a.name || '').toLowerCase();
+        const nameB = String(b.name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+    }
+
+    return result;
+  }, [items, showDueOnly, sortBy, dueOverrides]);
+
+  const hasActiveFilters = showDueOnly || sortBy !== 'none';
+
+  const handleOpenFilterModal = () => {
+    setTempShowDueOnly(showDueOnly);
+    setTempSortBy(sortBy);
+    setFilterModalVisible(true);
+  };
+
+  const handleApplyFilters = () => {
+    setShowDueOnly(tempShowDueOnly);
+    setSortBy(tempSortBy);
+    setFilterModalVisible(false);
+  };
+
+  const handleClearFilters = () => {
+    setTempShowDueOnly(false);
+    setTempSortBy('none');
+    setShowDueOnly(false);
+    setSortBy('none');
+    setFilterModalVisible(false);
   };
 
   const renderItem = React.useCallback(
@@ -181,20 +246,32 @@ export default function CustomerListScreen() {
     <View style={[styles.container]}>
       <HeroHeader color={Colors.light.brandPurple} title="Customers" />
       <View style={{ paddingTop: Platform.OS === 'ios' ? 130 : insets.top + 90, flex: 1 }}>
-        <View style={styles.searchBar}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search customers..."
-            placeholderTextColor="#aaa"
-            value={query}
-            onChangeText={setQuery}
-          />
-          <View style={styles.searchIconWrap}>
-            <Text style={styles.searchIcon}>🔍</Text>
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search customers..."
+              placeholderTextColor="#aaa"
+              value={query}
+              onChangeText={setQuery}
+            />
+            <View style={styles.searchIconWrap}>
+              <Text style={styles.searchIcon}>🔍</Text>
+            </View>
           </View>
+          <TouchableOpacity
+            style={styles.filterButton}
+            activeOpacity={0.7}
+            onPress={handleOpenFilterModal}
+            accessibilityRole="button"
+            accessibilityLabel="Filter customers"
+          >
+            <Feather name="filter" size={20} color="#0d101b" />
+            {hasActiveFilters && <View style={styles.filterDot} />}
+          </TouchableOpacity>
         </View>
         <FlatList
-          data={items}
+          data={filteredAndSortedItems}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 16 }}
@@ -292,6 +369,79 @@ export default function CustomerListScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* Filter Modal */}
+      <Modal transparent visible={filterModalVisible} animationType="fade" onRequestClose={() => setFilterModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setFilterModalVisible(false)}>
+          <View style={styles.menuOverlay}>
+            <View style={styles.filterModalContainer}>
+              <Text style={styles.filterModalTitle}>Filter & Sort</Text>
+
+              <TouchableOpacity
+                style={styles.filterOption}
+                onPress={() => setTempShowDueOnly(!tempShowDueOnly)}
+              >
+                <View style={styles.filterOptionLeft}>
+                  <Feather name="alert-circle" size={18} color="#e53935" />
+                  <Text style={styles.filterOptionText}>Due Pay Only</Text>
+                </View>
+                <View style={[styles.checkbox, tempShowDueOnly && styles.checkboxActive]}>
+                  {tempShowDueOnly && <Feather name="check" size={14} color="#fff" />}
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.filterDivider} />
+              <Text style={styles.filterSectionTitle}>Sort By</Text>
+
+              <TouchableOpacity
+                style={styles.filterOption}
+                onPress={() => setTempSortBy(tempSortBy === 'card' ? 'none' : 'card')}
+              >
+                <View style={styles.filterOptionLeft}>
+                  <Feather name="credit-card" size={18} color="#333" />
+                  <Text style={styles.filterOptionText}>Card Number</Text>
+                </View>
+                <View style={[styles.radioButton, tempSortBy === 'card' && styles.radioButtonActive]}>
+                  {tempSortBy === 'card' && <View style={styles.radioButtonInner} />}
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.filterOption}
+                onPress={() => setTempSortBy(tempSortBy === 'name' ? 'none' : 'name')}
+              >
+                <View style={styles.filterOptionLeft}>
+                  <Feather name="user" size={18} color="#333" />
+                  <Text style={styles.filterOptionText}>Name</Text>
+                </View>
+                <View style={[styles.radioButton, tempSortBy === 'name' && styles.radioButtonActive]}>
+                  {tempSortBy === 'name' && <View style={styles.radioButtonInner} />}
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.filterDivider} />
+
+              <View style={styles.filterButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.clearFilterButton, !(tempShowDueOnly || tempSortBy !== 'none') && styles.clearFilterButtonDisabled]}
+                  onPress={handleClearFilters}
+                  disabled={!(tempShowDueOnly || tempSortBy !== 'none')}
+                >
+                  <Feather name="x-circle" size={18} color={(tempShowDueOnly || tempSortBy !== 'none') ? '#ff3b30' : '#ccc'} />
+                  <Text style={[styles.clearFilterText, !(tempShowDueOnly || tempSortBy !== 'none') && { color: '#ccc' }]}>Clear</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.applyFilterButton}
+                  onPress={handleApplyFilters}
+                >
+                  <Text style={styles.applyFilterText}>Apply Filter</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
       {/* Warning/Error Modal */}
       <ConfirmationModal
         visible={errorModalVisible}
@@ -334,7 +484,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
-    width: '90%',
+    width: '85%',
   },
   searchInput: {
     flex: 1,
@@ -476,5 +626,174 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     marginLeft: 12,
+  },
+
+  // Filter Styles
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  filterButton: {
+    marginTop: 8,
+    width: 55,
+    height: 55,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  filterDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.light.brandPurple,
+  },
+  filterModalContainer: {
+    position: 'absolute',
+    top: '30%',
+    left: '50%',
+    transform: [{ translateX: -160 }],
+    width: 320,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  filterModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0d101b',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  filterOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: '#fff',
+  },
+  filterOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#fff',
+  },
+  filterOptionText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  checkboxActive: {
+    backgroundColor: Colors.light.tint,
+    borderColor: Colors.light.tint,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  radioButtonActive: {
+    borderColor: Colors.light.tint,
+  },
+  radioButtonInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.light.tint,
+  },
+  filterDivider: {
+    height: 1,
+    backgroundColor: '#eee',
+    marginVertical: 8,
+  },
+  filterSectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#666',
+    marginBottom: 4,
+    marginTop: 4,
+  },
+  filterButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 8,
+    backgroundColor: '#fff',
+  },
+  clearFilterButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: 'rgba(13,16,27,0.08)',
+  },
+  clearFilterButtonDisabled: {
+    opacity: 0.5,
+  },
+  clearFilterText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ff3b30',
+  },
+  applyFilterButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: Colors.light.tint,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  applyFilterText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
   },
 });
