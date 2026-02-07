@@ -34,7 +34,7 @@ function toTitleCaseLocal(s: string) {
     .join(' ');
 }
 
-export function useCustomerList(searchQuery = '') {
+export function useCustomerList(searchQuery = '', showDueOnly = false, sortBy: 'none' | 'card' | 'name' = 'none') {
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -50,6 +50,13 @@ export function useCustomerList(searchQuery = '') {
   const inFlightSeqRef = useRef<number | null>(null);
   const activeQueryRef = useRef('');
   const requestedPagesByQueryRef = useRef<Map<string, Set<number>>>(new Map());
+
+  /* Use refs for filters to keep fetchCustomers stable but accessing latest values */
+  const filtersRef = useRef({ showDueOnly, sortBy });
+  filtersRef.current = { showDueOnly, sortBy };
+
+  // Track mount status to avoid double fetch on initial render (handled by useFocusEffect)
+  const isMountedRef = useRef(false);
 
   function customerKey(c: Customer) {
     return String(c._id ?? `${c.name ?? ''}-${c.cardNumber ?? ''}-${c.phone ?? ''}`);
@@ -99,8 +106,19 @@ export function useCustomerList(searchQuery = '') {
         const token = await getItem('token');
         const shopId = await getItem('userId');
 
+        const params: any = { shopId, page: currentPage, limit: LIMIT, q: query };
+
+        // Add filter parameters from ref
+        const { showDueOnly: currentDueOnly, sortBy: currentSortBy } = filtersRef.current;
+        if (currentDueOnly) {
+          params.dueOnly = 'true';
+        }
+        if (currentSortBy !== 'none') {
+          params.sortBy = currentSortBy;
+        }
+
         const res = await getRequest(apiEndpoint.customers.list, {
-          params: { shopId, page: currentPage, limit: LIMIT, q: query },
+          params,
           headers: { authorization: token ? `Bearer ${token}` : '' },
         });
 
@@ -155,6 +173,22 @@ export function useCustomerList(searchQuery = '') {
     },
     [LIMIT],
   );
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    if (!isMountedRef.current) {
+      isMountedRef.current = true;
+      return;
+    }
+
+    setLoading(true);
+    activeQueryRef.current = debouncedQuery;
+    requestedPagesByQueryRef.current = new Map();
+    hasMoreRef.current = true;
+    setHasMore(true);
+    pageRef.current = 1;
+    fetchCustomers(true, debouncedQuery);
+  }, [showDueOnly, sortBy, fetchCustomers, debouncedQuery]);
 
   useFocusEffect(
     useCallback(() => {

@@ -138,8 +138,8 @@ export default function RecentOrderScreen() {
       </View>
       <OrderSheet
         {...orderLogic}
+        onClear={refresh}
         saveLabel={editMode ? 'Update Order' : 'Order'}
-        save={() => save(refresh)}
       />
     </View>
   );
