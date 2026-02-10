@@ -56,8 +56,11 @@ export function useProfile() {
     navigation.navigate('ProductList');
   }
 
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
   async function handleLogout() {
     try {
+      setLogoutLoading(true);
       const userId = await getItem('userId');
       if (userId) {
         const deviceId = await getDeviceId();
@@ -67,6 +70,7 @@ export function useProfile() {
       // noop: proceed to clear storage and navigate regardless
     } finally {
       await clear();
+      setLogoutLoading(false);
       navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
     }
   }
@@ -127,5 +131,6 @@ export function useProfile() {
     entityType,
     shopDetails,
     customerDetails,
+    logoutLoading,
   };
 }
