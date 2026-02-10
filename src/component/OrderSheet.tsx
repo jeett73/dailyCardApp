@@ -1,8 +1,16 @@
+import { getRequest } from '@/api/apiMethods';
 import { GroupedItem, ShopProduct } from '@/component/OrderComponent';
+import { Txn } from '@/components/CustomerDetailComponent';
+import { StatementCard } from '@/components/StatementCard';
+
 import { Text, View } from '@/components/Themed';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
-import { formatToKolkataTime } from '@/utils/dateUtils';
+import { log } from '@/services/logger';
+import { getItem } from '@/services/storage';
+import { formatToKolkataDateString, formatToKolkataTime } from '@/utils/dateUtils';
+import Feather from '@expo/vector-icons/Feather';
+
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
@@ -26,7 +34,8 @@ interface OrderSheetProps {
   sheetVisible: boolean;
   sheetY: Animated.Value;
   height: number;
-  currentCustomer: { name?: string; cardNumber?: string | number } | null;
+  currentCustomer: { name?: string; cardNumber?: string | number; id?: string; _id?: string } | null;
+
   products: ShopProduct[];
   productsLoading?: boolean;
   quantities: Record<string, number>;
@@ -190,6 +199,110 @@ export default function OrderSheet({
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Duplicate Order Logic
+  const [recentOrderData, setRecentOrderData] = useState<Txn[] | null>(null);
+  const [recentOrderTotal, setRecentOrderTotal] = useState(0);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+
+  React.useEffect(() => {
+    log()
+    if (!currentCustomer?.id && !currentCustomer?._id) {
+      setRecentOrderData(null);
+      setRecentOrderTotal(0);
+      return;
+    }
+
+
+    let isMounted = true;
+
+    const checkRecentOrders = async () => {
+      try {
+        const customerId = (currentCustomer as any)?.id || (currentCustomer as any)?._id || (currentCustomer as any)?.customerId;
+        const shopId = await getItem('userId');
+
+        if (!shopId || !customerId) {
+          console.log('Missing shopId or customerId', { shopId, customerId });
+          return;
+        }
+
+        // Fetch monthly statement
+        const res = await getRequest(
+          apiEndpoint.cards.monthlyStatement(customerId, shopId),
+        );
+
+        if (!isMounted) return;
+
+        const data = res?.data as any;
+        const cardData = data?.card;
+
+        if (!cardData || !cardData.products) {
+          setRecentOrderData(null);
+          setRecentOrderTotal(0);
+          return;
+        }
+
+        // Find order for TODAY
+        const todayStr = formatToKolkataDateString(new Date());
+
+        const txns: Txn[] = [];
+        let total = 0;
+
+        cardData.products.forEach((daily: any, dailyIdx: number) => {
+          daily.product.forEach((prod: any) => {
+            const prodDate = formatToKolkataDateString(prod.time);
+            if (prodDate === todayStr) {
+              txns.push({
+                id: `${dailyIdx}-${prod.productId}-${prod.time}`,
+                date: prodDate,
+                item: prod.productName,
+                qty: prod.qty,
+                amount: prod.qty * prod.price,
+                time: prod.time,
+              });
+              total += (prod.qty * prod.price);
+            }
+          });
+
+          if (daily.others) {
+            daily.others.forEach((other: any, idx: number) => {
+              const otherDate = formatToKolkataDateString(other.time);
+              if (otherDate === todayStr) {
+                txns.push({
+                  id: `other-${dailyIdx}-${other.time}-${idx}`,
+                  date: otherDate,
+                  item: 'Others',
+                  qty: 1,
+                  amount: other.price,
+                  time: other.time,
+                });
+                total += other.price;
+              }
+            });
+          }
+        });
+
+        if (txns.length > 0) {
+          setRecentOrderData(txns);
+          setRecentOrderTotal(total);
+        } else {
+          setRecentOrderData(null);
+          setRecentOrderTotal(0);
+        }
+
+      } catch (e) {
+        console.log('Failed to check monthly orders', e);
+      }
+    };
+
+
+    checkRecentOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentCustomer, sheetVisible]); // Re-run when customer changes or sheet opens
+
 
   React.useEffect(() => {
     const showSubscription = Keyboard.addListener(
@@ -497,6 +610,54 @@ export default function OrderSheet({
     );
   };
 
+
+  const renderDuplicateOrderModal = () => {
+    if (!showDuplicateModal || !recentOrderData) return null;
+
+    return (
+      <Modal
+        visible={showDuplicateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDuplicateModal(false)}
+      >
+        <View style={styles.confirmOverlay}>
+          <BlurView
+            intensity={Platform.OS === 'android' ? 5 : 15}
+            tint="dark"
+            experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[styles.confirmCard, { padding: 0, overflow: 'hidden', backgroundColor: 'transparent' }]}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 16 }}>
+
+              <View style={{ maxHeight: 400, borderRadius: 20, overflow: 'hidden' }}>
+                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                  <StatementCard
+                    dayLabel="Today's Orders"
+                    orders={recentOrderData}
+                    total={recentOrderTotal}
+                    scale={1}
+                    style={{ marginTop: 0, elevation: 0, backgroundColor: Colors.light.orange }}
+                  />
+                </ScrollView>
+              </View>
+
+
+              <TouchableOpacity
+                style={[styles.saveButton, { marginTop: 16, height: 44, backgroundColor: 'black' }]}
+                onPress={() => setShowDuplicateModal(false)}
+              >
+                <Text style={styles.saveButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+
   return (
     <>
       {/* Overlay */}
@@ -528,18 +689,33 @@ export default function OrderSheet({
         >
           <View style={styles.sheetHeader}>
             <View style={styles.dragIndicator} />
-            <Text style={styles.sheetTitle}>
-              {cardNumber ? <Text style={{ fontStyle: 'italic' }}>#{cardNumber} </Text> : null}
-              {selectedName || ''}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}>
+              <Text style={styles.sheetTitle}>
+                {cardNumber ? <Text style={{ fontStyle: 'italic' }}>#{cardNumber} </Text> : null}
+                {selectedName || ''}
+              </Text>
+              {recentOrderData && (
+                <TouchableOpacity
+                  style={{ marginLeft: 8, padding: 4 }}
+                  onPress={() => setShowDuplicateModal(true)}
+                >
+                  <Feather name="info" size={24} color={Colors.light.orange} />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
+
 
           <View style={styles.sheetCard}>{renderContent()}</View>
         </Animated.View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingView >
 
       {/* Confirmation Modal */}
       {renderConfirmation()}
+
+      {/* Duplicate Order Modal */}
+      {renderDuplicateOrderModal()}
+
 
       {/* Success Overlay */}
       <SuccessOverlay
