@@ -125,6 +125,8 @@ const StatementCard = memo(function StatementCard({
 export default function MonthlyStatementScreen() {
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
+  const { year, month } = route.params || {};
+
   const {
     days,
     groupedByDay,
@@ -137,7 +139,7 @@ export default function MonthlyStatementScreen() {
     loading,
     refetch,
     currentMonthLabel,
-  } = useMonthlyStatement();
+  } = useMonthlyStatement(year, month);
 
   useFocusEffect(
     useCallback(() => {

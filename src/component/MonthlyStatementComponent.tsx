@@ -1,4 +1,4 @@
-import { getRequest } from '@/api/apiMethods';
+import { getRequest, postRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { formatToKolkataDateString, getKolkataCurrentDate } from '@/utils/dateUtils';
@@ -80,11 +80,33 @@ export const MONTHS_FULL = [
   'December',
 ];
 
-export function useMonthlyStatement() {
+export function useMonthlyStatement(year?: number, month?: number) {
   const { width } = useWindowDimensions();
   const scale = width >= 768 ? 1.1 : width <= 360 ? 0.95 : 1;
 
-  const { year: currentYear, month: currentMonth, day: upto } = getKolkataCurrentDate();
+  const {
+    year: currentYear,
+    month: currentMonth,
+    day: currentDay,
+  } = getKolkataCurrentDate();
+
+  // If year/month provided, use them. Else use current date.
+  const isHistoryMode = year !== undefined && month !== undefined;
+
+  // Display year/month
+  const displayYear = isHistoryMode ? year : currentYear;
+  const displayMonth = isHistoryMode ? month : currentMonth;
+
+  // For current month, show up to today. For past months, show all days (up to 31).
+  const daysInMonth = useMemo(() => {
+    if (!displayYear || displayMonth === undefined) return 30;
+    // get days in month: new Date(year, month + 1, 0).getDate()
+    // month is 0-indexed in JS Date
+    return new Date(displayYear, displayMonth + 1, 0).getDate();
+  }, [displayYear, displayMonth]);
+
+
+  const upto = isHistoryMode ? daysInMonth : currentDay;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,17 +118,44 @@ export function useMonthlyStatement() {
       setError(null);
       const customerId = await getItem('userId');
       const shopId = await getItem('shopId');
-      const url = apiEndpoint.cards.monthlyStatement(customerId!, shopId!);
-      const res = await getRequest(url);
-      const data = res.data as MonthlyStatementResponse;
-      setCardData(data.card);
+
+      if (!customerId || !shopId) {
+        setError("User not identified");
+        setLoading(false);
+        return;
+      }
+
+      let res;
+      if (isHistoryMode) {
+        // POST /cards/monthly-details
+        // Body: { customerId, shopId, month: month + 1, year }
+        // API expects 1-based month? Yes, usually. Our internal is 0-based.
+        // User request: "month": , "year":
+
+        const payload = {
+          customerId,
+          shopId,
+          month: (month || 0) + 1, // Convert 0-based to 1-based
+          year: year
+        };
+
+        res = await postRequest(apiEndpoint.cards.monthlyDetails, payload);
+      } else {
+        // GET /cards/monthly-statement (Current month)
+        const url = apiEndpoint.cards.monthlyStatement(customerId, shopId);
+        res = await getRequest(url);
+      }
+
+      const data = res?.data as MonthlyStatementResponse;
+      setCardData(data?.card || null);
+
     } catch (err) {
       console.error('Failed to fetch monthly statement', err);
       setError('Failed to load data');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isHistoryMode, year, month]);
 
   const txns = useMemo(() => {
     if (!cardData || !cardData.products) return [];
@@ -162,9 +211,9 @@ export function useMonthlyStatement() {
       const tYear = parseInt(yStr, 10);
       const tMonth = parseInt(mStr, 10) - 1;
       const tDay = parseInt(dStr, 10);
-      return tYear === currentYear && tMonth === currentMonth && tDay <= upto;
+      return tYear === displayYear && tMonth === displayMonth && tDay <= upto;
     });
-  }, [txns, currentYear, currentMonth, upto]);
+  }, [txns, displayYear, displayMonth, upto]);
 
   const groupedByDay = useMemo(() => {
     const res: Record<number, DayEntry> = {};
@@ -186,10 +235,10 @@ export function useMonthlyStatement() {
   );
 
   function fmtDay(day: number) {
-    return `${day} ${MONTHS_SHORT[currentMonth]} ${currentYear}`;
+    return `${day} ${MONTHS_SHORT[displayMonth]} ${displayYear}`;
   }
 
-  const currentMonthLabel = `${MONTHS_FULL[currentMonth]} ${currentYear}`;
+  const currentMonthLabel = `${MONTHS_FULL[displayMonth]} ${displayYear}`;
 
   return {
     days,
