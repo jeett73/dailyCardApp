@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   },
 
   customerCard: {
-    marginTop: 0,
+    marginTop: 5,
   },
   customerRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff' },
   centerRow: { justifyContent: 'center', width: '100%' },
