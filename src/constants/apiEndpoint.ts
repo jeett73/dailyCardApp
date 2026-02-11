@@ -39,6 +39,8 @@ const apiEndpoint = {
     updateOrderPost: url('/cards/update-order'),
     duesDetails: (customerId: string, shopId: string) =>
       url(`/cards/dues-details?customerId=${customerId}&shopId=${shopId}`),
+    monthlyDetails: (customerId: string, shopId: string, month: number, year: number) =>
+      url(`/cards/monthly-details?customerId=${customerId}&shopId=${shopId}&month=${month}&year=${year}`),
   },
   shopProducts: {
     listShopProducts: url('/shop-products'),

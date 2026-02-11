@@ -139,7 +139,7 @@ export function useMonthlyStatement(year?: number, month?: number) {
           year: year
         };
 
-        res = await postRequest(apiEndpoint.cards.monthlyDetails, payload);
+        res = await postRequest(apiEndpoint.cards.monthlyDetails(customerId, shopId, month, year), payload);
       } else {
         // GET /cards/monthly-statement (Current month)
         const url = apiEndpoint.cards.monthlyStatement(customerId, shopId);

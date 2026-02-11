@@ -164,7 +164,7 @@ export default function MonthlyStatementScreen() {
         <ScrollView
           contentContainerStyle={{
             paddingTop: Platform.OS === 'ios' ? 120 : insets.top + 90,
-            paddingBottom: Math.max(insets.bottom, 24),
+            paddingBottom: Math.max(insets.bottom + 80, 24),
           }}
         >
           {error ? (
