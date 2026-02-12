@@ -33,7 +33,7 @@ export default function LoginScreen() {
     <View style={styles.screen}>
       <View style={styles.hero}>
         <ImageBackground
-          source={require('../../assets/images/bg.png')}
+          source={require('../../assets/images/login-bg.jpeg')}
           style={styles.heroImage}
           imageStyle={styles.heroImageInner}
           resizeMode="cover"
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   heroImage: { flex: 1 },
-  heroImageInner: { width: '100%', height: '140%', transform: [{ translateY: -200 }] },
+  heroImageInner: { width: '100%', height: '150%', transform: [{ translateY: 0 }] },
   heroOverlay: {
     position: 'absolute',
     top: 0,
