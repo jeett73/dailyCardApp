@@ -3,6 +3,7 @@ import apiEndpoint from '../constants/apiEndpoint';
 import { getDeviceId } from '../services/deviceService';
 import { reportError } from '../services/globalErrorHandler';
 import { log, error as logError } from '../services/logger';
+import { navigation } from '../services/NavigationService';
 import { getItem, removeItem, setItem } from '../services/storage';
 
 const api = axios.create({
@@ -40,6 +41,7 @@ api.interceptors.response.use(
       if (!rt) {
         await removeItem('token');
         reportError(error, { source: 'api', userMessage: 'Session expired. Please login again.' });
+        navigation.navigate('Login');
         return Promise.reject(error);
       }
       try {
@@ -62,6 +64,7 @@ api.interceptors.response.use(
         await removeItem('token');
         await removeItem('refreshToken');
         reportError(refreshErr, { source: 'api.refresh' });
+        navigation.navigate('Login');
         return Promise.reject(refreshErr);
       }
     }
