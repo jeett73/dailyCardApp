@@ -87,12 +87,12 @@ export function useProfile() {
   }
 
   const baseMenuItems = [
-    { label: 'Past Statements', onPress: gotoStatements, isFor: 'customer' },
-    { label: 'Recent Order', onPress: gotoRecentOrder, isFor: 'shop' },
-    { label: 'Customers', onPress: gotoCustomers, isFor: 'shop' },
-    { label: 'Products', onPress: gotoProducts, isFor: 'shop' },
-    { label: 'Reset Password', onPress: resetPassword, isFor: 'shop' },
-    { label: 'Logout', onPress: handleLogout, isFor: 'both' },
+    { label: 'Past Statements', onPress: gotoStatements, isFor: 'customer', icon: 'file-text' },
+    { label: 'Recent Order', onPress: gotoRecentOrder, isFor: 'shop', icon: 'clock' },
+    { label: 'Customers', onPress: gotoCustomers, isFor: 'shop', icon: 'users' },
+    { label: 'Products', onPress: gotoProducts, isFor: 'shop', icon: 'shopping-bag' },
+    { label: 'Reset Password', onPress: resetPassword, isFor: 'shop', icon: 'lock' },
+    { label: 'Logout', onPress: handleLogout, isFor: 'both', icon: 'log-out' },
   ] as const;
 
   const menuItems = useMemo(() => {

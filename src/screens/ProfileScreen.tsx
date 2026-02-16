@@ -12,9 +12,10 @@ type MenuOptionProps = {
   label: MenuLabel | string;
   onPress: () => void;
   loading?: boolean;
+  icon: keyof typeof Feather.glyphMap;
 };
 
-function MenuOption({ label, onPress, loading }: MenuOptionProps) {
+function MenuOption({ label, onPress, loading, icon }: MenuOptionProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -32,7 +33,10 @@ function MenuOption({ label, onPress, loading }: MenuOptionProps) {
         <ActivityIndicator size="small" color={Colors.light.tint} />
       ) : (
         <>
-          <Text style={styles.menuLabel}>{label}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' }}>
+            <Feather name={icon} size={20} color={Colors.light.text} />
+            <Text style={styles.menuLabel}>{label}</Text>
+          </View>
           <Feather name="chevron-right" size={18} color={Colors.light.text} />
         </>
       )}
@@ -137,6 +141,7 @@ export default function ProfileScreen() {
             <MenuOption
               key={m.label}
               label={m.label}
+              icon={m.icon}
               onPress={m.onPress}
               loading={m.label === 'Logout' ? logoutLoading : false}
             />
