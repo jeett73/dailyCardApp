@@ -1,16 +1,18 @@
-import { useMonthlyStatement } from '@/component/MonthlyStatementComponent';
+import { Txn, useMonthlyStatement } from '@/component/MonthlyStatementComponent';
 // eslint-disable-next-line import/no-named-as-default
 import GreetingCard from '@/components/GreetingCard';
 import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { getItem } from '@/services/storage';
-import { getKolkataCurrentDate } from '@/utils/dateUtils';
+import { formatToKolkataTime, getKolkataCurrentDate } from '@/utils/dateUtils';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, ScrollView, StyleSheet } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+type TimeGroup = { time: number; orders: Txn[] };
 
 export default function CustomerScreen() {
   const insets = useSafeAreaInsets();
@@ -45,6 +47,27 @@ export default function CustomerScreen() {
     return groupedByDay[today] ?? { orders: [], total: 0 };
   }, [groupedByDay]);
 
+  const timeGroups = useMemo(() => {
+    if (!todayData.orders) return [];
+    const groups: TimeGroup[] = [];
+    todayData.orders.forEach((ord) => {
+      let group = groups.find((g) => g.time === ord.time);
+      if (!group) {
+        group = { time: ord.time, orders: [] };
+        groups.push(group);
+      }
+      group.orders.push(ord);
+    });
+    // Sort by time ascending (morning to evening) as in StatementCard
+    groups.sort((a, b) => a.time - b.time);
+    return groups;
+  }, [todayData.orders]);
+
+  function formatTime(timestamp: number) {
+    if (!timestamp) return '';
+    return formatToKolkataTime(timestamp);
+  }
+
   return (
     <View style={styles.screen}>
       <HeroHeader color={Colors.light.brandPurple} showProfile={true} avatarSize={55} />
@@ -75,12 +98,17 @@ export default function CustomerScreen() {
                   showsVerticalScrollIndicator={false}
                   onContentSizeChange={(_, height) => setStatementHeight(height > 220 ? 440 : 290)}
                 >
-                  {todayData.orders.map((it) => (
-                    <View key={it.id} style={styles.statementRow}>
-                      <Text style={styles.itemName}>
-                        {it.item === 'Others' ? 'Others' : `${it.item} × ${it.qty}`}
-                      </Text>
-                      <Text style={styles.itemQty}>{`₹${it.amount}`}</Text>
+                  {timeGroups.map((group, groupIdx) => (
+                    <View key={`group-${groupIdx}`} style={{ marginBottom: 12 }}>
+                      <Text style={styles.timeHeader}>[ {formatTime(group.time)} ]</Text>
+                      {group.orders.map((it) => (
+                        <View key={it.id} style={styles.statementRow}>
+                          <Text style={styles.itemName}>
+                            {it.item === 'Others' ? 'Others' : `${it.item} × ${it.qty}`}
+                          </Text>
+                          <Text style={styles.itemQty}>{`₹${it.amount}`}</Text>
+                        </View>
+                      ))}
                     </View>
                   ))}
                 </ScrollView>
@@ -258,5 +286,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     width: 40,
     height: 40,
+  },
+  timeHeader: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '800',
+    backgroundColor: '#a69af7',
   },
 });

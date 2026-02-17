@@ -4,32 +4,56 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
 import React from 'react';
-import { Platform, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet } from 'react-native';
 
 type MenuLabel = 'Past Statements' | 'Logout' | 'Customers' | 'Products';
 
 type MenuOptionProps = {
   label: MenuLabel | string;
   onPress: () => void;
+  loading?: boolean;
+  icon: keyof typeof Feather.glyphMap;
 };
 
-function MenuOption({ label, onPress }: MenuOptionProps) {
+function MenuOption({ label, onPress, loading, icon }: MenuOptionProps) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
       onPress={onPress}
-      style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+      disabled={loading}
+      style={({ pressed }) => [
+        styles.menuItem,
+        pressed && styles.menuItemPressed,
+        loading && { justifyContent: 'center' },
+      ]}
     >
-      <Text style={styles.menuLabel}>{label}</Text>
-      <Feather name="chevron-right" size={18} color={Colors.light.text} />
+      {loading ? (
+        <ActivityIndicator size="small" color={Colors.light.tint} />
+      ) : (
+        <>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' }}>
+            <Feather name={icon} size={20} color={Colors.light.text} />
+            <Text style={styles.menuLabel}>{label}</Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={Colors.light.text} />
+        </>
+      )}
     </Pressable>
   );
 }
 
 export default function ProfileScreen() {
-  const { insets, handleCall, menuItems, entityType, shopDetails, customerDetails } = useProfile();
+  const {
+    insets,
+    handleCall,
+    menuItems,
+    entityType,
+    shopDetails,
+    customerDetails,
+    logoutLoading,
+  } = useProfile();
 
   return (
     <View style={[styles.container]}>
@@ -114,7 +138,13 @@ export default function ProfileScreen() {
         )}
         <View style={styles.menuCard} accessibilityRole="menu">
           {menuItems.map((m) => (
-            <MenuOption key={m.label} label={m.label} onPress={m.onPress} />
+            <MenuOption
+              key={m.label}
+              label={m.label}
+              icon={m.icon}
+              onPress={m.onPress}
+              loading={m.label === 'Logout' ? logoutLoading : false}
+            />
           ))}
         </View>
       </View>
@@ -225,4 +255,11 @@ const styles = StyleSheet.create({
   callRow: { minHeight: 32, justifyContent: 'center' },
   callRowPressed: { opacity: 0.7 },
   infoLink: { color: Colors.light.tint },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
 });

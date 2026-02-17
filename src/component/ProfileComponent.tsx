@@ -56,8 +56,11 @@ export function useProfile() {
     navigation.navigate('ProductList');
   }
 
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
   async function handleLogout() {
     try {
+      setLogoutLoading(true);
       const userId = await getItem('userId');
       if (userId) {
         const deviceId = await getDeviceId();
@@ -67,6 +70,7 @@ export function useProfile() {
       // noop: proceed to clear storage and navigate regardless
     } finally {
       await clear();
+      setLogoutLoading(false);
       navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
     }
   }
@@ -83,12 +87,12 @@ export function useProfile() {
   }
 
   const baseMenuItems = [
-    { label: 'Past Statements', onPress: gotoStatements, isFor: 'customer' },
-    { label: 'Recent Order', onPress: gotoRecentOrder, isFor: 'shop' },
-    { label: 'Customers', onPress: gotoCustomers, isFor: 'shop' },
-    { label: 'Products', onPress: gotoProducts, isFor: 'shop' },
-    { label: 'Reset Password', onPress: resetPassword, isFor: 'shop' },
-    { label: 'Logout', onPress: handleLogout, isFor: 'both' },
+    { label: 'Past Statements', onPress: gotoStatements, isFor: 'customer', icon: 'file-text' },
+    { label: 'Recent Order', onPress: gotoRecentOrder, isFor: 'shop', icon: 'clock' },
+    { label: 'Customers', onPress: gotoCustomers, isFor: 'shop', icon: 'users' },
+    { label: 'Products', onPress: gotoProducts, isFor: 'shop', icon: 'shopping-bag' },
+    { label: 'Reset Password', onPress: resetPassword, isFor: 'shop', icon: 'lock' },
+    { label: 'Logout', onPress: handleLogout, isFor: 'both', icon: 'log-out' },
   ] as const;
 
   const menuItems = useMemo(() => {
@@ -127,5 +131,6 @@ export function useProfile() {
     entityType,
     shopDetails,
     customerDetails,
+    logoutLoading,
   };
 }

@@ -125,6 +125,8 @@ const StatementCard = memo(function StatementCard({
 export default function MonthlyStatementScreen() {
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
+  const { year, month } = route.params || {};
+
   const {
     days,
     groupedByDay,
@@ -137,7 +139,7 @@ export default function MonthlyStatementScreen() {
     loading,
     refetch,
     currentMonthLabel,
-  } = useMonthlyStatement();
+  } = useMonthlyStatement(year, month);
 
   useFocusEffect(
     useCallback(() => {
@@ -162,7 +164,7 @@ export default function MonthlyStatementScreen() {
         <ScrollView
           contentContainerStyle={{
             paddingTop: Platform.OS === 'ios' ? 120 : insets.top + 90,
-            paddingBottom: Math.max(insets.bottom, 24),
+            paddingBottom: Math.max(insets.bottom + 80, 24),
           }}
         >
           {error ? (

@@ -21,8 +21,8 @@ export default function LoginScreen() {
     password,
     focused,
     loading,
-    isValid,
     error,
+    errors,
     setPhone,
     setPassword,
     setFocused,
@@ -33,7 +33,7 @@ export default function LoginScreen() {
     <View style={styles.screen}>
       <View style={styles.hero}>
         <ImageBackground
-          source={require('../../assets/images/bg.png')}
+          source={require('../../assets/images/login-bg.jpeg')}
           style={styles.heroImage}
           imageStyle={styles.heroImageInner}
           resizeMode="cover"
@@ -62,9 +62,10 @@ export default function LoginScreen() {
                 keyboardType="phone-pad"
                 placeholder="Enter phone number"
                 placeholderTextColor="#0d101b"
-                style={styles.input}
+                style={[styles.input, errors.phone && styles.inputError]}
                 maxLength={10}
               />
+              {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
             </View>
             <View style={styles.inputWrapper}>
               <TextInput
@@ -74,16 +75,17 @@ export default function LoginScreen() {
                 onBlur={() => setFocused(false)}
                 placeholder="Enter card number"
                 placeholderTextColor="#0d101b"
-                style={styles.input}
+                style={[styles.input, errors.password && styles.inputError]}
                 autoCapitalize="none"
               />
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
             </View>
-            {!!error && <Text style={styles.errorText}>{error}</Text>}
+            {!!error && <Text style={styles.apiErrorText}>{error}</Text>}
             <TouchableOpacity
               onPress={handleContinue}
               activeOpacity={0.9}
-              disabled={!isValid || loading}
-              style={[styles.button, (!isValid || loading) && styles.buttonDisabled]}
+              disabled={loading}
+              style={[styles.button, loading && styles.buttonDisabled]}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" />
@@ -114,7 +116,7 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   heroImage: { flex: 1 },
-  heroImageInner: { width: '100%', height: '140%', transform: [{ translateY: -200 }] },
+  heroImageInner: { width: '100%', height: '150%', transform: [{ translateY: 0 }] },
   heroOverlay: {
     position: 'absolute',
     top: 0,
@@ -182,6 +184,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.text,
   },
+  inputError: {
+    borderColor: '#e53935',
+  },
   button: {
     height: 56,
     borderRadius: 18,
@@ -204,6 +209,12 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   errorText: {
+    fontSize: 12,
+    color: '#e53935',
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  apiErrorText: {
     marginTop: 4,
     marginBottom: 8,
     textAlign: 'center',

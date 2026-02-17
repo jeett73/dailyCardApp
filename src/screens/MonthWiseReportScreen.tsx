@@ -3,7 +3,7 @@ import HeroHeader from '@/components/HeroHeader';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import React, { useMemo } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, Text as RNText, View as RNView, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MonthWiseReportScreen() {
@@ -24,9 +24,9 @@ export default function MonthWiseReportScreen() {
         </View>
       );
     }
-    // onPress={() => handleNavigate(m)}
     return months.map((m) => (
       <Pressable
+        onPress={() => handleNavigate(m)}
         key={`${m.year}-${m.month}`}
         style={({ pressed }) =>
           StyleSheet.flatten([
@@ -39,12 +39,39 @@ export default function MonthWiseReportScreen() {
         accessibilityLabel={`Open ${m.label}`}
         accessibilityHint="Shows monthly statement for selected month"
       >
-        <Text style={styles.statementTitle}>{m.label}</Text>
-        <View style={styles.statementDivider} />
-        <View style={styles.statementRow}>
-          <Text style={styles.itemName}>Total</Text>
-          <Text style={styles.itemQty}>₹{m.total}</Text>
-        </View>
+        <RNView style={styles.headerRow}>
+          <RNText style={styles.statementTitle}>{m.label}</RNText>
+          <RNView
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor:
+                  !m.receivedAmount || m.receivedAmount === 0
+                    ? '#F44336' // UnPaid - Red
+                    : m.total - m.receivedAmount === 0
+                      ? '#4CAF50' // Paid - Green
+                      : m.total - m.receivedAmount > 0
+                        ? '#FFC107' // Partial - Amber
+                        : '#4CAF50', // Overpaid - Green
+              },
+            ]}
+          >
+            <RNText style={styles.statusText}>
+              {!m.receivedAmount || m.receivedAmount === 0
+                ? 'UnPaid'
+                : m.total - m.receivedAmount === 0
+                  ? 'Paid'
+                  : m.total - m.receivedAmount > 0
+                    ? `Partial Paid ₹${m.receivedAmount}`
+                    : 'Paid'}
+            </RNText>
+          </RNView>
+        </RNView>
+        <RNView style={styles.statementDivider} />
+        <RNView style={styles.statementRow}>
+          <RNText style={styles.itemName}>Total</RNText>
+          <RNText style={styles.itemQty}>₹{m.total}</RNText>
+        </RNView>
       </Pressable>
     ));
   }, [months, loading, error, cardWidth, handleNavigate]);
@@ -131,4 +158,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.35)',
   },
   navOverlayText: { marginTop: 8, fontSize: 14, color: Colors.light.text, fontWeight: '700' },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 });

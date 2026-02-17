@@ -4,7 +4,7 @@ import { getDeviceId } from '@/services/deviceService';
 import { registerForPushNotificationsAsync } from '@/services/notificationService';
 import { setItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Keyboard } from 'react-native';
 
 export function useLogin() {
@@ -15,7 +15,8 @@ export function useLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fcmToken, setFcmToken] = useState<string | undefined>(undefined);
-  const isValid = useMemo(() => phone.length === 10, [phone]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {
@@ -25,9 +26,30 @@ export function useLogin() {
     });
   }, []);
 
+  function validate(currentPhone: string, currentPassword: string) {
+    const newErrors: Record<string, string> = {};
+    if (!currentPhone.trim()) {
+      newErrors.phone = 'Phone is required';
+    } else if (currentPhone.length !== 10) {
+      newErrors.phone = 'Enter a valid 10 digit phone';
+    }
+
+    if (!currentPassword.trim()) {
+      newErrors.password = 'Card Number is required';
+    }
+    return newErrors;
+  }
+
   async function handleContinue() {
+    setHasSubmitted(true);
     const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length !== 10) return;
+    const currentErrors = validate(cleaned, password);
+
+    if (Object.keys(currentErrors).length > 0) {
+      setErrors(currentErrors);
+      return;
+    }
+
     Keyboard.dismiss();
     try {
       setLoading(true);
@@ -72,7 +94,7 @@ export function useLogin() {
           shopId && setItem('shopId', shopId),
           userDetails?.phone && setItem('phone', userDetails?.phone),
           userDetails?.depositeAmount &&
-            setItem('depositeAmount', userDetails?.depositeAmount.toString()),
+          setItem('depositeAmount', userDetails?.depositeAmount.toString()),
           shopName && setItem('shopName', shopName),
         ].filter(Boolean),
       );
@@ -97,7 +119,30 @@ export function useLogin() {
   }
 
   function onPhoneChange(t: string) {
-    setPhone(t.replace(/\D/g, '').slice(0, 10));
+    const cleaned = t.replace(/\D/g, '').slice(0, 10);
+    setPhone(cleaned);
+    if (hasSubmitted) {
+      setErrors(validate(cleaned, password));
+    } else if (errors.phone) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.phone;
+        return next;
+      });
+    }
+  }
+
+  function onPasswordChange(t: string) {
+    setPassword(t);
+    if (hasSubmitted) {
+      setErrors(validate(phone, t));
+    } else if (errors.password) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.password;
+        return next;
+      });
+    }
   }
 
   return {
@@ -105,10 +150,10 @@ export function useLogin() {
     password,
     focused,
     loading,
-    isValid,
     error,
+    errors,
     setPhone: onPhoneChange,
-    setPassword,
+    setPassword: onPasswordChange,
     setFocused,
     handleContinue,
   };

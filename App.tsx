@@ -2,6 +2,7 @@ import { initAuthFromStorage } from '@/api/http';
 import InfoToaster from '@/components/InfoToaster';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import AppNavigator from '@/navigation/AppNavigator';
+import { navigationRef } from '@/services/NavigationService';
 import { installGlobalErrorHandler } from '@/services/globalErrorHandler';
 import {
   handleNotificationOpenedApp,
@@ -61,7 +62,10 @@ function App() {
     <>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <NavigationContainer
+            theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
+            ref={navigationRef}
+          >
             <>
               <AppNavigator />
               <InfoToaster />

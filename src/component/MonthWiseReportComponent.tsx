@@ -7,7 +7,13 @@ import { useEffect, useState } from 'react';
 import { DimensionValue, useWindowDimensions } from 'react-native';
 
 export type Txn = { id: string; date: string; item: string; qty: number; amount: number };
-export type MonthSummary = { year: number; month: number; label: string; total: number };
+export type MonthSummary = {
+  year: number;
+  month: number;
+  label: string;
+  total: number;
+  receivedAmount: number;
+};
 
 const MONTHS_FULL = [
   'January',
@@ -65,6 +71,7 @@ export function useMonthWiseReport() {
             month: m,
             label: label,
             total: Number(item.totalBill || 0),
+            receivedAmount: Number(item.receivedAmount || 0),
           };
         });
 
@@ -78,7 +85,10 @@ export function useMonthWiseReport() {
   }, []);
 
   const handleNavigate = (m: MonthSummary) => {
-    navigation.navigate('Statements', { year: m.year, month: m.month });
+    navigation.navigate('MainTabs', {
+      screen: 'Statements',
+      params: { year: m.year, month: m.month },
+    });
   };
 
   return {
