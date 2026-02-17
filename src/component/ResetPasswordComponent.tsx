@@ -2,7 +2,8 @@ import { patchRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, useWindowDimensions } from 'react-native';
 
 export function useResetPassword() {
   const navigation = useNavigation<any>();
@@ -66,6 +67,31 @@ export function useResetPassword() {
     }
   }
 
+  // Responsive Logic
+  const { width } = useWindowDimensions();
+  const isTablet = width > 768;
+  const contentWidth = isTablet ? 500 : '100%';
+  const headerHeight = isTablet ? 300 : 250;
+
+  // Animation Logic
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return {
     newPassword,
     setNewPassword: (t: string) => {
@@ -83,5 +109,11 @@ export function useResetPassword() {
     isValid,
     handleResetPassword,
     handleBlur,
+    // UI Props
+    isTablet,
+    contentWidth,
+    headerHeight,
+    fadeAnim,
+    slideAnim,
   };
 }

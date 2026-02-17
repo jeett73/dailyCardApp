@@ -1,24 +1,30 @@
 import OrderSheet from '@/component/OrderSheet';
 import { Customer, useOwner } from '@/component/OwnerComponent';
-import HeroHeader, { AvatarInitials, toTitleCase } from '@/components/HeroHeader';
-import { Text, View } from '@/components/Themed';
+import { AvatarInitials, toTitleCase } from '@/components/HeroHeader';
 import Colors from '@/constants/Colors';
+import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import {
   ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
+  View,
+  useColorScheme,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const brandPurple = '#b3a0ff';
-
 export default function OwnerScreen() {
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+
   const ownerData = useOwner();
   const {
     input,
@@ -30,327 +36,374 @@ export default function OwnerScreen() {
     formatCardNumber,
     formatMobile,
     openSheet,
+    // UI Props from Hook
+    isTablet,
+    contentWidth,
+    headerHeight,
+    cardWidth,
+    fadeAnim,
+    slideAnim,
   } = ownerData;
 
+  const headerTitleSize = isTablet ? 28 : 22;
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.flex}
-    >
-      <HeroHeader color={brandPurple} showHomeIcon={true} />
-      <View style={[styles.container, { paddingTop: insets.top + 90 }]}>
-        <View style={styles.searchBar}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Enter card number..."
-            placeholderTextColor="#aaa"
-            value={input}
-            maxLength={10}
-            autoFocus={true}
-            showSoftInputOnFocus={false}
-          />
-          <View style={styles.searchIconWrap}>
-            <Text style={styles.searchIcon}>🔍</Text>
-          </View>
-        </View>
+    <View style={[styles.screen, { backgroundColor: themeColors.background }]}>
 
-        <ScrollView contentContainerStyle={styles.listContainer}>
-          {input && customersLoading && (
-            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-              <ActivityIndicator size="small" color={Colors.light.tint} />
+      {/* Curved Header Background */}
+      <View style={[styles.headerBg, {
+        height: headerHeight,
+        backgroundColor: themeColors.brandPurple,
+        borderBottomLeftRadius: 32,
+        borderBottomRightRadius: 32,
+      }]}
+      />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
+      >
+        <View style={[styles.container, { paddingTop: insets.top + (isTablet ? 30 : 20) }]}>
+
+          {/* Header Content */}
+          <Animated.View style={{
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+            paddingHorizontal: 24,
+            marginBottom: 20,
+          }}>
+            <View style={styles.headerTopRow}>
+              <View>
+                <Text style={[styles.headerTitle, { fontSize: headerTitleSize }]}>Shop Dashboard</Text>
+                <Text style={styles.headerSubtitle}>Manage customers & orders</Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.headerIconBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+                onPress={() => navigation.navigate('Profile')}
+                activeOpacity={0.7}
+              >
+                <Feather name="grid" size={20} color="#fff" />
+              </TouchableOpacity>
             </View>
-          )}
-          {input && !customersLoading && filtered.length === 0 && (
-            <Text style={styles.emptyText}>No customers found</Text>
-          )}
-          {filtered.map((c) => {
-            const name = toTitleCase(String(c.name || '').trim());
-            const cardFormatted = formatCardNumber(c.cardNumber);
-            const mobileFormatted = formatMobile(c.phone);
-            const dueAmount = Number(c.previousMonthDue || 0);
-            return (
-              <TouchableOpacity
-                key={String(c._id ?? `${c.name}-${c.cardNumber ?? ''}`)}
-                style={[styles.customerCard, dueAmount > 0 && styles.dueCard]}
-                activeOpacity={0.85}
-                onPress={() => {
-                  openSheet(c || ({} as Customer));
-                }}
-                accessibilityLabel={`${name || 'Unknown'} • Card ${cardFormatted} • Mobile ${mobileFormatted}`}
-              >
-                <View style={[styles.customerRow, dueAmount > 0 && styles.customerRowDue]}>
-                  <AvatarInitials title={name || 'Unknown'} />
-                  <View style={[styles.customerInfo, dueAmount > 0 && styles.customerInfoDue]}>
-                    <Text style={styles.customerTitle}>
-                      <Text style={{ fontStyle: 'italic' }}>#{cardFormatted}</Text>{' '}
-                      {name || 'Hiren Dabhi'}
-                    </Text>
-                    <View style={[styles.metaRow, dueAmount > 0 && styles.metaRowDue]}>
-                      <Text style={styles.metaLabel}>Mobile</Text>
-                      <Text style={styles.metaValue}>{mobileFormatted}</Text>
-                    </View>
-                    {dueAmount > 0 ? (
-                      <View style={[styles.metaRow, dueAmount > 0 && styles.metaRowDue]}>
-                        <Text style={styles.metaLabel}>Due Amount</Text>
-                        <Text style={styles.metaValue}>₹ {dueAmount}</Text>
-                      </View>
-                    ) : (
-                      <></>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
 
-        <View
-          style={[
-            styles.keypadWrapper,
-            {
-              bottom: 0,
-              paddingBottom: Math.max(insets.bottom, 12),
-            },
-          ]}
-        >
-          <View style={styles.keypadRow}>
-            {['1', '2', '3'].map((d) => (
-              <TouchableOpacity
-                key={d}
-                style={styles.key}
-                activeOpacity={0.8}
-                onPress={() => onDigit(d)}
-              >
-                <Text style={styles.keyText}>{d}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.keypadRow}>
-            {['4', '5', '6'].map((d) => (
-              <TouchableOpacity
-                key={d}
-                style={styles.key}
-                activeOpacity={0.8}
-                onPress={() => onDigit(d)}
-              >
-                <Text style={styles.keyText}>{d}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.keypadRow}>
-            {['7', '8', '9'].map((d) => (
-              <TouchableOpacity
-                key={d}
-                style={styles.key}
-                activeOpacity={0.8}
-                onPress={() => onDigit(d)}
-              >
-                <Text style={styles.keyText}>{d}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.keypadRow}>
-            <TouchableOpacity
-              style={[styles.key, styles.utilKey]}
-              activeOpacity={0.8}
-              onPress={onClear}
-            >
-              <Text style={styles.utilKeyText}>Clear</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.key} activeOpacity={0.8} onPress={() => onDigit('0')}>
-              <Text style={styles.keyText}>0</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.key, styles.utilKey]}
-              activeOpacity={0.8}
-              onPress={onBackspace}
-            >
-              <Text style={styles.utilKeyText}>⌫</Text>
-            </TouchableOpacity>
-          </View>
+            {/* Search Bar */}
+            <View style={[styles.searchBar, {
+              backgroundColor: themeColors.cardBackground,
+              shadowColor: themeColors.shadow
+            }]}>
+              <Feather name="search" size={18} color={themeColors.textSecondary} style={{ marginLeft: 16 }} />
+              <TextInput
+                style={[styles.searchInput, { color: themeColors.text }]}
+                placeholder="Search by card number..."
+                placeholderTextColor={themeColors.textSecondary}
+                value={input}
+                maxLength={10}
+                showSoftInputOnFocus={false} // Custom keypad
+                editable={false} // Driven by keypad
+              />
+              {!!input && (
+                <TouchableOpacity onPress={onClear} style={{ padding: 8 }}>
+                  <Feather name="x-circle" size={16} color={themeColors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </Animated.View>
+
+          {/* Customer List */}
+          <Animated.ScrollView
+            contentContainerStyle={[styles.listContainer, { width: contentWidth, alignSelf: 'center' }]}
+            showsVerticalScrollIndicator={false}
+            style={{ opacity: fadeAnim }}
+          >
+            {input && customersLoading && (
+              <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={themeColors.brandPurple} />
+                <Text style={{ marginTop: 12, color: themeColors.textSecondary, fontWeight: '500' }}>Searching...</Text>
+              </View>
+            )}
+
+            {input && !customersLoading && filtered.length === 0 && (
+              <View style={{ paddingVertical: 60, alignItems: 'center', opacity: 0.7 }}>
+                <Feather name="users" size={48} color={themeColors.border} />
+                <Text style={[styles.emptyText, { color: themeColors.textSecondary, marginTop: 16 }]}>No customers found</Text>
+              </View>
+            )}
+
+            <View style={[styles.grid, isTablet && { justifyContent: 'space-between' }]}>
+              {filtered.map((c) => {
+                const name = toTitleCase(String(c.name || '').trim());
+                const cardFormatted = formatCardNumber(c.cardNumber);
+                const mobileFormatted = formatMobile(c.phone);
+                const dueAmount = Number(c.previousMonthDue || 0);
+                const hasDue = dueAmount > 0;
+
+                return (
+                  <TouchableOpacity
+                    key={String(c._id ?? `${c.name}-${c.cardNumber ?? ''}`)}
+                    style={[
+                      styles.customerCard,
+                      {
+                        width: cardWidth,
+                        backgroundColor: themeColors.cardBackground,
+                        borderColor: hasDue ? themeColors.destructiveBorder : themeColors.border,
+                        shadowColor: themeColors.shadow
+                      }
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={() => openSheet(c || ({} as Customer))}
+                  >
+                    <View style={styles.customerHeader}>
+                      <AvatarInitials title={name || 'Un'} size={40} fontSize={14} />
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <Text style={[styles.customerName, { color: themeColors.text }]} numberOfLines={1}>{name || 'Unknown'}</Text>
+                        <Text style={[styles.customerCardNo, { color: themeColors.textSecondary }]}>#{cardFormatted}</Text>
+                      </View>
+                      {hasDue && <Feather name="alert-circle" size={18} color={themeColors.destructive} />}
+                    </View>
+
+                    <View style={[styles.divider, { backgroundColor: hasDue ? 'rgba(229,57,53,0.1)' : themeColors.border }]} />
+
+                    <View style={styles.customerMeta}>
+                      <View style={styles.metaItem}>
+                        <Feather name="phone" size={12} color={themeColors.textSecondary} style={{ marginRight: 6 }} />
+                        <Text style={[styles.metaText, { color: themeColors.textSecondary }]}>{mobileFormatted}</Text>
+                      </View>
+                      {hasDue && (
+                        <View style={styles.metaItem}>
+                          <Text style={[styles.dueLabel, { color: themeColors.destructive }]}>Due:</Text>
+                          <Text style={[styles.dueValue, { color: themeColors.destructive }]}>₹{dueAmount}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Bottom Spacer for Keypad */}
+            <View style={{ height: 340 }} />
+          </Animated.ScrollView>
+
+          {/* Keypad */}
+          <Animated.View
+            style={[
+              styles.keypadWrapper,
+              {
+                backgroundColor: themeColors.keypadBackground,
+                paddingBottom: Math.max(insets.bottom, 12),
+                transform: [{ translateY: slideAnim }]
+              },
+            ]}
+          >
+            <View style={{ width: isTablet ? 480 : '100%', alignSelf: 'center' }}>
+              {/* Keypad Rows usually handled by loop, explicit here for custom keys */}
+              {[
+                ['1', '2', '3'],
+                ['4', '5', '6'],
+                ['7', '8', '9'],
+              ].map((row, rowIndex) => (
+                <View key={rowIndex} style={styles.keypadRow}>
+                  {row.map((d) => (
+                    <TouchableOpacity
+                      key={d}
+                      style={[styles.key, { backgroundColor: themeColors.keypadPressed, shadowColor: themeColors.shadow }]}
+                      activeOpacity={0.7}
+                      onPress={() => onDigit(d)}
+                    >
+                      <Text style={[styles.keyText, { color: themeColors.keypadText }]}>{d}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ))}
+              <View style={styles.keypadRow}>
+                <TouchableOpacity
+                  style={[styles.key, { backgroundColor: themeColors.keypadBackground, elevation: 0 }]}
+                  onPress={onClear}
+                >
+                  <Text style={[styles.utilKeyText, { color: themeColors.textSecondary }]}>Clear</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.key, { backgroundColor: themeColors.keypadPressed, shadowColor: themeColors.shadow }]}
+                  onPress={() => onDigit('0')}
+                >
+                  <Text style={[styles.keyText, { color: themeColors.keypadText }]}>0</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.key, { backgroundColor: themeColors.keypadBackground, elevation: 0 }]}
+                  onPress={onBackspace}
+                >
+                  <Feather name="delete" size={24} color={themeColors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Animated.View>
+
+          <OrderSheet {...ownerData} />
         </View>
-        <OrderSheet {...ownerData} />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  screen: { flex: 1 },
+  headerBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 0,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
   },
-  headerCenter: {
-    alignItems: 'center',
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
-  title: {
-    fontSize: 22,
+  headerTitle: {
+    color: '#fff',
     fontWeight: '800',
-    color: Colors.light.text,
+    marginBottom: 4,
   },
-  subTitle: {
-    marginTop: 4,
+  headerSubtitle: {
+    color: 'rgba(255,255,255,0.8)',
     fontSize: 14,
-    color: '#666',
+    fontWeight: '500',
+  },
+  headerIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 10,
-    height: 55,
-    borderRadius: 22,
-    backgroundColor: '#fff',
+    height: 56,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
-    paddingLeft: 16,
-    paddingRight: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    borderColor: 'transparent', // controlled by theme
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    width: '90%',
+    elevation: 6,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
-    color: Colors.light.text,
-  },
-  searchIconWrap: {
-    marginLeft: 8,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchIcon: {
     fontSize: 16,
-    color: '#0d101b',
+    fontWeight: '500',
+    paddingHorizontal: 12,
   },
   listContainer: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center', // centered for mobile list
   },
   emptyText: {
-    textAlign: 'center',
-    color: '#666',
-    fontSize: 14,
-    paddingVertical: 12,
+    fontSize: 16,
+    fontWeight: '600',
   },
   customerCard: {
-    borderRadius: 16,
-    padding: 12,
-    marginVertical: 8,
-    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
-  dueCard: {
-    backgroundColor: '#fdecea',
-    borderColor: 'rgba(229,57,53,0.24)',
-  },
-
-  customerName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: 8,
-  },
-  customerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
-  customerRowDue: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#fdecea',
-  },
-  customerInfo: { flex: 1, backgroundColor: '#fff' },
-  customerInfoDue: { flex: 1, backgroundColor: '#fdecea' },
-  customerTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, backgroundColor: '#fff' },
-  metaRowDue: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    backgroundColor: '#fdecea',
-  },
-  metaLabel: { fontSize: 12, color: '#666', marginRight: 8 },
-  metaValue: { fontSize: 12, color: Colors.light.text, fontWeight: '700' },
-  cardRow: {
+  customerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  cardItem: {
+  customerName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+    flexShrink: 1, // Prevent text overflow
+  },
+  customerCardNo: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  divider: {
+    height: 1,
+    marginVertical: 12,
+  },
+  customerMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  cardItemLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginRight: 8,
-  },
-  cardItemBadge: {
-    minWidth: 24,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-    backgroundColor: '#0d101b',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardItemBadgeText: {
+  metaText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '500',
+  },
+  dueLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  dueValue: {
+    fontSize: 12,
+    fontWeight: '800',
   },
   keypadWrapper: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    minHeight: 320,
-    paddingHorizontal: 24,
-    paddingTop: 8,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 10,
   },
   keypadRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    justifyContent: 'space-evenly',
+    marginBottom: 16,
   },
   key: {
+    width: 60, // approximate, flex handled in parent mostly or fixed logic
     flex: 1,
-    height: 68,
-    marginHorizontal: 6,
+    maxWidth: 90,
+    height: 60,
+    marginHorizontal: 8,
     borderRadius: 18,
-    backgroundColor: '#a0c6ff',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   keyText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  utilKey: {
-    backgroundColor: '#0d101b',
+    fontSize: 24,
+    fontWeight: '600',
   },
   utilKeyText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '600',
   },
 });

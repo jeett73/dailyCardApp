@@ -4,8 +4,8 @@ import { getDeviceId } from '@/services/deviceService';
 import { registerForPushNotificationsAsync } from '@/services/notificationService';
 import { setItem } from '@/services/storage';
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
-import { Keyboard } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Keyboard, useWindowDimensions } from 'react-native';
 
 export function useLogin() {
   const navigation = useNavigation<any>();
@@ -145,6 +145,31 @@ export function useLogin() {
     }
   }
 
+  // Responsive Logic
+  const { width } = useWindowDimensions();
+  const isTablet = width > 768;
+  const contentWidth = isTablet ? 480 : '100%';
+  const headerHeight = isTablet ? 300 : 260;
+
+  // Animation Logic
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return {
     phone,
     password,
@@ -156,5 +181,11 @@ export function useLogin() {
     setPassword: onPasswordChange,
     setFocused,
     handleContinue,
+    // UI Props
+    isTablet,
+    contentWidth,
+    headerHeight,
+    fadeAnim,
+    slideAnim,
   };
 }

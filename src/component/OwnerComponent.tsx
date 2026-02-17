@@ -1,8 +1,8 @@
 import { getRequest } from '@/api/apiMethods';
 import apiEndpoint from '@/constants/apiEndpoint';
 import { getItem } from '@/services/storage';
-import { useEffect, useMemo, useState } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, useWindowDimensions } from 'react-native';
 import { useOrder, type ShopProduct } from './OrderComponent';
 
 export type Customer = {
@@ -110,6 +110,31 @@ export function useOwner() {
   // Derive selectedName from orderLogic for backward compatibility
   const selectedName = orderLogic.currentCustomer?.name ?? null;
 
+  // Responsive Logic
+  const isTablet = width > 768;
+  const contentWidth = isTablet ? 600 : '100%';
+  const headerHeight = isTablet ? 320 : 150;
+  const cardWidth = isTablet ? '48%' : '100%'; // Grid layout for tablet
+
+  // Animation Logic
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return {
     width,
     // height comes from orderLogic or useWindowDimensions.
@@ -126,5 +151,12 @@ export function useOwner() {
     formatCardNumber,
     formatMobile,
     ...orderLogic,
+    // UI Props
+    isTablet,
+    contentWidth,
+    headerHeight,
+    cardWidth,
+    fadeAnim,
+    slideAnim,
   };
 }

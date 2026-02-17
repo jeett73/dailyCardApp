@@ -1,99 +1,161 @@
-// import { Text, View } from '@/components/Themed';
 import { useLogin } from '@/component/LoginComponent';
+import Colors from '@/constants/Colors';
+import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import {
   ActivityIndicator,
-  ImageBackground,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  useColorScheme,
 } from 'react-native';
-import Colors from '../constants/Colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
+  const insets = useSafeAreaInsets();
+
   const {
     phone,
     password,
-    focused,
     loading,
     error,
     errors,
     setPhone,
     setPassword,
-    setFocused,
     handleContinue,
+    // UI Props from Hook
+    isTablet,
+    contentWidth,
+    headerHeight,
+    fadeAnim,
+    slideAnim,
   } = useLogin();
 
+  const headerTitleSize = isTablet ? 36 : 30;
+
   return (
-    <View style={styles.screen}>
-      <View style={styles.hero}>
-        <ImageBackground
-          source={require('../../assets/images/login-bg.jpeg')}
-          style={styles.heroImage}
-          imageStyle={styles.heroImageInner}
-          resizeMode="cover"
-          blurRadius={focused ? 10 : 0}
-        >
-          {focused && <View style={styles.heroOverlay} pointerEvents="none" />}
-        </ImageBackground>
-      </View>
+    <View style={[styles.screen, { backgroundColor: themeColors.background }]}>
+      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+
+      {/* Curved Header Background */}
+      <View style={[styles.headerBg, {
+        height: headerHeight,
+        backgroundColor: themeColors.brandPurple,
+        borderBottomLeftRadius: 40,
+        borderBottomRightRadius: 40,
+      }]}
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
       >
         <ScrollView
-          contentContainerStyle={[styles.container, focused && { paddingTop: error ? 95 : 150 }]}
+          contentContainerStyle={[styles.container, { paddingTop: insets.top + (isTablet ? 60 : 40) }]}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <View style={[styles.card, focused && styles.cardFocused]}>
-            <Text style={styles.title}>Welcome</Text>
-            <Text style={styles.subtitle}>Enter your phone and card number to continue</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                value={phone}
-                onChangeText={setPhone}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                keyboardType="phone-pad"
-                placeholder="Enter phone number"
-                placeholderTextColor="#0d101b"
-                style={[styles.input, errors.phone && styles.inputError]}
-                maxLength={10}
-              />
-              {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+          <Animated.View style={{
+            width: contentWidth,
+            alignSelf: 'center',
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }}>
+
+            {/* Header Content */}
+            <View style={styles.headerContent}>
+              <Text style={[styles.headerTitle, { fontSize: headerTitleSize }]}>Welcome</Text>
+              <Text style={styles.headerSubtitle}>Sign in to your account</Text>
             </View>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                placeholder="Enter card number"
-                placeholderTextColor="#0d101b"
-                style={[styles.input, errors.password && styles.inputError]}
-                autoCapitalize="none"
-              />
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+
+            {/* Login Card */}
+            <View style={[styles.card, {
+              backgroundColor: themeColors.cardBackground,
+              shadowColor: themeColors.shadow
+            }]}>
+
+              {/* Phone Input */}
+              <View style={styles.inputWrapper}>
+                <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Mobile Number</Text>
+                <View style={[styles.inputContainer, {
+                  backgroundColor: themeColors.iconBackground,
+                  borderColor: errors.phone ? themeColors.destructive : themeColors.border
+                }]}>
+                  <Feather name="phone" size={20} color={themeColors.textSecondary} style={styles.inputIcon} />
+                  <TextInput
+                    value={phone}
+                    onChangeText={setPhone}
+                    keyboardType="phone-pad"
+                    placeholder="Enter 10-digit number"
+                    placeholderTextColor={themeColors.textSecondary}
+                    style={[styles.input, { color: themeColors.text }]}
+                    maxLength={10}
+                    editable={!loading}
+                  />
+                </View>
+                {errors.phone && <Text style={[styles.errorText, { color: themeColors.destructive }]}>{errors.phone}</Text>}
+              </View>
+
+              {/* Password Input */}
+              <View style={styles.inputWrapper}>
+                <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Card Number</Text>
+                <View style={[styles.inputContainer, {
+                  backgroundColor: themeColors.iconBackground,
+                  borderColor: errors.password ? themeColors.destructive : themeColors.border
+                }]}>
+                  <Feather name="credit-card" size={20} color={themeColors.textSecondary} style={styles.inputIcon} />
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Enter card number"
+                    placeholderTextColor={themeColors.textSecondary}
+                    style={[styles.input, { color: themeColors.text }]}
+                    autoCapitalize="none"
+                    editable={!loading}
+                  />
+                </View>
+                {errors.password && <Text style={[styles.errorText, { color: themeColors.destructive }]}>{errors.password}</Text>}
+              </View>
+
+              {/* API Error */}
+              {!!error && <Text style={[styles.apiErrorText, { color: themeColors.destructive }]}>{error}</Text>}
+
+              {/* Submit Button */}
+              <TouchableOpacity
+                onPress={handleContinue}
+                activeOpacity={0.8}
+                disabled={loading}
+                style={[styles.button, {
+                  backgroundColor: themeColors.brandPurple,
+                  opacity: loading ? 0.7 : 1,
+                  shadowColor: themeColors.brandPurple
+                }]}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Login</Text>
+                )}
+              </TouchableOpacity>
+
             </View>
-            {!!error && <Text style={styles.apiErrorText}>{error}</Text>}
-            <TouchableOpacity
-              onPress={handleContinue}
-              activeOpacity={0.9}
-              disabled={loading}
-              style={[styles.button, loading && styles.buttonDisabled]}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Login</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+
+            <View style={styles.footer}>
+              <Text style={[styles.footerText, { color: themeColors.textSecondary }]}>
+                By logging in, you agree to our Terms & Conditions
+              </Text>
+            </View>
+
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -102,122 +164,106 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  screen: { flex: 1, backgroundColor: '#fff' },
-  hero: {
+  screen: { flex: 1 },
+  headerBg: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 600,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
-    overflow: 'hidden',
-    backgroundColor: '#f6f6f6',
     zIndex: 0,
-  },
-  heroImage: { flex: 1 },
-  heroImageInner: { width: '100%', height: '150%', transform: [{ translateY: 0 }] },
-  heroOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'rgba(0,0,0,0.25)',
   },
   container: {
     flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
     paddingHorizontal: 24,
-    paddingTop: 430,
-    paddingBottom: 32,
+    paddingBottom: 40,
+  },
+  headerContent: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  headerTitle: {
+    color: '#fff',
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 16,
+    textAlign: 'center',
   },
   card: {
     width: '100%',
-    maxWidth: 460,
     borderRadius: 24,
-    paddingVertical: 32,
-    paddingHorizontal: 20,
-    minHeight: 250,
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    shadowColor: '#000',
+    padding: 24,
+    paddingTop: 32,
     shadowOpacity: 0.1,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
     elevation: 8,
-  },
-  cardFocused: {
-    zIndex: 10000,
-    elevation: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: Colors.light.text,
-  },
-  subtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: Colors.light.text,
     marginBottom: 24,
   },
   inputWrapper: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   inputLabel: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
     marginBottom: 8,
+    marginLeft: 4,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    paddingHorizontal: 16,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    height: 52,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(248,248,248,0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
+    flex: 1,
     fontSize: 16,
-    color: Colors.light.text,
+    fontWeight: '500',
+    height: '100%',
   },
-  inputError: {
-    borderColor: '#e53935',
+  errorText: {
+    fontSize: 12,
+    marginTop: 6,
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  apiErrorText: {
+    marginTop: 0,
+    marginBottom: 16,
+    textAlign: 'center',
+    fontWeight: '600',
   },
   button: {
     height: 56,
-    borderRadius: 18,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.light.tint,
     marginTop: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
     elevation: 6,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '700',
     color: '#fff',
   },
-  errorText: {
+  footer: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  footerText: {
     fontSize: 12,
-    color: '#e53935',
-    marginTop: 4,
-    marginLeft: 4,
-  },
-  apiErrorText: {
-    marginTop: 4,
-    marginBottom: 8,
     textAlign: 'center',
-    color: '#ff3333',
-  },
+    lineHeight: 18,
+  }
 });

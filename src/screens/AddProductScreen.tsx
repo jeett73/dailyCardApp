@@ -1,356 +1,363 @@
 import { useAddProduct } from '@/component/AddProductComponent';
-import HeroHeader from '@/components/HeroHeader';
-import { Text, View } from '@/components/Themed';
 import apiEndpoint from '@/constants/apiEndpoint';
 import Colors from '@/constants/Colors';
-import Feather from '@expo/vector-icons/Feather';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Feather } from '@expo/vector-icons';
+import React from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Image,
-  Keyboard,
-  LayoutAnimation,
+  KeyboardAvoidingView,
   Platform,
+  StatusBar,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  UIManager,
+  View,
+  useColorScheme,
 } from 'react-native';
-import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type InputRef = React.ElementRef<typeof TextInput>;
-
 export default function AddProductScreen() {
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const insets = useSafeAreaInsets();
-  const { items, loading, error, toggle, setPriceText, saveAll, saving, setOrderIds } =
-    useAddProduct();
-  const listRef = useRef<import('react-native-gesture-handler').FlatList<any> | null>(null);
-  const inputRefs = useRef<Record<string, InputRef | null>>({});
-  const cardOffsets = useRef<Record<string, number>>({});
-  const inputOffsets = useRef<Record<string, number>>({});
-  const lastFocusedIdRef = useRef<string | null>(null);
-  const [focusTargetId, setFocusTargetId] = useState<string | null>(null);
-  const [keyboardPadding, setKeyboardPadding] = useState(0);
-  const [dragging, setDragging] = useState(false);
 
+  const {
+    items,
+    loading,
+    error,
+    toggle,
+    setPriceText,
+    saveAll,
+    saving,
+    setOrderIds,
+    // UI Props from Hook
+    listRef,
+    keyboardPadding,
+    dragging,
+    isTablet,
+    contentWidth,
+    headerHeight,
+    fadeAnim,
+    slideAnim,
+    // Handlers
+    handleLayoutList,
+    handleScroll,
+    handleDragBegin,
+    handleDragEnd,
+    handleInputFocus,
+    handleInputLayout,
+    handleCardLayout,
+    setInputRef,
+  } = useAddProduct();
+
+  const headerTitleSize = isTablet ? 32 : 24;
   const footerBottomPadding = Math.max(insets.bottom, 16);
-  const footerHeight = 12 + 50 + footerBottomPadding;
 
-  const keyboardHeightRef = useRef(0);
-  const scrollYRef = useRef(0);
-  const listHeightRef = useRef(0);
-
-  const scrollToProductInput = useCallback(
-    (id: string) => {
-      if (!listRef.current) return;
-
-      // Get stored Y position of input or card
-      const cardY = cardOffsets.current[id] ?? 0;
-      const inputY = inputOffsets.current[id] ?? 0;
-      const y = cardY + inputY;
-
-      const currentScrollY = scrollYRef.current;
-      const viewHeight = listHeightRef.current;
-      const keyboardHeight = keyboardHeightRef.current;
-
-      if (viewHeight === 0) return;
-
-      // Visible height after keyboard opens
-      const effectiveVisibleHeight = viewHeight - keyboardHeight;
-
-      // Height available for list content after footer
-      const availableHeight = effectiveVisibleHeight - footerHeight;
-
-      // Approximate input size and margin
-      const INPUT_HEIGHT = 60;
-      const MARGIN = 20;
-
-      // Position of input relative to current viewport
-      const inputTop = y - currentScrollY;
-
-      let targetOffset: number | null = null;
-
-      // Case 1: Input is above visible area
-      if (inputTop < MARGIN) {
-        targetOffset = Math.max(0, y - MARGIN);
-      }
-      // Case 2: Input is below visible area (hidden by keyboard/footer)
-      else if (inputTop + INPUT_HEIGHT + MARGIN > availableHeight) {
-        targetOffset = Math.max(0, y + INPUT_HEIGHT - availableHeight + MARGIN);
-      }
-
-      if (targetOffset === null) return;
-
-      // First scroll
-      listRef.current.scrollToOffset({
-        offset: targetOffset,
-        animated: true,
-      });
-
-      // Second scroll to stabilize after keyboard animation
-      setTimeout(() => {
-        if (lastFocusedIdRef.current === id) {
-          listRef.current?.scrollToOffset({
-            offset: targetOffset!,
-            animated: true,
-          });
-        }
-      }, 250);
-    },
-    [footerHeight],
-  );
-  useEffect(() => {
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', (e: any) => {
-      const h = e?.endCoordinates?.height ?? 0;
-      setKeyboardPadding(h);
-      keyboardHeightRef.current = h;
-      const id = lastFocusedIdRef.current;
-      if (id) {
-        setTimeout(() => {
-          scrollToProductInput(id);
-        }, 50);
-      }
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardPadding(0);
-      keyboardHeightRef.current = 0;
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, [scrollToProductInput]);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (focusTargetId) {
-      const targetSelected = items.some((it) => it.id === focusTargetId && it.selected);
-      if (targetSelected) {
-        timer = setTimeout(() => {
-          inputRefs.current[focusTargetId]?.focus?.();
-          setFocusTargetId(null);
-        }, 50);
-      }
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [items, focusTargetId]);
-
-  const content = useMemo(() => {
+  // Render content based on state
+  const renderContent = () => {
     if (loading) {
       return (
-        <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-          <ActivityIndicator size="small" color={Colors.light.tint} />
+        <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={themeColors.brandPurple} />
         </View>
       );
     }
     if (error) {
-      return <Text style={styles.error}>{error}</Text>;
+      return (
+        <View style={{ padding: 24, alignItems: 'center' }}>
+          <Feather name="alert-circle" size={32} color={themeColors.destructive} />
+          <Text style={[styles.errorText, { color: themeColors.destructive, marginTop: 8 }]}>{error}</Text>
+        </View>
+      );
     }
     if (!items || items.length === 0) {
-      return <Text style={styles.emptyText}>No products available</Text>;
+      return (
+        <View style={{ padding: 40, alignItems: 'center' }}>
+          <Feather name="box" size={40} color={themeColors.textSecondary} />
+          <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>No products available</Text>
+        </View>
+      );
     }
     return null;
-  }, [items, loading, error, toggle, setPriceText, scrollToProductInput]);
+  };
 
   return (
-    <View style={[styles.container]}>
-      <HeroHeader color={Colors.light.brandPurple} title="Select Product" />
-      <View
-        style={styles.flex}
-        onLayout={(e) => (listHeightRef.current = e.nativeEvent.layout.height)}
-      >
-        {content ? (
-          content
-        ) : (
-          <DraggableFlatList
-            ref={listRef}
-            data={items}
-            onScroll={(e) => {
-              scrollYRef.current = e.nativeEvent.contentOffset.y;
-            }}
-            scrollEventThrottle={16}
-            keyExtractor={(item) => item.id}
-            containerStyle={styles.flex}
-            scrollEnabled={!dragging}
-            contentContainerStyle={[
-              styles.contentContainer,
-              { paddingTop: insets.top + 90 },
-              { paddingBottom: footerHeight + 24 + keyboardPadding },
-            ]}
-            keyboardShouldPersistTaps="always"
-            onDragBegin={() => setDragging(true)}
-            onDragEnd={({ data }) => {
-              setDragging(false);
-              // Preserve approximate Y positions for the new order to prevent scroll jumping
-              // (onLayout will correct these if heights differ, but this covers the no-layout-change case)
-              const currentYs = Object.values(cardOffsets.current).sort((a, b) => a - b);
-              const newOffsets: Record<string, number> = {};
-              data.forEach((item, index) => {
-                if (index < currentYs.length) {
-                  newOffsets[item.id] = currentYs[index];
-                }
-              });
-              cardOffsets.current = newOffsets;
+    <View style={[styles.screen, { backgroundColor: themeColors.background }]}>
+      <StatusBar barStyle="light-content" />
 
-              setOrderIds(data.map((x) => x.id));
-            }}
-            renderItem={({ item, drag, isActive, getIndex }: RenderItemParams<any>) => {
-              return (
-                <TouchableOpacity
-                  style={[
-                    styles.productCard,
-                    item.selected && styles.productCardSelected,
-                    isActive && styles.productCardActive,
-                  ]}
-                  onLongPress={drag}
-                  delayLongPress={200}
-                  activeOpacity={1}
-                  accessibilityLabel={`${item.name}`}
-                  onLayout={(e) => {
-                    cardOffsets.current[item.id] = e?.nativeEvent?.layout?.y ?? 0;
-                  }}
-                >
-                  <View style={[styles.productRow, item.selected && styles.productRowSelected]}>
-                    <Image
-                      source={{ uri: apiEndpoint.uploads(item.icon) }}
-                      style={styles.productThumb}
-                      resizeMode="cover"
-                    />
-                    <View style={styles.productInfo}>
-                      <Text style={styles.productTitle} numberOfLines={1}>
-                        {item.name}
-                      </Text>
-                      {item.selected && (
-                        <TextInput
-                          ref={(r) => {
-                            inputRefs.current[item.id] = r;
-                          }}
-                          style={styles.priceInput}
-                          placeholder="Enter price"
-                          keyboardType="decimal-pad"
-                          value={item.priceText}
-                          onChangeText={(t) => setPriceText(item.id, t)}
-                          onLayout={(e) => {
-                            inputOffsets.current[item.id] = e?.nativeEvent?.layout?.y ?? 0;
-                          }}
-                          onFocus={() => {
-                            lastFocusedIdRef.current = item.id;
-                            scrollToProductInput(item.id);
-                          }}
-                        />
-                      )}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
+      >
+        <View style={styles.flex} onLayout={handleLayoutList}>
+
+          {/* Header Content (Static for correct zIndex over list) */}
+          <Animated.View style={{
+            position: 'absolute',
+            top: insets.top + (isTablet ? 30 : 20),
+            width: contentWidth,
+            alignSelf: 'center',
+            zIndex: 20, // Increase zIndex
+            paddingHorizontal: 24,
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }}>
+            <Text style={[styles.headerTitle, { fontSize: headerTitleSize }]}>Select Product</Text>
+          </Animated.View>
+
+          {loading || error || items.length === 0 ? (
+            <View style={{ marginTop: headerHeight }}>
+              {renderContent()}
+            </View>
+          ) : (
+            <DraggableFlatList
+              ref={listRef}
+              data={items}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              keyExtractor={(item) => item.id}
+              containerStyle={styles.flex}
+              scrollEnabled={!dragging}
+              contentContainerStyle={[
+                styles.listContent,
+                { paddingTop: headerHeight - 20, paddingBottom: 100 + keyboardPadding }
+              ]}
+              keyboardShouldPersistTaps="always"
+              onDragBegin={handleDragBegin}
+              onDragEnd={handleDragEnd}
+              renderItem={({ item, drag, isActive }: RenderItemParams<any>) => (
+                <ScaleDecorator>
+                  <TouchableOpacity
+                    style={[
+                      styles.productCard,
+                      {
+                        width: isTablet ? '48%' : '100%',
+                        backgroundColor: themeColors.cardBackground,
+                        borderColor: item.selected ? themeColors.brandPurple : themeColors.border,
+                        shadowColor: themeColors.shadow
+                      },
+                      isActive && { opacity: 0.9, transform: [{ scale: 1.02 }] }
+                    ]}
+                    onLongPress={drag}
+                    delayLongPress={200}
+                    activeOpacity={0.9}
+                    onLayout={(e) => handleCardLayout(item.id, e)}
+                  >
+                    <View style={styles.productRow}>
+                      <Image
+                        source={{ uri: apiEndpoint.uploads(item.icon) }}
+                        style={[styles.productThumb, { backgroundColor: themeColors.iconBackground }]}
+                        resizeMode="cover"
+                      />
+
+                      <View style={styles.productInfo}>
+                        <Text style={[styles.productTitle, { color: themeColors.text }]} numberOfLines={1}>
+                          {item.name}
+                        </Text>
+
+                        {item.selected && (
+                          <Animated.View style={styles.inputWrapper}>
+                            <Text style={[styles.currencyPrefix, { color: themeColors.textSecondary }]}>₹</Text>
+                            <TextInput
+                              ref={(r) => setInputRef(item.id, r)}
+                              style={[styles.priceInput, { color: themeColors.text }]}
+                              placeholder="0"
+                              placeholderTextColor={themeColors.textSecondary}
+                              keyboardType="decimal-pad"
+                              value={item.priceText}
+                              onChangeText={(t) => setPriceText(item.id, t)}
+                              onLayout={(e) => handleInputLayout(item.id, e)}
+                              onFocus={() => handleInputFocus(item.id)}
+                            />
+                          </Animated.View>
+                        )}
+                      </View>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.checkbox,
+                          item.selected
+                            ? { backgroundColor: themeColors.brandPurple, borderColor: themeColors.brandPurple }
+                            : { backgroundColor: 'transparent', borderColor: themeColors.textSecondary }
+                        ]}
+                        activeOpacity={0.7}
+                        onPress={() => toggle(item.id)}
+                      >
+                        {item.selected && <Feather name="check" size={14} color="#fff" />}
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={[styles.checkbox, item.selected && styles.checkboxChecked]}
-                      activeOpacity={0.85}
-                      onPress={() => {
-                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                        if (!item.selected) setFocusTargetId(item.id);
-                        toggle(item.id);
-                      }}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: item.selected }}
-                    >
-                      {item.selected && <Feather name="check" size={14} color="#fff" />}
-                    </TouchableOpacity>
-                  </View>
-                </TouchableOpacity>
-              );
-            }}
-          />
-        )}
-        <View
-          style={[styles.footer, { paddingBottom: footerBottomPadding, bottom: keyboardPadding }]}
-        >
-          <TouchableOpacity
-            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-            activeOpacity={0.9}
-            onPress={saveAll}
-            disabled={saving}
-          >
-            <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save'}</Text>
-          </TouchableOpacity>
+                  </TouchableOpacity>
+                </ScaleDecorator>
+              )}
+            />
+          )}
+
+          {/* Footer */}
+          <View style={[
+            styles.footer,
+            {
+              paddingBottom: footerBottomPadding,
+              bottom: keyboardPadding,
+              backgroundColor: themeColors.background,
+              borderTopColor: themeColors.border,
+              zIndex: 30 // Ensure footer is above everything
+            }
+          ]}>
+            <TouchableOpacity
+              style={[
+                styles.saveButton,
+                { backgroundColor: themeColors.brandPurple },
+                saving && { opacity: 0.7 }
+              ]}
+              activeOpacity={0.8}
+              onPress={saveAll}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveButtonText}>Save Products</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
         </View>
-      </View>
+      </KeyboardAvoidingView>
+
+      {/* Curved Header Background (Moved AFTER content for zIndex) */}
+      <View style={[styles.headerBg, {
+        height: headerHeight,
+        backgroundColor: themeColors.brandPurple,
+        borderBottomLeftRadius: 40,
+        borderBottomRightRadius: 40,
+        zIndex: 10, // Ensure it's above list but below specific overlays if any
+      }]}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  container: { flex: 1, backgroundColor: '#fff' },
-  contentContainer: { paddingVertical: 12, paddingHorizontal: 16 },
-  productCard: {
-    borderRadius: 16,
-    padding: 12,
-    marginVertical: 8,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+  screen: { flex: 1 },
+  headerBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 0,
   },
-  productCardSelected: { borderColor: Colors.light.tint, backgroundColor: '#fff' },
-  productCardActive: { opacity: 0.9 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
-  productRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
-  productRowSelected: { backgroundColor: '#fff' },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
+  headerTitle: {
+    color: '#fff',
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    marginTop: 30,
+  },
+  productCard: {
+    borderRadius: 20,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1.5,
-    borderColor: 'rgba(13,16,27,0.25)',
-    backgroundColor: '#fff',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    alignSelf: 'center', // for grid logic if needed
+  },
+  productRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
+  },
+  productThumb: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+  },
+  productInfo: {
+    flex: 1,
     justifyContent: 'center',
   },
-  checkboxChecked: { backgroundColor: Colors.light.tint, borderColor: Colors.light.tint },
-  productThumb: { width: 84, height: 84, borderRadius: 14, marginVertical: -4 },
-  productInfo: { flex: 1, backgroundColor: '#fff' },
-  productTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.text },
+  productTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  currencyPrefix: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 4,
+  },
   priceInput: {
-    marginTop: 6,
-    height: 40,
-    width: 120,
-    alignSelf: 'flex-start',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.12)',
-    paddingHorizontal: 12,
-    backgroundColor: '#fff',
-    fontSize: 14,
-    color: Colors.light.text,
+    fontSize: 16,
+    fontWeight: '600',
+    minWidth: 80,
+    paddingVertical: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(128,128,128,0.3)',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   footer: {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -4 },
   },
   saveButton: {
-    height: 50,
+    height: 56,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.light.tint,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  saveButtonDisabled: { opacity: 0.7 },
-  saveButtonText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  emptyText: { textAlign: 'center', color: '#666', fontSize: 14, paddingVertical: 12 },
-  error: { fontSize: 14, color: '#e53935' },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginTop: 16,
+  },
 });

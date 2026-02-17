@@ -1,21 +1,28 @@
 import { useResetPassword } from '@/component/ResetPasswordComponent';
-import HeroHeader from '@/components/HeroHeader';
 import Colors from '@/constants/Colors';
+import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import {
+  ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ResetPasswordScreen() {
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const insets = useSafeAreaInsets();
+
   const {
     newPassword,
     setNewPassword,
@@ -27,124 +34,243 @@ export default function ResetPasswordScreen() {
     isValid,
     handleResetPassword,
     handleBlur,
+    // UI Props
+    isTablet,
+    contentWidth,
+    headerHeight,
+    fadeAnim,
+    slideAnim,
   } = useResetPassword();
 
-  return (
-    <View style={styles.container}>
-      <HeroHeader color={Colors.light.brandPurple} title="Reset Password" />
+  const headerTitleSize = isTablet ? 32 : 28;
 
-      <View style={styles.flex}>
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={[
-            styles.listContainer,
-            { paddingTop: Platform.OS === 'ios' ? 80 : insets.top + 90 },
-            { paddingBottom: Math.max(insets.bottom, 24) },
-          ]}
-        >
-          <View style={styles.card}>
-            <Text style={styles.label}>New Password</Text>
-            <TextInput
-              style={[styles.input, errors.newPassword && styles.inputError]}
-              placeholder="Enter new password"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              onBlur={() => handleBlur('newPassword')}
-              secureTextEntry
-            />
-            {errors.newPassword && <Text style={styles.errorText}>{errors.newPassword}</Text>}
-
-            <Text style={styles.label}>Confirm Password</Text>
-            <TextInput
-              style={[styles.input, errors.confirmPassword && styles.inputError]}
-              placeholder="Confirm new password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              onBlur={() => handleBlur('confirmPassword')}
-              secureTextEntry
-            />
-            {errors.confirmPassword && (
-              <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-            )}
-
-            {error && <Text style={styles.mainErrorText}>{error}</Text>}
-
-            <TouchableOpacity
-              style={[styles.saveButton, (!isValid || loading) && styles.saveButtonDisabled]}
-              activeOpacity={0.9}
-              onPress={handleResetPassword}
-              disabled={!isValid || loading}
-            >
-              <Text style={styles.saveButtonText}>
-                {loading ? 'Resetting...' : 'Reset Password'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardSpacer}
+  const renderInput = (
+    label: string,
+    value: string,
+    onChangeText: (text: string) => void,
+    field: 'newPassword' | 'confirmPassword',
+    placeholder: string,
+    errorMsg?: string
+  ) => (
+    <View style={styles.inputGroup}>
+      <Text style={[styles.label, { color: themeColors.text }]}>{label}</Text>
+      <View style={[
+        styles.inputContainer,
+        {
+          backgroundColor: themeColors.background,
+          borderColor: errorMsg ? themeColors.destructive : themeColors.border
+        }
+      ]}>
+        <Feather name="lock" size={20} color={themeColors.textSecondary} style={{ marginRight: 10 }} />
+        <TextInput
+          style={[styles.input, { color: themeColors.text }]}
+          placeholder={placeholder}
+          placeholderTextColor={themeColors.textSecondary}
+          value={value}
+          onChangeText={onChangeText}
+          onBlur={() => handleBlur(field)}
+          secureTextEntry
         />
       </View>
+      {errorMsg && (
+        <View style={styles.errorRow}>
+          <Feather name="alert-circle" size={12} color={themeColors.destructive} />
+          <Text style={[styles.errorText, { color: themeColors.destructive }]}>{errorMsg}</Text>
+        </View>
+      )}
+    </View>
+  );
+
+  return (
+    <View style={[styles.screen, { backgroundColor: themeColors.background }]}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Curved Header Background */}
+      <View style={[styles.headerBg, {
+        height: headerHeight,
+        backgroundColor: themeColors.brandPurple,
+        borderBottomLeftRadius: 40,
+        borderBottomRightRadius: 40,
+      }]}
+      />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40 }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View style={{
+            width: contentWidth,
+            alignSelf: 'center',
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }}>
+
+            {/* Header Title */}
+            <View style={styles.headerContainer}>
+              <Text style={[styles.headerTitle, { fontSize: headerTitleSize }]}>Reset Password</Text>
+              <Text style={styles.headerSubtitle}>Create a new secure password</Text>
+            </View>
+
+            {/* Form Card */}
+            <View style={[styles.card, {
+              backgroundColor: themeColors.cardBackground,
+              shadowColor: themeColors.shadow
+            }]}>
+
+              {renderInput(
+                "New Password",
+                newPassword,
+                setNewPassword,
+                'newPassword',
+                "Enter new password",
+                errors.newPassword
+              )}
+
+              {renderInput(
+                "Confirm Password",
+                confirmPassword,
+                setConfirmPassword,
+                'confirmPassword',
+                "Confirm new password",
+                errors.confirmPassword
+              )}
+
+              {error && (
+                <View style={[styles.mainErrorContainer, { backgroundColor: themeColors.destructiveBackground }]}>
+                  <Feather name="alert-triangle" size={16} color={themeColors.destructive} />
+                  <Text style={[styles.mainErrorText, { color: themeColors.destructive }]}>{error}</Text>
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={[
+                  styles.primaryButton,
+                  { backgroundColor: themeColors.brandPurple },
+                  (!isValid || loading) && { opacity: 0.7, backgroundColor: themeColors.textSecondary }
+                ]}
+                activeOpacity={0.8}
+                onPress={handleResetPassword}
+                disabled={!isValid || loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Update Password</Text>
+                )}
+              </TouchableOpacity>
+
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  container: { flex: 1, backgroundColor: Colors.light.background },
-  listContainer: { paddingVertical: 12, paddingHorizontal: 16 },
+  screen: { flex: 1 },
+  headerBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 0,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    zIndex: 1,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  headerTitle: {
+    color: '#fff',
+    fontWeight: '800',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  headerSubtitle: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 16,
+    textAlign: 'center',
+  },
   card: {
-    borderRadius: 16,
-    padding: 12,
-    marginVertical: 8,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.08)',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    borderRadius: 24,
+    padding: 24,
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
   },
-  label: { marginTop: 12, fontSize: 14, color: Colors.light.text, fontWeight: '700' },
-  input: {
-    marginTop: 8,
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(13,16,27,0.12)',
-    paddingHorizontal: 12,
-    backgroundColor: '#fff',
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
     fontSize: 14,
-    color: Colors.light.text,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginLeft: 4,
   },
-  inputError: {
-    borderColor: '#e53935',
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    paddingHorizontal: 16,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    marginLeft: 4,
   },
   errorText: {
     fontSize: 12,
-    color: '#e53935',
-    marginTop: 4,
+    fontWeight: '500',
     marginLeft: 4,
   },
-  mainErrorText: {
-    fontSize: 14,
-    color: '#e53935',
-    marginTop: 12,
-    textAlign: 'center',
+  mainErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 20,
+    justifyContent: 'center',
   },
-  saveButton: {
-    marginTop: 24,
-    height: 50,
+  mainErrorText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  primaryButton: {
+    height: 56,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.light.tint,
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  saveButtonDisabled: { opacity: 0.7 },
-  saveButtonText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  keyboardSpacer: { height: 0 },
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });

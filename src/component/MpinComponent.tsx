@@ -1,7 +1,7 @@
 import { log } from '@/services/logger';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TextInput } from 'react-native';
+import { Animated, TextInput, useWindowDimensions } from 'react-native';
 import { postRequest } from '../api/apiMethods';
 import apiEndpoint from '../constants/apiEndpoint';
 import { getItem, setItem } from '../services/storage';
@@ -179,6 +179,36 @@ export function useMpin() {
     inputRefs[0].current?.focus();
   }
 
+  // Responsive Logic
+  const { width } = useWindowDimensions();
+  const isTablet = width > 768;
+  const contentWidth = isTablet ? 480 : '100%';
+  const headerTitleSize = isTablet ? 32 : 24;
+  const avatarSize = isTablet ? 100 : 80;
+  const avatarInitialsSize = isTablet ? 36 : 28;
+  const keyHeight = isTablet ? 80 : 60;
+  const keyWidth = isTablet ? 110 : 90;
+  const headerHeight = isTablet ? 300 : 260;
+
+  // Animation Logic
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return {
     phone,
     name,
@@ -199,5 +229,17 @@ export function useMpin() {
     onBackspace,
     onClear,
     inputRefs,
+    // UI/Responsive Props
+    isTablet,
+    contentWidth,
+    headerTitleSize,
+    avatarSize,
+    avatarInitialsSize,
+    keyHeight,
+    keyWidth,
+    headerHeight,
+    // Animation Props
+    fadeAnim,
+    slideAnim,
   };
 }
